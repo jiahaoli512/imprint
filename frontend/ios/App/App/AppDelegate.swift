@@ -3,7 +3,7 @@ import Capacitor
 import WebKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UIScrollViewDelegate {
 
     var window: UIWindow?
 
@@ -20,10 +20,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private func configureWebView() {
         guard let rootView = self.window?.rootViewController?.view else { return }
         if let webView = self.findWKWebView(in: rootView) {
+            webView.scrollView.delegate = self
             webView.scrollView.bounces = true
             webView.scrollView.alwaysBounceVertical = true
             webView.scrollView.alwaysBounceHorizontal = false
             webView.scrollView.showsHorizontalScrollIndicator = false
+        }
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView.contentOffset.x != 0 {
+            scrollView.contentOffset = CGPoint(x: 0, y: scrollView.contentOffset.y)
         }
     }
 
