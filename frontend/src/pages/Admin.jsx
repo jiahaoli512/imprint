@@ -171,10 +171,10 @@ export default function Admin() {
               <thead>
                 <tr>
                   <th className="col-grip" />
-                  <th className="col-num">#</th>
+                  <th className="col-num col-hide-mobile">#</th>
                   <th>Email</th>
-                  <th>Name</th>
-                  <th>Joined</th>
+                  <th className="col-hide-mobile">Name</th>
+                  <th className="col-hide-mobile">Joined</th>
                   <th>Status</th>
                   <th className="col-actions" />
                 </tr>
@@ -200,10 +200,10 @@ export default function Admin() {
                     <td className="col-grip">
                       <GripVertical size={14} className="grip-icon" />
                     </td>
-                    <td className="muted col-num">{i + 1}</td>
+                    <td className="muted col-num col-hide-mobile">{i + 1}</td>
                     <td>{e.email}</td>
-                    <td className="muted">{e.name || '—'}</td>
-                    <td className="muted">
+                    <td className="muted col-hide-mobile">{e.name || '—'}</td>
+                    <td className="muted col-hide-mobile">
                       {new Date(e.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td>

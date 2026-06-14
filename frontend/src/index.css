@@ -747,7 +747,7 @@ footer {
   border: 1px solid var(--border);
   border-radius: 24px;
   padding: 40px 36px;
-  width: 100%;
+  width: calc(100vw - 48px);
   max-width: 380px;
   text-align: center;
   box-shadow: 0 40px 100px rgba(0,0,0,0.6);
@@ -1078,6 +1078,7 @@ footer {
 
   .admin-header { padding: 16px 20px; padding-top: calc(16px + env(safe-area-inset-top)); }
   .admin-header-spacer { height: calc(68px + env(safe-area-inset-top)); }
+  .col-hide-mobile { display: none; }
   .admin-body { padding: 32px 20px; }
   .admin-top { flex-direction: column; align-items: flex-start; gap: 16px; }
   .admin-title { font-size: 28px; }
