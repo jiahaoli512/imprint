@@ -29,10 +29,10 @@ export default function MapMockup() {
           <span className="county-label cl-oc" style={{ top: '64%', left: '29%' }}>Orange Co.</span>
 
           {/* Pins — SoCal cities */}
-          <div className="pin pin3" style={{ top: '30%', left: '27%' }} />  {/* Los Angeles */}
-          <div className="pin"      style={{ top: '56%', left: '36%' }} />  {/* Anaheim */}
-          <div className="pin pin2" style={{ top: '64%', left: '38%' }} />  {/* Irvine */}
-          <div className="pin"      style={{ top: '70%', left: '30%' }} />  {/* Newport Beach */}
+          <div className="pin pin3" style={{ top: '30%', left: '27%' }} />
+          <div className="pin"      style={{ top: '56%', left: '36%' }} />
+          <div className="pin pin2" style={{ top: '64%', left: '38%' }} />
+          <div className="pin"      style={{ top: '70%', left: '30%' }} />
         </div>
         <div className="map-stats-bar">
           <div className="map-stat">

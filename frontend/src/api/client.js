@@ -1,14 +1,21 @@
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const BASE = import.meta.env.VITE_API_URL || window.location.origin;
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('imprint_token');
-  const res = await fetch(`${BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
+  const method = options.method || 'GET';
+  const url = `${BASE}${path}`;
+
+  let res;
+  if (method === 'GET' && !token) {
+    res = await fetch(url);
+  } else {
+    const headers = {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...options,
-  });
+    };
+    res = await fetch(url, { ...options, headers });
+  }
+
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
