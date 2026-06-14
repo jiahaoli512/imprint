@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
 
@@ -35,30 +35,28 @@ export default function Signup() {
   const allPassed = checks.every(c => c.passed);
   const passwordsMatch = allPassed && confirmPassword.length > 0 && confirmPassword === password;
 
-  useEffect(() => {
-    if (!passwordsMatch) return;
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      try {
-        const res = await fetch(`${apiBase}/api/users`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-        const data = await res.json();
-        if (cancelled) return;
-        if (!res.ok) {
-          setRegisterError(data.error || 'Something went wrong.');
-          setConfirmPassword('');
-        } else {
-          setStep('done');
-        }
-      } catch {
-        if (!cancelled) setRegisterError('Something went wrong. Please try again.');
+  async function handleRegister() {
+    setLoading(true);
+    setRegisterError('');
+    try {
+      const res = await fetch(`${apiBase}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRegisterError(data.error || 'Something went wrong.');
+        setConfirmPassword('');
+      } else {
+        setStep('done');
       }
-    }, 500);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [passwordsMatch]);
+    } catch {
+      setRegisterError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleEmailSubmit(e) {
     e.preventDefault();
@@ -75,6 +73,8 @@ export default function Signup() {
       if (data.status === 'approved') {
         setStep('success');
         setTimeout(() => setStep('password'), 2000);
+      } else if (data.status === 'already_registered') {
+        setEmailError('An account with this email already exists. Please log in.');
       } else {
         setStep('not_found');
       }
@@ -188,6 +188,16 @@ export default function Signup() {
               </div>
 
               {registerError && <p className="auth-error">{registerError}</p>}
+
+              {passwordsMatch && (
+                <button
+                  className="btn btn-primary auth-submit"
+                  onClick={handleRegister}
+                  disabled={loading}
+                >
+                  {loading ? 'Creating account…' : 'Continue'}
+                </button>
+              )}
             </div>
           </>
         )}
