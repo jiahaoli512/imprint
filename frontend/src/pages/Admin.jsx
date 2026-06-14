@@ -140,6 +140,7 @@ export default function Admin() {
         </div>
       </div>
 
+      <div className="admin-header-spacer" />
       <div className="admin-body">
         <div className="admin-top">
           <div>
