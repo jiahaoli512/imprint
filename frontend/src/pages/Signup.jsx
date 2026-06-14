@@ -54,7 +54,7 @@ export default function Signup() {
             <p>Success! Your email is approved.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="auth-form">
+          <form onSubmit={handleSubmit} className="auth-form" noValidate>
             <input
               type="email"
               className="auth-input"
@@ -65,7 +65,7 @@ export default function Signup() {
             />
 
             {(status === 'not_found' || status === 'pending') && (
-              <p className="auth-error">
+              <p className="auth-notice">
                 Your account is not on the waitlist.{' '}
                 <a
                   href="https://imprint-wheat.vercel.app/"

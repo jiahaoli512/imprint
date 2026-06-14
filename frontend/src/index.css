@@ -889,6 +889,13 @@ footer {
 
 .auth-error {
   font-size: 13px;
+  color: #ff6b6b;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.auth-notice {
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
   text-align: center;
