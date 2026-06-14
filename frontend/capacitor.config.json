@@ -1,0 +1,15 @@
+{
+  "appId": "com.imprint.app",
+  "appName": "Imprint",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "dark",
+      "backgroundColor": "#080c14"
+    }
+  }
+}
