@@ -17,6 +17,7 @@ router.post('/', async (req, res, next) => {
 
     const passwordHash = await bcrypt.hash(password, 12);
     await User.create({ email, passwordHash });
+    await Waitlist.deleteOne({ email: email.toLowerCase() });
     res.status(201).json({ ok: true });
   } catch (err) {
     next(err);
