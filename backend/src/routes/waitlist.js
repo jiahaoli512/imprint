@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Waitlist = require('../models/Waitlist');
+const User = require('../models/User');
 const { sendApprovalEmail } = require('../utils/email');
 
 async function normalizePositions() {
@@ -52,6 +53,8 @@ router.get('/check', async (req, res, next) => {
     const entry = await Waitlist.findOne({ email: email.toLowerCase() });
     if (!entry) return res.json({ status: 'not_found' });
     if (!entry.approved) return res.json({ status: 'pending' });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) return res.json({ status: 'already_registered' });
     return res.json({ status: 'approved' });
   } catch (err) {
     next(err);
