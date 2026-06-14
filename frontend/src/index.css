@@ -878,6 +878,8 @@ footer {
 }
 .auth-input:focus { border-color: var(--accent); }
 .auth-input::placeholder { color: var(--muted); }
+.auth-input:disabled { opacity: 0.35; cursor: not-allowed; }
+.auth-input-match { border-color: var(--accent) !important; }
 
 .auth-submit {
   width: 100%;
