@@ -44,6 +44,20 @@ router.get('/count', async (req, res, next) => {
   }
 });
 
+// GET /api/waitlist/check?email=...
+router.get('/check', async (req, res, next) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    const entry = await Waitlist.findOne({ email: email.toLowerCase() });
+    if (!entry) return res.json({ status: 'not_found' });
+    if (!entry.approved) return res.json({ status: 'pending' });
+    return res.json({ status: 'approved' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH /api/waitlist/reorder
 router.patch('/reorder', async (req, res, next) => {
   try {
