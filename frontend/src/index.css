@@ -992,6 +992,23 @@ footer {
   animation: spin 0.8s linear infinite;
 }
 
+.admin-search {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.admin-search:focus { border-color: var(--accent); }
+.admin-search::placeholder { color: var(--muted); }
+
 /* ── ADMIN PAGE ── */
 .admin-page {
   min-height: 100vh;
