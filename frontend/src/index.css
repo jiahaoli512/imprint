@@ -650,25 +650,19 @@ body {
   flex-wrap: wrap;
 }
 
-.store-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px 22px;
-  color: var(--text);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s;
+.store-badge-img {
+  display: inline-block;
+  transition: transform 0.2s, opacity 0.2s;
 }
 
-.store-badge:hover {
-  border-color: rgba(255,255,255,0.2);
-  background: var(--surface2);
+.store-badge-img:hover {
   transform: translateY(-2px);
+  opacity: 0.85;
+}
+
+.store-badge-img img {
+  height: 54px;
+  display: block;
 }
 
 .store-icon { font-size: 22px; }
