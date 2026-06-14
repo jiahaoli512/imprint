@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
+import Signup from './pages/Signup';
 
 function RequireAdminAuth({ children }) {
   if (!sessionStorage.getItem('admin_auth')) {
@@ -16,6 +17,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/admin/waitlist" element={
           <RequireAdminAuth>
             <Admin />
