@@ -65,7 +65,9 @@ router.patch('/:id/approve', async (req, res, next) => {
       { new: true }
     );
     if (!entry) return res.status(404).json({ error: 'Entry not found' });
-    await sendApprovalEmail(entry.email, entry.name);
+    sendApprovalEmail(entry.email, entry.name).catch((err) =>
+      console.error('[email] Failed to send approval email:', err.message)
+    );
     res.json({ ok: true });
   } catch (err) {
     next(err);
