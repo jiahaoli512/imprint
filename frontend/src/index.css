@@ -820,9 +820,15 @@ footer {
   border-bottom: 1px solid var(--border);
   background: rgba(8,12,20,0.9);
   backdrop-filter: blur(16px);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
+}
+
+.admin-header-spacer {
+  height: calc(80px + env(safe-area-inset-top));
 }
 
 .admin-header-right { display: flex; align-items: center; gap: 16px; }
@@ -1071,6 +1077,7 @@ footer {
   .progress-wrap { order: 3; width: 100%; max-width: none; margin: 0; }
 
   .admin-header { padding: 16px 20px; padding-top: calc(16px + env(safe-area-inset-top)); }
+  .admin-header-spacer { height: calc(68px + env(safe-area-inset-top)); }
   .admin-body { padding: 32px 20px; }
   .admin-top { flex-direction: column; align-items: flex-start; gap: 16px; }
   .admin-title { font-size: 28px; }
