@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock } from 'lucide-react';
+import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck } from 'lucide-react';
 export default function Admin() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
@@ -11,6 +11,9 @@ export default function Admin() {
   const [dragOver, setDragOver] = useState(null);
 
   const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+  const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [waitlistSearch, setWaitlistSearch] = useState('');
+  const [usersSearch, setUsersSearch] = useState('');
 
   function apiFetch(path, options) {
     return fetch(`${apiBase}${path}`, options).then((r) => r.json());
@@ -22,6 +25,11 @@ export default function Admin() {
       .then(setEntries)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+
+    fetch(`${apiBase}/api/users`)
+      .then((r) => r.json())
+      .then(setRegisteredUsers)
+      .catch(() => {});
   }, []);
 
   function exportCSV() {
@@ -123,6 +131,16 @@ export default function Admin() {
 
   const approvedCount = entries.filter((e) => e.approved).length;
 
+  const filteredEntries = entries.filter((e) => {
+    const q = waitlistSearch.toLowerCase();
+    return !q || e.email.toLowerCase().includes(q) || (e.name || '').toLowerCase().includes(q);
+  });
+
+  const filteredUsers = registeredUsers.filter((u) => {
+    const q = usersSearch.toLowerCase();
+    return !q || u.email.toLowerCase().includes(q);
+  });
+
   return (
     <div className="admin-page">
       <div className="admin-header">
@@ -154,6 +172,15 @@ export default function Admin() {
           </button>
         </div>
 
+        {!loading && entries.length > 0 && (
+          <input
+            className="admin-search"
+            placeholder="Search by name or email…"
+            value={waitlistSearch}
+            onChange={(e) => setWaitlistSearch(e.target.value)}
+          />
+        )}
+
         {loading && <p className="admin-state">Loading…</p>}
         {error   && <p className="admin-state error">{error}</p>}
 
@@ -166,7 +193,6 @@ export default function Admin() {
 
         {!loading && entries.length > 0 && (
           <div className="admin-table-wrap">
-           <div className="admin-table-scroll">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -180,7 +206,9 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((e, i) => (
+                {filteredEntries.length === 0 ? (
+                  <tr><td colSpan={7} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
+                ) : filteredEntries.map((e, i) => (
                   <tr
                     key={e._id}
                     data-index={i}
@@ -235,9 +263,57 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
-           </div>
           </div>
         )}
+        {/* ── Registered Users ── */}
+        <div className="admin-section">
+          <div className="admin-top" style={{ marginTop: '48px' }}>
+            <div>
+              <h2 className="admin-title" style={{ fontSize: '28px' }}>Registered Users</h2>
+              <p className="admin-sub">{registeredUsers.length} account{registeredUsers.length !== 1 ? 's' : ''} created</p>
+            </div>
+          </div>
+
+          {registeredUsers.length === 0 ? (
+            <div className="admin-empty">
+              <UserCheck size={40} color="var(--muted)" />
+              <p>No accounts yet.</p>
+            </div>
+          ) : (
+            <>
+              <input
+                className="admin-search"
+                placeholder="Search by email…"
+                value={usersSearch}
+                onChange={(e) => setUsersSearch(e.target.value)}
+              />
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th className="col-num col-hide-mobile">#</th>
+                      <th>Email</th>
+                      <th className="col-hide-mobile">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.length === 0 ? (
+                      <tr><td colSpan={3} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
+                    ) : filteredUsers.map((u, i) => (
+                      <tr key={u._id}>
+                        <td className="muted col-num col-hide-mobile">{i + 1}</td>
+                        <td>{u.email}</td>
+                        <td className="muted col-hide-mobile">
+                          {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

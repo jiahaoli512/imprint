@@ -28,6 +28,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [registerError, setRegisterError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const checks = PW_RULES.map(r => ({ ...r, passed: r.test(password) }));
@@ -35,10 +36,28 @@ export default function Signup() {
   const passwordsMatch = allPassed && confirmPassword.length > 0 && confirmPassword === password;
 
   useEffect(() => {
-    if (passwordsMatch) {
-      const t = setTimeout(() => setStep('done'), 500);
-      return () => clearTimeout(t);
-    }
+    if (!passwordsMatch) return;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        if (!res.ok) {
+          setRegisterError(data.error || 'Something went wrong.');
+          setConfirmPassword('');
+        } else {
+          setStep('done');
+        }
+      } catch {
+        if (!cancelled) setRegisterError('Something went wrong. Please try again.');
+      }
+    }, 500);
+    return () => { cancelled = true; clearTimeout(t); };
   }, [passwordsMatch]);
 
   async function handleEmailSubmit(e) {
@@ -167,6 +186,8 @@ export default function Signup() {
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+
+              {registerError && <p className="auth-error">{registerError}</p>}
             </div>
           </>
         )}
