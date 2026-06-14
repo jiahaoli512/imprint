@@ -20,6 +20,7 @@ export default function Footer() {
   function handleSubmit(e) {
     e.preventDefault();
     if (password === 'imprint') {
+      sessionStorage.setItem('admin_auth', '1');
       setModalOpen(false);
       navigate('/admin/waitlist');
     } else {

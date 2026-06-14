@@ -134,7 +134,7 @@ export default function Admin() {
         </div>
         <div className="admin-header-right">
           <span className="admin-badge">Admin</span>
-          <button className="btn btn-ghost" onClick={() => navigate('/home')}>
+          <button className="btn btn-ghost" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
             <ArrowLeft size={15} /> Back to site
           </button>
         </div>
