@@ -31,6 +31,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 20px 48px;
+  padding-top: calc(20px + env(safe-area-inset-top));
   background: rgba(8,12,20,0.8);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
