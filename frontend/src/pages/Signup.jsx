@@ -5,12 +5,20 @@ import { Fingerprint, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
 const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const SPECIAL_RE = /[~`!@#$%^&*()\-_+=\[\]{}|\\;:"<>,./?]/;
+
 const PW_RULES = [
-  { key: 'length',  label: 'At least 8 characters',  test: p => p.length >= 8 },
-  { key: 'upper',   label: 'One uppercase letter',    test: p => /[A-Z]/.test(p) },
-  { key: 'lower',   label: 'One lowercase letter',    test: p => /[a-z]/.test(p) },
-  { key: 'number',  label: 'One number',              test: p => /[0-9]/.test(p) },
-  { key: 'special', label: 'One special character',   test: p => /[^A-Za-z0-9]/.test(p) },
+  { key: 'length',  label: 'At least 12 characters',
+    test: p => p.length >= 12 },
+  { key: 'upper',   label: 'One uppercase letter (A–Z)',
+    test: p => /[A-Z]/.test(p) },
+  { key: 'lower',   label: 'One lowercase letter (a–z)',
+    test: p => /[a-z]/.test(p) },
+  { key: 'number',  label: 'One number (0–9)',
+    test: p => /[0-9]/.test(p) },
+  { key: 'special',
+    label: 'One special character not at start or end (~`!@#$%^&*()-_+=[]{}|\\;:"<>,./?)',
+    test: p => p.length >= 3 && SPECIAL_RE.test(p.slice(1, -1)) },
 ];
 
 export default function Signup() {
