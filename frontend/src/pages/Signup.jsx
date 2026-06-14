@@ -1,34 +1,63 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ArrowLeft } from 'lucide-react';
+import { Fingerprint, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
 
 const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const PW_RULES = [
+  { key: 'length',  label: 'At least 8 characters',  test: p => p.length >= 8 },
+  { key: 'upper',   label: 'One uppercase letter',    test: p => /[A-Z]/.test(p) },
+  { key: 'lower',   label: 'One lowercase letter',    test: p => /[a-z]/.test(p) },
+  { key: 'number',  label: 'One number',              test: p => /[0-9]/.test(p) },
+  { key: 'special', label: 'One special character',   test: p => /[^A-Za-z0-9]/.test(p) },
+];
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [step, setStep] = useState('email'); // email | not_found | success | password | done
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | loading | approved | not_found | pending
-  const [error, setError] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const checks = PW_RULES.map(r => ({ ...r, passed: r.test(password) }));
+  const allPassed = checks.every(c => c.passed);
 
-  async function handleSubmit(e) {
+  async function handleEmailSubmit(e) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
     if (!EMAIL_RE.test(trimmed)) {
-      setError('Enter a valid email address.');
+      setEmailError('Enter a valid email address.');
       return;
     }
-    setStatus('loading');
-    setError('');
+    setEmailError('');
+    setLoading(true);
     try {
       const res = await fetch(`${apiBase}/api/waitlist/check?email=${encodeURIComponent(trimmed)}`);
       const data = await res.json();
-      setStatus(data.status);
+      if (data.status === 'approved') {
+        setStep('success');
+        setTimeout(() => setStep('password'), 2000);
+      } else {
+        setStep('not_found');
+      }
     } catch {
-      setError('Something went wrong. Please try again.');
-      setStatus('idle');
+      setEmailError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
+  }
+
+  function handlePasswordSubmit(e) {
+    e.preventDefault();
+    if (!allPassed) {
+      setPwError("Your password doesn't meet the password requirements.");
+      return;
+    }
+    setStep('done');
   }
 
   return (
@@ -45,50 +74,93 @@ export default function Signup() {
           Imprint
         </div>
 
-        <h1 className="auth-title">Create Account</h1>
-        <p className="auth-sub">Enter your email to get started.</p>
+        {/* ── Email step ── */}
+        {(step === 'email' || step === 'not_found') && (
+          <>
+            <h1 className="auth-title">Create Account</h1>
+            <p className="auth-sub">Enter your email to get started.</p>
+            <form onSubmit={handleEmailSubmit} className="auth-form" noValidate>
+              <input
+                type="email"
+                className="auth-input"
+                placeholder="Enter a valid email address"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setEmailError(''); setStep('email'); }}
+                autoComplete="email"
+              />
+              {step === 'not_found' && (
+                <p className="auth-notice">
+                  Your account is not on the waitlist.{' '}
+                  <a href="https://imprint-wheat.vercel.app/" target="_blank" rel="noreferrer" className="auth-link">
+                    Sign up for the waitlist
+                  </a>{' '}
+                  to get approved.
+                </p>
+              )}
+              {emailError && <p className="auth-error">{emailError}</p>}
+              <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
+                {loading ? 'Checking…' : 'Continue'}
+              </button>
+            </form>
+          </>
+        )}
 
-        {status === 'approved' ? (
+        {/* ── Success / transition step ── */}
+        {step === 'success' && (
           <div className="auth-success">
-            <span className="auth-success-icon">✓</span>
+            <div className="auth-spinner" />
             <p>Success! Your email is approved.</p>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="auth-form" noValidate>
-            <input
-              type="email"
-              className="auth-input"
-              placeholder="Enter a valid email address"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setStatus('idle'); setError(''); }}
-              autoComplete="email"
-            />
+        )}
 
-            {(status === 'not_found' || status === 'pending') && (
-              <p className="auth-notice">
-                Your account is not on the waitlist.{' '}
-                <a
-                  href="https://imprint-wheat.vercel.app/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="auth-link"
-                >
-                  Sign up for the waitlist
-                </a>{' '}
-                to get approved.
-              </p>
-            )}
+        {/* ── Password step ── */}
+        {step === 'password' && (
+          <>
+            <h1 className="auth-title">Create Password</h1>
+            <p className="auth-sub">Choose a strong password.</p>
+            <form onSubmit={handlePasswordSubmit} className="auth-form" noValidate>
+              <div className="auth-input-wrap">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder="Password"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setPwError(''); }}
+                  autoComplete="new-password"
+                />
+                <button type="button" className="auth-eye" onClick={() => setShowPassword(s => !s)}>
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
 
-            {error && <p className="auth-error">{error}</p>}
+              <ul className="auth-checks">
+                {checks.map(c => (
+                  <li key={c.key} className={c.passed ? 'check-pass' : 'check-fail'}>
+                    {c.passed ? <Check size={12} /> : <X size={12} />}
+                    {c.label}
+                  </li>
+                ))}
+              </ul>
 
-            <button
-              type="submit"
-              className="btn btn-primary auth-submit"
-              disabled={status === 'loading'}
-            >
-              {status === 'loading' ? 'Checking…' : 'Continue'}
-            </button>
-          </form>
+              {pwError && <p className="auth-error">{pwError}</p>}
+
+              <button
+                type="submit"
+                className="btn btn-primary auth-submit"
+                disabled={!allPassed}
+              >
+                Continue
+              </button>
+            </form>
+          </>
+        )}
+
+        {/* ── Done step ── */}
+        {step === 'done' && (
+          <div className="auth-success">
+            <span className="auth-success-icon">✓</span>
+            <p>Password successful!</p>
+          </div>
         )}
       </div>
     </div>
