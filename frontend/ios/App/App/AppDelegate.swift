@@ -22,6 +22,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         guard let rootView = self.window?.rootViewController?.view,
               let webView = findWKWebView(in: rootView) else { return }
 
+        let appBg = UIColor(red: 8/255, green: 12/255, blue: 20/255, alpha: 1)
+        webView.backgroundColor = appBg
+        webView.scrollView.backgroundColor = appBg
+        self.window?.backgroundColor = appBg
+
         webView.scrollView.bounces = true
         webView.scrollView.alwaysBounceVertical = true
         webView.scrollView.alwaysBounceHorizontal = false
