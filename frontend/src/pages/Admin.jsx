@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck } from 'lucide-react';
+import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck, LayoutDashboard } from 'lucide-react';
 export default function Admin() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
@@ -152,6 +152,9 @@ export default function Admin() {
         </div>
         <div className="admin-header-right">
           <span className="admin-badge">Admin</span>
+          <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
+            <LayoutDashboard size={15} /> Admin Dashboard
+          </button>
           <button className="btn btn-ghost" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
             <ArrowLeft size={15} /> Back to site
           </button>

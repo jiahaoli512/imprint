@@ -992,6 +992,11 @@ footer {
   animation: spin 0.8s linear infinite;
 }
 
+.dashboard-map-wrap {
+  flex: 1;
+  height: calc(100vh - 80px);
+}
+
 .admin-search {
   width: 100%;
   padding: 10px 14px;
