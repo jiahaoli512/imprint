@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
 
 const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const SPECIAL_RE = /[~`!@#$%^&*()\-_+=\[\]{}|\\;:"<>,./?]/;
 
 const PW_RULES = [
@@ -16,23 +15,31 @@ const PW_RULES = [
     test: p => /[a-z]/.test(p) },
   { key: 'number',  label: 'One number (0–9)',
     test: p => /[0-9]/.test(p) },
-  { key: 'special',
-    label: 'One special character not at start or end (~`!@#$%^&*()-_+=[]{}|\\;:"<>,./?)',
+  { key: 'special', label: 'One special character, not at start or end',
     test: p => p.length >= 3 && SPECIAL_RE.test(p.slice(1, -1)) },
 ];
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [step, setStep] = useState('email'); // email | not_found | success | password | done
+  const [step, setStep] = useState('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [emailError, setEmailError] = useState('');
-  const [pwError, setPwError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const checks = PW_RULES.map(r => ({ ...r, passed: r.test(password) }));
   const allPassed = checks.every(c => c.passed);
+  const passwordsMatch = allPassed && confirmPassword.length > 0 && confirmPassword === password;
+
+  useEffect(() => {
+    if (passwordsMatch) {
+      const t = setTimeout(() => setStep('done'), 500);
+      return () => clearTimeout(t);
+    }
+  }, [passwordsMatch]);
 
   async function handleEmailSubmit(e) {
     e.preventDefault();
@@ -57,15 +64,6 @@ export default function Signup() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function handlePasswordSubmit(e) {
-    e.preventDefault();
-    if (!allPassed) {
-      setPwError("Your password doesn't meet the password requirements.");
-      return;
-    }
-    setStep('done');
   }
 
   return (
@@ -126,14 +124,14 @@ export default function Signup() {
           <>
             <h1 className="auth-title">Create Password</h1>
             <p className="auth-sub">Choose a strong password.</p>
-            <form onSubmit={handlePasswordSubmit} className="auth-form" noValidate>
+            <div className="auth-form">
               <div className="auth-input-wrap">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="auth-input"
                   placeholder="Password"
                   value={password}
-                  onChange={e => { setPassword(e.target.value); setPwError(''); }}
+                  onChange={e => { setPassword(e.target.value); setConfirmPassword(''); }}
                   autoComplete="new-password"
                 />
                 <button type="button" className="auth-eye" onClick={() => setShowPassword(s => !s)}>
@@ -150,16 +148,26 @@ export default function Signup() {
                 ))}
               </ul>
 
-              {pwError && <p className="auth-error">{pwError}</p>}
-
-              <button
-                type="submit"
-                className="btn btn-primary auth-submit"
-                disabled={!allPassed}
-              >
-                Continue
-              </button>
-            </form>
+              <div className="auth-input-wrap">
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  className={`auth-input${passwordsMatch ? ' auth-input-match' : ''}`}
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  disabled={!allPassed}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="auth-eye"
+                  onClick={() => setShowConfirm(s => !s)}
+                  disabled={!allPassed}
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
           </>
         )}
 
@@ -167,7 +175,7 @@ export default function Signup() {
         {step === 'done' && (
           <div className="auth-success">
             <span className="auth-success-icon">✓</span>
-            <p>Password successful!</p>
+            <p>Success!</p>
           </div>
         )}
       </div>
