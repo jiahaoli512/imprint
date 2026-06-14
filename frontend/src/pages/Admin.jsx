@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock } from 'lucide-react';
-import { api } from '../api/client';
-
 export default function Admin() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
@@ -12,8 +10,15 @@ export default function Admin() {
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
+  const apiBase = window.location.origin;
+
+  function apiFetch(path, options) {
+    return fetch(`${apiBase}${path}`, options).then((r) => r.json());
+  }
+
   useEffect(() => {
-    api.getWaitlist()
+    fetch(`${apiBase}/api/waitlist`)
+      .then((r) => r.json())
       .then(setEntries)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -37,7 +42,7 @@ export default function Admin() {
   async function handleApprove(id) {
     setApprovingId(id);
     try {
-      await api.approveWaitlistEntry(id);
+      await apiFetch(`/api/waitlist/${id}/approve`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' } });
       setEntries((es) => es.map((e) => e._id === id ? { ...e, approved: true } : e));
     } catch (err) {
       alert(`Failed to approve: ${err.message}`);
@@ -50,12 +55,26 @@ export default function Admin() {
     const prev = entries;
     setEntries((es) => es.filter((e) => e._id !== id));
     try {
-      await api.deleteWaitlistEntry(id);
+      await apiFetch(`/api/waitlist/${id}`, { method: 'DELETE' });
     } catch {
       setEntries(prev);
     }
   }
 
+  async function commitReorder(from, to) {
+    if (from === null || from === to) return;
+    const reordered = [...entries];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    setEntries(reordered);
+    try {
+      await apiFetch('/api/waitlist/reorder', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: reordered.map((entry) => entry._id) }) });
+    } catch {
+      fetch(`${apiBase}/api/waitlist`).then((r) => r.json()).then(setEntries).catch(() => {});
+    }
+  }
+
+  // Mouse / desktop drag
   function onDragStart(e, i) {
     dragIndex.current = i;
     e.dataTransfer.effectAllowed = 'move';
@@ -72,23 +91,34 @@ export default function Admin() {
     const from = dragIndex.current;
     setDragOver(null);
     dragIndex.current = null;
-    if (from === null || from === i) return;
-
-    const reordered = [...entries];
-    const [moved] = reordered.splice(from, 1);
-    reordered.splice(i, 0, moved);
-    setEntries(reordered);
-
-    try {
-      await api.reorderWaitlist(reordered.map((entry) => entry._id));
-    } catch {
-      api.getWaitlist().then(setEntries).catch(() => {});
-    }
+    await commitReorder(from, i);
   }
 
   function onDragEnd() {
     dragIndex.current = null;
     setDragOver(null);
+  }
+
+  // Touch / mobile drag
+  function onTouchStart(e, i) {
+    dragIndex.current = i;
+  }
+
+  function onTouchMove(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const row = el?.closest('tr[data-index]');
+    const idx = row ? parseInt(row.dataset.index, 10) : null;
+    if (idx !== null && idx !== dragOver) setDragOver(idx);
+  }
+
+  async function onTouchEnd() {
+    const from = dragIndex.current;
+    const to = dragOver;
+    dragIndex.current = null;
+    setDragOver(null);
+    await commitReorder(from, to);
   }
 
   const approvedCount = entries.filter((e) => e.approved).length;
@@ -135,6 +165,7 @@ export default function Admin() {
 
         {!loading && entries.length > 0 && (
           <div className="admin-table-wrap">
+           <div className="admin-table-scroll">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -151,11 +182,15 @@ export default function Admin() {
                 {entries.map((e, i) => (
                   <tr
                     key={e._id}
+                    data-index={i}
                     draggable
                     onDragStart={(ev) => onDragStart(ev, i)}
                     onDragOver={(ev) => onDragOver(ev, i)}
                     onDrop={(ev) => onDrop(ev, i)}
                     onDragEnd={onDragEnd}
+                    onTouchStart={(ev) => onTouchStart(ev, i)}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
                     className={[
                       dragIndex.current === i ? 'row-dragging' : '',
                       dragOver === i && dragIndex.current !== i ? 'row-drag-over' : '',
@@ -199,6 +234,7 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+           </div>
           </div>
         )}
       </div>
