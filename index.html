@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Imprint — How Much of the World Have You Seen?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080c14;
+      --surface: #0f1623;
+      --surface2: #161f30;
+      --accent: #4fffb0;
+      --accent2: #00c9ff;
+      --text: #f0f4ff;
+      --muted: #6b7a99;
+      --border: rgba(255,255,255,0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      background: rgba(8,12,20,0.8);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #080c14;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(79,255,176,0.3);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,255,176,0.08) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hero-glow2 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,201,255,0.06) 0%, transparent 70%);
+      top: 40%;
+      left: 60%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(79,255,176,0.1);
+      border: 1px solid rgba(79,255,176,0.25);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 28px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 7vw, 88px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -3px;
+      margin-bottom: 24px;
+      max-width: 900px;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 72px;
+    }
+
+    .hero-actions .btn {
+      padding: 14px 28px;
+      font-size: 15px;
+    }
+
+    /* ── MAP VISUAL ── */
+    .map-container {
+      position: relative;
+      width: min(860px, 90vw);
+      margin: 0 auto;
+    }
+
+    .map-frame {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+    }
+
+    .map-topbar {
+      background: var(--surface2);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .map-body {
+      height: 380px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* SVG world map placeholder */
+    .map-svg-wrap {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .world-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(79,255,176,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,255,176,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .continent {
+      position: absolute;
+      border-radius: 4px;
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .continent.visited {
+      background: linear-gradient(135deg, rgba(79,255,176,0.35), rgba(0,201,255,0.25));
+      border-color: rgba(79,255,176,0.4);
+      box-shadow: 0 0 20px rgba(79,255,176,0.15);
+    }
+
+    /* Rough continent shapes */
+    .c-na  { width: 15%; height: 22%; top: 18%; left: 8%; border-radius: 8px 12px 6px 10px; }
+    .c-sa  { width: 10%; height: 20%; top: 44%; left: 13%; border-radius: 6px 8px 14px 8px; }
+    .c-eu  { width: 10%; height: 14%; top: 16%; left: 42%; border-radius: 8px; }
+    .c-af  { width: 11%; height: 24%; top: 30%; left: 43%; border-radius: 6px 8px 20px 10px; }
+    .c-as  { width: 24%; height: 22%; top: 14%; left: 54%; border-radius: 10px 8px 6px 10px; }
+    .c-au  { width: 10%; height: 12%; top: 56%; left: 74%; border-radius: 8px; }
+
+    .map-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 40%, rgba(79,255,176,0.06) 0%, transparent 60%);
+    }
+
+    /* Pulse dot markers */
+    .pin {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+    }
+
+    .pin::before {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .pin::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse 2s infinite;
+      opacity: 0.5;
+    }
+
+    .pin2::before { background: var(--accent2); }
+    .pin2::after { border-color: var(--accent2); animation-delay: 0.5s; }
+    .pin3::before { background: #ff6b6b; }
+    .pin3::after { border-color: #ff6b6b; animation-delay: 1s; }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%,-50%) scale(0.8); opacity: 0.6; }
+      100% { transform: translate(-50%,-50%) scale(2); opacity: 0; }
+    }
+
+    .map-stats-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .map-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .map-stat-val {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .map-stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .progress-wrap {
+      flex: 1;
+      max-width: 240px;
+      margin: 0 24px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 23%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 100px;
+      animation: fill 1.5s ease-out forwards;
+    }
+
+    @keyframes fill {
+      from { width: 0; }
+      to { width: 23%; }
+    }
+
+    /* ── SOCIAL PROOF ── */
+    .social-proof {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 56px;
+      flex-wrap: wrap;
+    }
+
+    .avatars {
+      display: flex;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--bg);
+      margin-left: -8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .avatar:first-child { margin-left: 0; }
+
+    .av1 { background: linear-gradient(135deg,#667eea,#764ba2); }
+    .av2 { background: linear-gradient(135deg,#f093fb,#f5576c); }
+    .av3 { background: linear-gradient(135deg,#4facfe,#00f2fe); }
+    .av4 { background: linear-gradient(135deg,#43e97b,#38f9d7); }
+
+    .social-text {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .social-text strong {
+      color: var(--text);
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-item {
+      flex: 1;
+      padding: 48px 32px;
+      background: var(--bg);
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat-desc {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ── FEATURES ── */
+    .section {
+      padding: 100px 48px;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.6;
+      margin-bottom: 64px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(79,255,176,0.05), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(79,255,176,0.2);
+      transform: translateY(-4px);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .icon-green { background: rgba(79,255,176,0.12); }
+    .icon-blue  { background: rgba(0,201,255,0.12); }
+    .icon-purple{ background: rgba(168,85,247,0.12); }
+    .icon-orange{ background: rgba(251,146,60,0.12); }
+    .icon-pink  { background: rgba(236,72,153,0.12); }
+    .icon-yellow{ background: rgba(251,191,36,0.12); }
+
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-section {
+      padding: 100px 48px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .how-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 40px;
+      margin-top: 64px;
+    }
+
+    .step {
+      position: relative;
+    }
+
+    .step-num {
+      font-size: 72px;
+      font-weight: 900;
+      letter-spacing: -4px;
+      line-height: 1;
+      background: linear-gradient(135deg, rgba(79,255,176,0.25), rgba(0,201,255,0.15));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    .step h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .step p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 120px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,255,176,0.07) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 900;
+      letter-spacing: -2.5px;
+      line-height: 1.05;
+      margin-bottom: 20px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-section p {
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .cta-actions .btn {
+      padding: 16px 32px;
+      font-size: 16px;
+    }
+
+    .store-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 22px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .store-badge:hover {
+      border-color: rgba(255,255,255,0.2);
+      background: var(--surface2);
+      transform: translateY(-2px);
+    }
+
+    .store-badge .store-icon { font-size: 22px; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-copy {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+      .section, .cta-section { padding: 64px 20px; }
+      .how-section { padding: 64px 20px; }
+      footer { padding: 32px 20px; flex-direction: column; text-align: center; }
+      .stats-row { flex-direction: column; }
+      .stat-item { border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">
+      <div class="logo-icon">🌍</div>
+      Imprint
+    </div>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#stats">Stats</a></li>
+    </ul>
+    <a href="#cta" class="btn btn-primary">Get Early Access</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-glow2"></div>
+
+    <div class="badge">✦ Now in Beta</div>
+
+    <h1>How much of the<br /><span>world have you seen?</span></h1>
+
+    <p>Imprint maps every place you've ever been — turning your travels into a living portrait of your world. See your coverage, explore what's left, and share the journey.</p>
+
+    <div class="hero-actions">
+      <a href="#cta" class="btn btn-primary">
+        <span>📱</span> Get Early Access
+      </a>
+      <a href="#features" class="btn btn-ghost">See Features →</a>
+    </div>
+
+    <!-- MAP MOCKUP -->
+    <div class="map-container">
+      <div class="map-frame">
+        <div class="map-topbar">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <div class="map-body">
+          <div class="world-grid"></div>
+          <div class="map-overlay"></div>
+
+          <!-- Continent shapes -->
+          <div class="continent c-na visited"></div>
+          <div class="continent c-sa"></div>
+          <div class="continent c-eu visited"></div>
+          <div class="continent c-af"></div>
+          <div class="continent c-as"></div>
+          <div class="continent c-au"></div>
+
+          <!-- Location pins -->
+          <div class="pin" style="top:28%;left:14%"></div>
+          <div class="pin pin2" style="top:22%;left:47%"></div>
+          <div class="pin pin3" style="top:35%;left:62%"></div>
+          <div class="pin" style="top:24%;left:10%"></div>
+        </div>
+        <div class="map-stats-bar">
+          <div class="map-stat">
+            <span class="map-stat-val">23%</span>
+            <span class="map-stat-label">World covered</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label">
+              <span>Your Imprint</span>
+              <span>23 / 100%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+          </div>
+          <div class="map-stat" style="text-align:right">
+            <span class="map-stat-val">47</span>
+            <span class="map-stat-label">Cities visited</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOCIAL PROOF -->
+    <div class="social-proof">
+      <div class="avatars">
+        <div class="avatar av1">A</div>
+        <div class="avatar av2">K</div>
+        <div class="avatar av3">M</div>
+        <div class="avatar av4">J</div>
+      </div>
+      <span class="social-text"><strong>2,400+ explorers</strong> already mapping their world</span>
+    </div>
+  </section>
+
+  <!-- STATS ROW -->
+  <div class="stats-row" id="stats">
+    <div class="stat-item">
+      <div class="stat-num">195</div>
+      <div class="stat-desc">Countries to discover</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">510M</div>
+      <div class="stat-desc">km² of Earth's surface</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">∞</div>
+      <div class="stat-desc">Stories to find</div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div class="section-tag">Features</div>
+    <h2 class="section-title">More than a travel tracker.</h2>
+    <p class="section-sub">Imprint goes beyond pinning locations — it gives you a living, breathing map of your life's journey.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon icon-green">🗺️</div>
+        <h3>Coverage Map</h3>
+        <p>See exactly what percentage of the world, each country, and each region you've explored — visualized as a heat map that grows with you.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon icon-blue">📍</div>
+        <h3>Passive Tracking</h3>
+        <p>Imprint quietly logs your location in the background. Just live your life — your map builds itself automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon icon-purple">👥</div>
+        <h3>Friend Comparisons</h3>
+        <p>See how your coverage stacks up against friends. Discover places they've been that you haven't — and challenge them to catch up.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon icon-orange">🏆</div>
+        <h3>Achievements & Milestones</h3>
+        <p>Unlock badges for hitting every continent, exploring all 50 US states, visiting UNESCO World Heritage Sites, and hundreds more.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon icon-pink">✈️</div>
+        <h3>Trip Recaps</h3>
+        <p>Every trip automatically becomes a shareable recap — a beautiful visual story of where you went, how far you traveled, and what you covered.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon icon-yellow">🎯</div>
+        <h3>Bucket List</h3>
+        <p>Pin places you want to visit next. Imprint will help you plan the most efficient route to maximize your coverage on your next adventure.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-section" id="how">
+    <div class="how-inner">
+      <div class="section-tag">How it works</div>
+      <h2 class="section-title">Start leaving your<br />mark today.</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <h3>Download Imprint</h3>
+          <p>Available on iOS and Android. Sign up in seconds — no account setup or manual input needed to get started.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <h3>Explore the world</h3>
+          <p>Imprint runs quietly in the background, logging every city, region, and country you visit as you live your life.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <h3>Watch your map grow</h3>
+          <p>Open the app to see your coverage expand in real time. Compare, compete, and get inspired to see more.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <h3>Share your imprint</h3>
+          <p>Export your map or trip recap as a beautiful card to share with friends and family on any platform.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <section class="cta-section" id="cta">
+    <div class="cta-glow"></div>
+    <h2>Leave your <span style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Imprint</span><br />on the world.</h2>
+    <p>Join the waitlist and be the first to explore.</p>
+    <div class="cta-actions">
+      <a href="#" class="store-badge">
+        <span class="store-icon">🍎</span>
+        <div>
+          <div style="font-size:10px;opacity:0.6;font-weight:400">Download on the</div>
+          App Store
+        </div>
+      </a>
+      <a href="#" class="store-badge">
+        <span class="store-icon">🤖</span>
+        <div>
+          <div style="font-size:10px;opacity:0.6;font-weight:400">Get it on</div>
+          Google Play
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="logo" style="font-size:16px">
+      <div class="logo-icon" style="width:26px;height:26px;font-size:13px">🌍</div>
+      Imprint
+    </div>
+    <span class="footer-copy">© 2026 Imprint. All rights reserved.</span>
+    <ul class="footer-links">
+      <li><a href="#">Privacy</a></li>
+      <li><a href="#">Terms</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </footer>
+
+</body>
+</html>
