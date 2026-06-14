@@ -10,10 +10,15 @@ export default function Signup() {
   const [status, setStatus] = useState('idle'); // idle | loading | approved | not_found | pending
   const [error, setError] = useState('');
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   async function handleSubmit(e) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
-    if (!trimmed) return;
+    if (!EMAIL_RE.test(trimmed)) {
+      setError('Enter a valid email address.');
+      return;
+    }
     setStatus('loading');
     setError('');
     try {
@@ -53,10 +58,9 @@ export default function Signup() {
             <input
               type="email"
               className="auth-input"
-              placeholder="you@example.com"
+              placeholder="Enter a valid email address"
               value={email}
-              onChange={(e) => { setEmail(e.target.value); setStatus('idle'); }}
-              required
+              onChange={(e) => { setEmail(e.target.value); setStatus('idle'); setError(''); }}
               autoComplete="email"
             />
 
