@@ -50,10 +50,10 @@ export default function CTA({ onJoin }) {
       {msg && <p className={`form-msg ${status}`}>{msg}</p>}
 
       <div className="cta-actions">
-        <a href="#" className="store-badge-img">
+        <a href="#" className="store-badge-img apple-badge">
           <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" />
         </a>
-        <a href="#" className="store-badge-img">
+        <a href="#" className="store-badge-img google-badge">
           <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" />
         </a>
       </div>

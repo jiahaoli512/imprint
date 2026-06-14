@@ -661,28 +661,25 @@
       font-size: 16px;
     }
 
-    .store-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 22px;
-      color: var(--text);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.2s;
+    .store-badge-img {
+      display: inline-block;
+      transition: transform 0.2s, opacity 0.2s;
     }
 
-    .store-badge:hover {
-      border-color: rgba(255,255,255,0.2);
-      background: var(--surface2);
+    .store-badge-img:hover {
       transform: translateY(-2px);
+      opacity: 0.85;
     }
 
-    .store-badge .store-icon { font-size: 22px; }
+    .apple-badge img {
+      height: 54px;
+      display: block;
+    }
+
+    .google-badge img {
+      height: 78px;
+      display: block;
+    }
 
     /* ── FOOTER ── */
     footer {
@@ -915,8 +912,11 @@
     <h2>Leave your <span style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Imprint</span><br />on the world.</h2>
     <p>Join the waitlist and be the first to explore.</p>
     <div class="cta-actions">
-      <a href="https://imprint-wheat.vercel.app" class="btn btn-primary" style="padding:16px 32px;font-size:16px">
-        <span>📱</span> Join the Waitlist
+      <a href="#" class="store-badge-img apple-badge">
+        <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" />
+      </a>
+      <a href="#" class="store-badge-img google-badge">
+        <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" />
       </a>
     </div>
   </section>
