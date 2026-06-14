@@ -10,7 +10,7 @@ export default function Admin() {
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
-  const apiBase = window.location.origin;
+  const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
 
   function apiFetch(path, options) {
     return fetch(`${apiBase}${path}`, options).then((r) => r.json());
