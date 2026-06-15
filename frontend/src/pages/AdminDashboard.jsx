@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import { Fingerprint, ArrowLeft, List, Eye, Pencil, Save, Trash2 } from 'lucide-react';
 import L from 'leaflet';
+import ConfirmModal from '../components/ConfirmModal';
 
 const STORAGE_KEY = 'admin_map_markers';
 
@@ -41,6 +42,7 @@ function MapClickHandler({ editing, onAdd }) {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [mode, setMode] = useState('view');
+  const [confirmClear, setConfirmClear] = useState(false);
   const [saved, setSaved] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
     catch { return []; }
@@ -109,7 +111,7 @@ export default function AdminDashboard() {
             </div>
             {editing && (
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-ghost dashboard-save-btn" onClick={() => setDraft([])}>
+                <button className="btn btn-ghost dashboard-save-btn" onClick={() => setConfirmClear(true)}>
                   <Trash2 size={13} /> Clear all
                 </button>
                 <button className="btn btn-primary dashboard-save-btn" onClick={saveChanges}>
@@ -155,6 +157,17 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {confirmClear && (
+        <ConfirmModal
+          title="Clear all pins?"
+          message={`This will remove all ${draft.length} pin${draft.length !== 1 ? 's' : ''} from the map.`}
+          confirmLabel="Clear all"
+          danger
+          onConfirm={() => { setDraft([]); setConfirmClear(false); }}
+          onCancel={() => setConfirmClear(false)}
+        />
+      )}
     </div>
   );
 }

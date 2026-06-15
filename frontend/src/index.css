@@ -838,6 +838,29 @@ footer {
 .modal-cancel:hover { color: var(--text); }
 .modal-cancel:active { color: var(--text); transform: scale(0.94); transition: transform 0.06s ease; }
 
+.confirm-modal { padding: 32px 28px; }
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.confirm-modal-btn {
+  flex: 1;
+  justify-content: center;
+}
+
+.confirm-modal-danger {
+  background: rgba(255,107,107,0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255,107,107,0.3);
+}
+
+.confirm-modal-danger:hover {
+  background: rgba(255,107,107,0.25);
+}
+
 /* ── AUTH PAGES ── */
 .auth-page {
   min-height: 100vh;
