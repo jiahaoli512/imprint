@@ -1,5 +1,7 @@
+import { createPortal } from 'react-dom';
+
 export default function ConfirmModal({ title, message, confirmLabel = 'Confirm', altLabel, danger = false, onConfirm, onAlt, onCancel }) {
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal confirm-modal" onClick={e => e.stopPropagation()}>
         <h2 className="modal-title">{title}</h2>
@@ -18,6 +20,7 @@ export default function ConfirmModal({ title, message, confirmLabel = 'Confirm',
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
