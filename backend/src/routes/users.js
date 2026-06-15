@@ -3,6 +3,15 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Waitlist = require('../models/Waitlist');
 
+function ageFromDob(dob) {
+  const today = new Date();
+  const birth = new Date(dob);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 // POST /api/users — register a new account
 router.post('/', async (req, res, next) => {
   try {
@@ -36,7 +45,19 @@ router.post('/login', async (req, res, next) => {
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) return res.status(401).json({ error: 'Invalid email or password.' });
 
-    res.json({ ok: true });
+    res.json({ ok: true, username: user.username || null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/users/check-username?username=...
+router.get('/check-username', async (req, res, next) => {
+  try {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ error: 'Username is required.' });
+    const exists = await User.findOne({ username: username.trim().toLowerCase() });
+    res.json({ available: !exists });
   } catch (err) {
     next(err);
   }
@@ -45,13 +66,27 @@ router.post('/login', async (req, res, next) => {
 // PATCH /api/users/profile
 router.patch('/profile', async (req, res, next) => {
   try {
-    const { email, firstName, lastName } = req.body;
+    const { email, firstName, lastName, username, dateOfBirth } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required.' });
+    if (!username) return res.status(400).json({ error: 'Username is required.' });
+    if (!dateOfBirth) return res.status(400).json({ error: 'Date of birth is required.' });
+
+    if (ageFromDob(dateOfBirth) < 18)
+      return res.status(400).json({ error: 'You must be at least 18 years old.' });
+
+    const taken = await User.findOne({ username: username.trim().toLowerCase(), email: { $ne: email.toLowerCase() } });
+    if (taken) return res.status(409).json({ error: 'That username is already taken.' });
+
     await User.findOneAndUpdate(
       { email: email.toLowerCase() },
-      { firstName: firstName?.trim() || '', lastName: lastName?.trim() || '' }
+      {
+        firstName: firstName?.trim() || '',
+        lastName: lastName?.trim() || '',
+        username: username.trim().toLowerCase(),
+        dateOfBirth: new Date(dateOfBirth),
+      }
     );
-    res.json({ ok: true });
+    res.json({ ok: true, username: username.trim().toLowerCase() });
   } catch (err) {
     next(err);
   }

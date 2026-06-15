@@ -6,6 +6,8 @@ const userSchema = new Schema(
     passwordHash: { type: String, required: true },
     firstName:    { type: String, trim: true, default: '' },
     lastName:     { type: String, trim: true, default: '' },
+    username:     { type: String, trim: true, lowercase: true, unique: true, sparse: true },
+    dateOfBirth:  { type: Date },
   },
   { timestamps: true }
 );
