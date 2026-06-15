@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
+import ConfirmModal from '../components/ConfirmModal';
 
 const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,6 +31,7 @@ export default function Signup() {
   const [emailError, setEmailError] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [confirmCreate, setConfirmCreate] = useState(false);
 
   const checks = PW_RULES.map(r => ({ ...r, passed: r.test(password) }));
   const allPassed = checks.every(c => c.passed);
@@ -195,7 +197,7 @@ export default function Signup() {
               {passwordsMatch && (
                 <button
                   className="btn btn-primary auth-submit"
-                  onClick={handleRegister}
+                  onClick={() => setConfirmCreate(true)}
                   disabled={loading}
                 >
                   {loading ? 'Creating account…' : 'Continue'}
@@ -213,6 +215,16 @@ export default function Signup() {
           </div>
         )}
       </div>
+
+      {confirmCreate && (
+        <ConfirmModal
+          title="Create account?"
+          message={`You're about to create an account for ${email}.`}
+          confirmLabel="Create account"
+          onConfirm={() => { setConfirmCreate(false); handleRegister(); }}
+          onCancel={() => setConfirmCreate(false)}
+        />
+      )}
     </div>
   );
 }
