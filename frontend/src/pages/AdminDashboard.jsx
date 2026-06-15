@@ -93,23 +93,38 @@ function MapClickHandler({ editing, onAdd }) {
   return null;
 }
 
+const NOM = (lat, lng, zoom) =>
+  fetch(
+    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=${zoom}&accept-language=en`,
+    { headers: { 'User-Agent': 'ImprintAdminDashboard/1.0' } }
+  ).then(r => r.json());
+
 function RegionDetector({ onRegion }) {
   const map = useMap();
 
-  const detect = useCallback(() => {
+  const detect = useCallback(async () => {
     const zoom = map.getZoom();
     const level = getLevel(zoom);
 
     if (level === 'earth') { onRegion('Earth'); return; }
 
     const { lat, lng } = map.getCenter();
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`,
-      { headers: { 'User-Agent': 'ImprintAdminDashboard/1.0' } }
-    )
-      .then(r => r.json())
-      .then(d => onRegion(pickName(d.address || {}, level)))
-      .catch(() => onRegion(''));
+    try {
+      const data = await NOM(lat, lng, 18);
+      const addr = data.address || {};
+      let name = pickName(addr, level);
+
+      if (level === 'city' && !name) {
+        const fallback = await NOM(lat, lng, 14);
+        const fa = fallback.address || {};
+        const city = fa.city || fa.town || fa.village || fa.hamlet;
+        name = city ? `Near ${city}` : (fa.county || addr.county || '');
+      }
+
+      onRegion(name);
+    } catch {
+      onRegion('');
+    }
   }, [map, onRegion]);
 
   useEffect(() => {
