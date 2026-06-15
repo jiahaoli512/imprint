@@ -153,10 +153,10 @@ export default function Admin() {
         <div className="admin-header-right">
           <span className="admin-badge">Admin</span>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
-            <LayoutDashboard size={15} /> Admin Dashboard
+            <LayoutDashboard size={15} /> <span className="btn-label">Admin Dashboard</span>
           </button>
           <button className="btn btn-ghost" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
-            <ArrowLeft size={15} /> Back to site
+            <ArrowLeft size={15} /> <span className="btn-label">Back to site</span>
           </button>
         </div>
       </div>
@@ -204,7 +204,7 @@ export default function Admin() {
                   <th>Email</th>
                   <th className="col-hide-mobile">Name</th>
                   <th className="col-hide-mobile">Joined</th>
-                  <th>Status</th>
+                  <th className="col-status">Status</th>
                   <th className="col-actions" />
                 </tr>
               </thead>
@@ -237,7 +237,7 @@ export default function Admin() {
                     <td className="muted col-hide-mobile">
                       {new Date(e.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
-                    <td>
+                    <td className="col-status">
                       {e.approved
                         ? <span className="status-badge approved"><CheckCircle size={11} /> Approved</span>
                         : <span className="status-badge pending"><Clock size={11} /> Pending</span>

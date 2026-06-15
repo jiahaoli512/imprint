@@ -26,10 +26,10 @@ export default function AdminDashboard() {
         <div className="admin-header-right">
           <span className="admin-badge">Admin</span>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/waitlist')}>
-            <List size={15} /> Waitlist
+            <List size={15} /> <span className="btn-label">Waitlist</span>
           </button>
           <button className="btn btn-ghost" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
-            <ArrowLeft size={15} /> Back to site
+            <ArrowLeft size={15} /> <span className="btn-label">Back to site</span>
           </button>
         </div>
       </div>

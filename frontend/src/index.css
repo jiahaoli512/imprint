@@ -1183,6 +1183,7 @@ footer {
 
 .col-grip    { width: 36px; }
 .col-num     { width: 48px; }
+.col-status  { width: 100px; }
 .col-actions { width: 80px; text-align: right; }
 
 .grip-icon {
@@ -1350,13 +1351,21 @@ footer {
   .map-stats-bar { flex-wrap: wrap; gap: 12px; }
   .progress-wrap { order: 3; width: 100%; max-width: none; margin: 0; }
 
-  .admin-header { padding: 16px 20px; padding-top: calc(16px + env(safe-area-inset-top)); }
-  .admin-header-spacer { height: calc(68px + env(safe-area-inset-top)); }
+  .admin-header { padding: 14px 16px; padding-top: calc(14px + env(safe-area-inset-top)); }
+  .admin-header-spacer { height: calc(64px + env(safe-area-inset-top)); }
+  .admin-header-right { gap: 8px; }
+  .admin-header .btn { padding: 8px 10px; gap: 0; }
+  .btn-label { display: none; }
+  .admin-badge { display: none; }
+
   .col-hide-mobile { display: none; }
-  .admin-table { table-layout: fixed; }
-  .admin-table td, .admin-table th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .admin-table-wrap { overflow-x: hidden; }
-  .admin-body { padding: 32px 20px; }
+  .admin-table { table-layout: fixed; width: 100%; }
+  .admin-table td, .admin-table th { padding: 12px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .col-grip    { width: 28px; }
+  .col-status  { width: 88px; }
+  .col-actions { width: 56px; }
+  .admin-table-wrap { overflow-x: hidden; width: 100%; }
+  .admin-body { padding: 28px 16px; }
   .admin-top { flex-direction: column; align-items: flex-start; gap: 16px; }
   .admin-title { font-size: 28px; }
 }
