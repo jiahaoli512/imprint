@@ -14,8 +14,11 @@ router.post('/', async (req, res, next) => {
     const { email, name } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
 
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) return res.status(409).json({ error: 'An account with this email is already registered.' });
+
     const existing = await Waitlist.findOne({ email: email.toLowerCase() });
-    if (existing) return res.status(409).json({ error: 'User already on the waitlist!' });
+    if (existing) return res.status(409).json({ error: 'This email is already on the waitlist.' });
 
     const count = await Waitlist.countDocuments();
     await Waitlist.create({ email, name: name || null, position: count });
