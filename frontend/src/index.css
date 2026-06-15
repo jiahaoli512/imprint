@@ -1141,6 +1141,13 @@ footer {
   cursor: crosshair !important;
 }
 
+.dashboard-region {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+
 .dashboard-hint {
   text-align: center;
   font-size: 12px;

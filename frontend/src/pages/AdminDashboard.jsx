@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import { Fingerprint, ArrowLeft, List, Eye, Pencil, Trash2 } from 'lucide-react';
@@ -6,6 +6,65 @@ import L from 'leaflet';
 import ConfirmModal from '../components/ConfirmModal';
 
 const STORAGE_KEY = 'admin_map_markers';
+
+// Country code → continent
+const CONTINENT = {
+  AF:'Asia',AM:'Asia',AZ:'Asia',BH:'Asia',BD:'Asia',BT:'Asia',BN:'Asia',KH:'Asia',CN:'Asia',
+  CY:'Asia',GE:'Asia',IN:'Asia',ID:'Asia',IR:'Asia',IQ:'Asia',IL:'Asia',JP:'Asia',JO:'Asia',
+  KZ:'Asia',KW:'Asia',KG:'Asia',LA:'Asia',LB:'Asia',MY:'Asia',MV:'Asia',MN:'Asia',MM:'Asia',
+  NP:'Asia',KP:'Asia',OM:'Asia',PK:'Asia',PS:'Asia',PH:'Asia',QA:'Asia',SA:'Asia',SG:'Asia',
+  KR:'Asia',LK:'Asia',SY:'Asia',TW:'Asia',TJ:'Asia',TH:'Asia',TL:'Asia',TR:'Asia',TM:'Asia',
+  AE:'Asia',UZ:'Asia',VN:'Asia',YE:'Asia',
+  AL:'Europe',AD:'Europe',AT:'Europe',BY:'Europe',BE:'Europe',BA:'Europe',BG:'Europe',
+  HR:'Europe',CZ:'Europe',DK:'Europe',EE:'Europe',FI:'Europe',FR:'Europe',DE:'Europe',
+  GR:'Europe',HU:'Europe',IS:'Europe',IE:'Europe',IT:'Europe',XK:'Europe',LV:'Europe',
+  LI:'Europe',LT:'Europe',LU:'Europe',MT:'Europe',MD:'Europe',MC:'Europe',ME:'Europe',
+  NL:'Europe',MK:'Europe',NO:'Europe',PL:'Europe',PT:'Europe',RO:'Europe',RU:'Europe',
+  SM:'Europe',RS:'Europe',SK:'Europe',SI:'Europe',ES:'Europe',SE:'Europe',CH:'Europe',
+  UA:'Europe',GB:'Europe',VA:'Europe',AX:'Europe',FO:'Europe',GI:'Europe',IM:'Europe',
+  DZ:'Africa',AO:'Africa',BJ:'Africa',BW:'Africa',BF:'Africa',BI:'Africa',CV:'Africa',
+  CM:'Africa',CF:'Africa',TD:'Africa',KM:'Africa',CG:'Africa',CD:'Africa',CI:'Africa',
+  DJ:'Africa',EG:'Africa',GQ:'Africa',ER:'Africa',SZ:'Africa',ET:'Africa',GA:'Africa',
+  GM:'Africa',GH:'Africa',GN:'Africa',GW:'Africa',KE:'Africa',LS:'Africa',LR:'Africa',
+  LY:'Africa',MG:'Africa',MW:'Africa',ML:'Africa',MR:'Africa',MU:'Africa',MA:'Africa',
+  MZ:'Africa',NA:'Africa',NE:'Africa',NG:'Africa',RW:'Africa',ST:'Africa',SN:'Africa',
+  SL:'Africa',SO:'Africa',ZA:'Africa',SS:'Africa',SD:'Africa',TZ:'Africa',TG:'Africa',
+  TN:'Africa',UG:'Africa',ZM:'Africa',ZW:'Africa',EH:'Africa',
+  AG:'North America',BS:'North America',BB:'North America',BZ:'North America',
+  CA:'North America',CR:'North America',CU:'North America',DM:'North America',
+  DO:'North America',SV:'North America',GD:'North America',GT:'North America',
+  HT:'North America',HN:'North America',JM:'North America',MX:'North America',
+  NI:'North America',PA:'North America',KN:'North America',LC:'North America',
+  VC:'North America',TT:'North America',US:'North America',PR:'North America',
+  GL:'North America',BM:'North America',KY:'North America',
+  AR:'South America',BO:'South America',BR:'South America',CL:'South America',
+  CO:'South America',EC:'South America',GY:'South America',PY:'South America',
+  PE:'South America',SR:'South America',UY:'South America',VE:'South America',
+  GF:'South America',FK:'South America',
+  AU:'Oceania',FJ:'Oceania',KI:'Oceania',MH:'Oceania',FM:'Oceania',NR:'Oceania',
+  NZ:'Oceania',PW:'Oceania',PG:'Oceania',WS:'Oceania',SB:'Oceania',TO:'Oceania',
+  TV:'Oceania',VU:'Oceania',CK:'Oceania',PF:'Oceania',NC:'Oceania',GU:'Oceania',
+  AS:'Oceania',MP:'Oceania',NF:'Oceania',
+  AQ:'Antarctica',
+};
+
+function getLevel(zoom) {
+  if (zoom <= 2)  return 'earth';
+  if (zoom <= 4)  return 'continent';
+  if (zoom <= 6)  return 'country';
+  if (zoom <= 9)  return 'state';
+  if (zoom <= 12) return 'county';
+  return 'city';
+}
+
+function pickName(addr, level) {
+  if (level === 'earth')     return 'Earth';
+  if (level === 'continent') return CONTINENT[addr.country_code?.toUpperCase()] || addr.country || '';
+  if (level === 'country')   return addr.country || '';
+  if (level === 'state')     return addr.state || addr.country || '';
+  if (level === 'county')    return addr.county || addr.municipality || addr.state || '';
+  return addr.city || addr.town || addr.village || addr.hamlet || addr.county || '';
+}
 
 const pinIcon = L.divIcon({
   className: '',
@@ -23,19 +82,45 @@ const pinIconEdit = L.divIcon({
 
 function InvalidateOnMount() {
   const map = useMap();
-  useEffect(() => {
-    setTimeout(() => map.invalidateSize(), 100);
-  }, [map]);
+  useEffect(() => { setTimeout(() => map.invalidateSize(), 100); }, [map]);
   return null;
 }
 
 function MapClickHandler({ editing, onAdd }) {
   useMapEvents({
-    click(e) {
-      if (!editing) return;
-      onAdd([e.latlng.lat, e.latlng.lng]);
-    },
+    click(e) { if (editing) onAdd([e.latlng.lat, e.latlng.lng]); },
   });
+  return null;
+}
+
+function RegionDetector({ onRegion }) {
+  const map = useMap();
+
+  const detect = useCallback(() => {
+    const zoom = map.getZoom();
+    const level = getLevel(zoom);
+
+    if (level === 'earth') { onRegion('Earth'); return; }
+
+    const { lat, lng } = map.getCenter();
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`,
+      { headers: { 'User-Agent': 'ImprintAdminDashboard/1.0' } }
+    )
+      .then(r => r.json())
+      .then(d => onRegion(pickName(d.address || {}, level)))
+      .catch(() => onRegion(''));
+  }, [map, onRegion]);
+
+  useEffect(() => {
+    let timer;
+    const debounced = () => { clearTimeout(timer); timer = setTimeout(detect, 700); };
+    map.on('moveend', debounced);
+    map.on('zoomend', debounced);
+    detect();
+    return () => { map.off('moveend', debounced); map.off('zoomend', debounced); clearTimeout(timer); };
+  }, [map, detect]);
+
   return null;
 }
 
@@ -43,47 +128,28 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [mode, setMode] = useState('view');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [region, setRegion] = useState('');
   const [saved, setSaved] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
     catch { return []; }
   });
   const [draft, setDraft] = useState([]);
 
-  function enterEdit() {
-    setDraft([...saved]);
-    setMode('edit');
-  }
+  const editing = mode === 'edit';
+  const markers = editing ? draft : saved;
 
-  function handleViewClick() {
-    if (mode === 'edit') {
-      setShowSavePrompt(true);
-    }
-  }
+  function enterEdit() { setDraft([...saved]); setMode('edit'); }
+
+  function handleViewClick() { if (editing) setShowSavePrompt(true); }
 
   function saveAndView() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-    setSaved(draft);
-    setDraft([]);
-    setMode('view');
-    setShowSavePrompt(false);
+    setSaved(draft); setDraft([]); setMode('view'); setShowSavePrompt(false);
   }
 
-  function discardAndView() {
-    setDraft([]);
-    setMode('view');
-    setShowSavePrompt(false);
-  }
+  function discardAndView() { setDraft([]); setMode('view'); setShowSavePrompt(false); }
 
-  function addMarker(pos) {
-    setDraft(d => [...d, pos]);
-  }
-
-  function removeMarker(i) {
-    setDraft(d => d.filter((_, idx) => idx !== i));
-  }
-
-  const editing = mode === 'edit';
-  const markers = editing ? draft : saved;
+  const handleRegion = useCallback((r) => setRegion(r), []);
 
   return (
     <div className="dashboard-page">
@@ -117,11 +183,14 @@ export default function AdminDashboard() {
                 <Pencil size={13} /> Edit
               </button>
             </div>
-            {editing && (
-              <button className="btn btn-ghost dashboard-save-btn" onClick={() => setDraft([])}>
-                <Trash2 size={13} /> Clear all
-              </button>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {region && <span className="dashboard-region">{region}</span>}
+              {editing && (
+                <button className="btn btn-ghost dashboard-save-btn" onClick={() => setDraft([])}>
+                  <Trash2 size={13} /> Clear all
+                </button>
+              )}
+            </div>
           </div>
 
           <div className={`dashboard-map-wrap${editing ? ' editing' : ''}`}>
@@ -137,7 +206,8 @@ export default function AdminDashboard() {
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
               />
-              <MapClickHandler editing={editing} onAdd={addMarker} />
+              <MapClickHandler editing={editing} onAdd={(pos) => setDraft(d => [...d, pos])} />
+              <RegionDetector onRegion={handleRegion} />
               {markers.map((pos, i) => (
                 <React.Fragment key={i}>
                   <Circle
@@ -155,10 +225,7 @@ export default function AdminDashboard() {
                     position={pos}
                     icon={editing ? pinIconEdit : pinIcon}
                     eventHandlers={editing ? {
-                      click(e) {
-                        L.DomEvent.stopPropagation(e);
-                        removeMarker(i);
-                      },
+                      click(e) { L.DomEvent.stopPropagation(e); setDraft(d => d.filter((_, idx) => idx !== i)); },
                     } : {}}
                   />
                 </React.Fragment>
