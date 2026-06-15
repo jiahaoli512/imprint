@@ -1,34 +1,23 @@
-const nodemailer = require('nodemailer');
+const FROM_EMAIL = process.env.EMAIL_USER || 'donotreply.imprint@gmail.com';
 
-const FROM = process.env.EMAIL_USER || 'donotreply.imprint@gmail.com';
-
-if (!process.env.EMAIL_PASS) {
-  console.warn('[email] WARNING: EMAIL_PASS is not set — approval emails will fail');
+if (!process.env.BREVO_API_KEY) {
+  console.warn('[email] WARNING: BREVO_API_KEY is not set — approval emails will fail');
 }
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: FROM,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000,
-  socketTimeout: 10000,
-});
-
-transporter.verify((err) => {
-  if (err) console.error('[email] Transporter verification failed:', err.message);
-  else console.log('[email] Transporter ready');
-});
 
 async function sendApprovalEmail(to, name) {
   const displayName = name || to.split('@')[0];
 
-  await transporter.sendMail({
-    from: `"Imprint" <${FROM}>`,
-    to,
-    subject: "You're approved — Welcome to Imprint 🗺️",
-    html: `
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: 'Imprint', email: FROM_EMAIL },
+      to: [{ email: to, name: displayName }],
+      subject: "You're approved — Welcome to Imprint 🗺️",
+      htmlContent: `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -76,7 +65,7 @@ async function sendApprovalEmail(to, name) {
 
         <!-- Footer -->
         <tr><td style="padding-top:32px;text-align:center;">
-          <p style="margin:0;font-size:12px;color:#3a4560;">© 2026 Imprint · <a href="#" style="color:#3a4560;text-decoration:none;">Privacy</a> · <a href="#" style="color:#3a4560;text-decoration:none;">Unsubscribe</a></p>
+          <p style="margin:0;font-size:12px;color:#3a4560;">© 2026 Imprint · <a href="#" style="color:#3a4560;text-decoration:none;">Privacy</a></p>
         </td></tr>
 
       </table>
@@ -84,7 +73,13 @@ async function sendApprovalEmail(to, name) {
   </table>
 </body>
 </html>`,
+    }),
   });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Brevo API error ${res.status}`);
+  }
 }
 
 module.exports = { sendApprovalEmail };
