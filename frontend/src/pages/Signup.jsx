@@ -216,6 +216,13 @@ export default function Signup() {
         )}
       </div>
 
+      {step === 'email' && (
+        <p className="auth-switch">
+          Already have an account?{' '}
+          <button className="auth-link-btn" onClick={() => navigate('/login')}>Log in</button>
+        </p>
+      )}
+
       {confirmCreate && (
         <ConfirmModal
           title="Create account?"

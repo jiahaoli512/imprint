@@ -1,31 +1,8 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
-import { api } from '../api/client';
 import MapMockup from './MapMockup';
 
-const isNative = Capacitor.isNativePlatform();
-
-export default function Hero({ waitlistCount, onJoin }) {
+export default function Hero({ waitlistCount }) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState(null);
-  const [msg, setMsg] = useState('');
-
-  async function handleJoin(e) {
-    e.preventDefault();
-    setStatus('loading');
-    try {
-      const data = await api.joinWaitlist({ email });
-      setMsg(`You're #${data.position} on the list!`);
-      setStatus('success');
-      onJoin((n) => n + 1);
-      setEmail('');
-    } catch (err) {
-      setMsg(err.message);
-      setStatus('error');
-    }
-  }
 
   return (
     <section className="hero">
@@ -41,29 +18,10 @@ export default function Hero({ waitlistCount, onJoin }) {
         portrait of your world. See your coverage, explore what's left, and share the journey.
       </p>
 
-      {isNative ? (
-        <div className="hero-auth-btns">
-          <button className="btn btn-primary" onClick={() => navigate('/signup')}>Sign Up</button>
-          <button className="btn btn-ghost" onClick={() => navigate('/login')}>Log In</button>
-        </div>
-      ) : (
-        <>
-          <form className="hero-form" onSubmit={handleJoin}>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={status === 'loading' || status === 'success'}
-            />
-            <button className="btn btn-primary" type="submit" disabled={status === 'loading' || status === 'success'}>
-              {status === 'loading' ? 'Joining…' : 'Get Early Access'}
-            </button>
-          </form>
-          {msg && <p className={`form-msg ${status}`}>{msg}</p>}
-        </>
-      )}
+      <div className="hero-auth-btns">
+        <button className="btn btn-primary" onClick={() => navigate('/signup')}>Sign Up</button>
+        <button className="btn btn-ghost" onClick={() => navigate('/login')}>Log In</button>
+      </div>
 
       <MapMockup />
 

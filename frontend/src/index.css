@@ -974,6 +974,24 @@ footer {
 }
 .auth-link:hover { text-decoration: underline; }
 
+.auth-switch {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.auth-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.auth-link-btn:hover { text-decoration: underline; }
+
 .auth-input-wrap {
   position: relative;
   width: 100%;
