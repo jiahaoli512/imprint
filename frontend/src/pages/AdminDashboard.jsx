@@ -3,9 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import { Fingerprint, ArrowLeft, List, Eye, Pencil, Trash2 } from 'lucide-react';
 import L from 'leaflet';
+import { Preferences } from '@capacitor/preferences';
 import ConfirmModal from '../components/ConfirmModal';
 
 const STORAGE_KEY = 'admin_map_markers';
+
+async function loadMarkers() {
+  try {
+    const { value } = await Preferences.get({ key: STORAGE_KEY });
+    return value ? JSON.parse(value) : [];
+  } catch { return []; }
+}
+
+async function saveMarkers(markers) {
+  await Preferences.set({ key: STORAGE_KEY, value: JSON.stringify(markers) });
+}
 
 // Country code → continent
 const CONTINENT = {
@@ -144,11 +156,10 @@ export default function AdminDashboard() {
   const [mode, setMode] = useState('view');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [region, setRegion] = useState('');
-  const [saved, setSaved] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch { return []; }
-  });
+  const [saved, setSaved] = useState([]);
   const [draft, setDraft] = useState([]);
+
+  useEffect(() => { loadMarkers().then(setSaved); }, []);
 
   const editing = mode === 'edit';
   const markers = editing ? draft : saved;
@@ -158,7 +169,7 @@ export default function AdminDashboard() {
   function handleViewClick() { if (editing) setShowSavePrompt(true); }
 
   function saveAndView() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    saveMarkers(draft);
     setSaved(draft); setDraft([]); setMode('view'); setShowSavePrompt(false);
   }
 
