@@ -92,6 +92,20 @@ router.patch('/profile', async (req, res, next) => {
   }
 });
 
+// GET /api/users/by-username/:username — public profile lookup
+router.get('/by-username/:username', async (req, res, next) => {
+  try {
+    const user = await User.findOne(
+      { username: req.params.username.toLowerCase() },
+      'username firstName lastName createdAt'
+    );
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/users — admin list of registered accounts
 router.get('/', async (req, res, next) => {
   try {
