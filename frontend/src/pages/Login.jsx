@@ -31,6 +31,7 @@ export default function Login() {
       if (!res.ok) {
         setError(data.error || 'Something went wrong.');
       } else if (data.username) {
+        localStorage.setItem('imprint_username', data.username);
         navigate(`/${data.username}/dashboard`);
       } else {
         navigate('/login/profile', { state: { email: email.trim().toLowerCase() } });

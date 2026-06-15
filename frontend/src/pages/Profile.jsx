@@ -80,6 +80,7 @@ export default function Profile() {
       if (!res.ok) {
         setError(data.error || 'Something went wrong.');
       } else {
+        localStorage.setItem('imprint_username', data.username);
         navigate(`/${data.username}/dashboard`);
       }
     } catch {
