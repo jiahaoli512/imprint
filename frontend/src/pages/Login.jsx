@@ -30,6 +30,8 @@ export default function Login() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Something went wrong.');
+      } else if (data.username) {
+        navigate(`/${data.username}/dashboard`);
       } else {
         navigate('/login/profile', { state: { email: email.trim().toLowerCase() } });
       }
