@@ -244,23 +244,25 @@ export default function Admin() {
                       }
                     </td>
                     <td className="col-actions">
-                      {!e.approved && (
+                      <div className="actions-wrap">
+                        {!e.approved && (
+                          <button
+                            className="approve-btn"
+                            onClick={() => handleApprove(e._id)}
+                            disabled={approvingId === e._id}
+                            title="Approve & email user"
+                          >
+                            <CheckCircle size={14} />
+                          </button>
+                        )}
                         <button
-                          className="approve-btn"
-                          onClick={() => handleApprove(e._id)}
-                          disabled={approvingId === e._id}
-                          title="Approve & email user"
+                          className="delete-btn"
+                          onClick={() => handleDelete(e._id)}
+                          title="Remove from waitlist"
                         >
-                          <CheckCircle size={14} />
+                          <Trash2 size={14} />
                         </button>
-                      )}
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDelete(e._id)}
-                        title="Remove from waitlist"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
