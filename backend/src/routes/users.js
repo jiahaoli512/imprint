@@ -42,6 +42,21 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
+// PATCH /api/users/profile
+router.patch('/profile', async (req, res, next) => {
+  try {
+    const { email, firstName, lastName } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+    await User.findOneAndUpdate(
+      { email: email.toLowerCase() },
+      { firstName: firstName?.trim() || '', lastName: lastName?.trim() || '' }
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/users — admin list of registered accounts
 router.get('/', async (req, res, next) => {
   try {
