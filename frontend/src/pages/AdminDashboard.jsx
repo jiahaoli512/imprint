@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import { Fingerprint, ArrowLeft, List, Eye, Pencil, Save, Trash2 } from 'lucide-react';
+import { Fingerprint, ArrowLeft, List, Eye, Pencil, Trash2 } from 'lucide-react';
 import L from 'leaflet';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -42,7 +42,7 @@ function MapClickHandler({ editing, onAdd }) {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [mode, setMode] = useState('view');
-  const [confirmClear, setConfirmClear] = useState(false);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [saved, setSaved] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
     catch { return []; }
@@ -54,16 +54,24 @@ export default function AdminDashboard() {
     setMode('edit');
   }
 
-  function enterView() {
-    setDraft([]);
-    setMode('view');
+  function handleViewClick() {
+    if (mode === 'edit') {
+      setShowSavePrompt(true);
+    }
   }
 
-  function saveChanges() {
+  function saveAndView() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
     setSaved(draft);
     setDraft([]);
     setMode('view');
+    setShowSavePrompt(false);
+  }
+
+  function discardAndView() {
+    setDraft([]);
+    setMode('view');
+    setShowSavePrompt(false);
   }
 
   function addMarker(pos) {
@@ -102,7 +110,7 @@ export default function AdminDashboard() {
 
           <div className="dashboard-toolbar">
             <div className="mode-toggle">
-              <button className={`mode-btn${!editing ? ' active' : ''}`} onClick={enterView}>
+              <button className={`mode-btn${!editing ? ' active' : ''}`} onClick={handleViewClick}>
                 <Eye size={13} /> View
               </button>
               <button className={`mode-btn${editing ? ' active' : ''}`} onClick={enterEdit}>
@@ -110,14 +118,9 @@ export default function AdminDashboard() {
               </button>
             </div>
             {editing && (
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-ghost dashboard-save-btn" onClick={() => setConfirmClear(true)}>
-                  <Trash2 size={13} /> Clear all
-                </button>
-                <button className="btn btn-primary dashboard-save-btn" onClick={saveChanges}>
-                  <Save size={13} /> Save changes
-                </button>
-              </div>
+              <button className="btn btn-ghost dashboard-save-btn" onClick={() => setDraft([])}>
+                <Trash2 size={13} /> Clear all
+              </button>
             )}
           </div>
 
@@ -158,14 +161,15 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {confirmClear && (
+      {showSavePrompt && (
         <ConfirmModal
-          title="Clear all pins?"
-          message={`This will remove all ${draft.length} pin${draft.length !== 1 ? 's' : ''} from the map.`}
-          confirmLabel="Clear all"
-          danger
-          onConfirm={() => { setDraft([]); setConfirmClear(false); }}
-          onCancel={() => setConfirmClear(false)}
+          title="Save changes?"
+          message="Do you want to save your changes to the map?"
+          confirmLabel="Save"
+          altLabel="Discard"
+          onConfirm={saveAndView}
+          onAlt={discardAndView}
+          onCancel={() => setShowSavePrompt(false)}
         />
       )}
     </div>
