@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const waitlistRoutes = require('./routes/waitlist');
 const locationRoutes = require('./routes/locations');
 const userRoutes = require('./routes/users');
+const markerRoutes = require('./routes/markers');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -20,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/markers', markerRoutes);
 
 app.use((err, req, res, next) => {
   if (err.code === 11000) {

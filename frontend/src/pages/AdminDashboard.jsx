@@ -3,20 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import { Fingerprint, ArrowLeft, List, Eye, Pencil, Trash2 } from 'lucide-react';
 import L from 'leaflet';
-import { Preferences } from '@capacitor/preferences';
 import ConfirmModal from '../components/ConfirmModal';
 
-const STORAGE_KEY = 'admin_map_markers';
+const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
 
 async function loadMarkers() {
   try {
-    const { value } = await Preferences.get({ key: STORAGE_KEY });
-    return value ? JSON.parse(value) : [];
+    const res = await fetch(`${apiBase}/api/markers`);
+    return await res.json();
   } catch { return []; }
 }
 
-async function saveMarkers(markers) {
-  await Preferences.set({ key: STORAGE_KEY, value: JSON.stringify(markers) });
+async function saveMarkers(points) {
+  await fetch(`${apiBase}/api/markers`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ points }),
+  });
 }
 
 // Country code → continent
