@@ -50,9 +50,8 @@ export default function Admin() {
   async function handleApprove(id) {
     setApprovingId(id);
     try {
-      const data = await apiFetch(`/api/waitlist/${id}/approve`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' } });
+      await apiFetch(`/api/waitlist/${id}/approve`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' } });
       setEntries((es) => es.map((e) => e._id === id ? { ...e, approved: true } : e));
-      if (data.emailError) alert(`Approved, but email failed to send:\n${data.emailError}`);
     } catch (err) {
       alert(`Failed to approve: ${err.message}`);
     } finally {
