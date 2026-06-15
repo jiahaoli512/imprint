@@ -73,8 +73,6 @@ export default function Signup() {
       if (data.status === 'approved') {
         setStep('success');
         setTimeout(() => setStep('password'), 2000);
-      } else if (data.status === 'already_registered') {
-        setEmailError('An account with this email already exists. Please log in.');
       } else {
         setStep('not_found');
       }
@@ -114,13 +112,18 @@ export default function Signup() {
                 autoComplete="email"
               />
               {step === 'not_found' && (
-                <p className="auth-notice">
-                  Your account is not on the waitlist.{' '}
-                  <a href="https://imprint-wheat.vercel.app/" target="_blank" rel="noreferrer" className="auth-link">
-                    Sign up for the waitlist
-                  </a>{' '}
-                  to get approved.
-                </p>
+                <div className="auth-notice">
+                  <p style={{ marginBottom: '8px' }}>Your account could not be verified. Your email is either:</p>
+                  <ol className="auth-notice-list">
+                    <li>Not on the waitlist —{' '}
+                      <a href="https://imprint-wheat.vercel.app/" target="_blank" rel="noreferrer" className="auth-link">
+                        sign up here
+                      </a>
+                    </li>
+                    <li>On the waitlist but has yet to be approved</li>
+                    <li>Already registered — please log in</li>
+                  </ol>
+                </div>
               )}
               {emailError && <p className="auth-error">{emailError}</p>}
               <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
