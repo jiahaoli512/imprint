@@ -50,7 +50,7 @@ async function sendApprovalEmail(to, name) {
 
           <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#6b7a99;text-transform:uppercase;letter-spacing:1px;">How to get started</p>
           <p style="margin:0 0 24px;font-size:14px;color:#6b7a99;line-height:1.6;">
-            Download the Imprint app and create your account using <strong style="color:#f0f4ff;">exactly this email address</strong>:
+            Create your account using <strong style="color:#f0f4ff;">exactly this email address</strong> — available on the mobile app and in your web browser:
           </p>
 
           <!-- Email highlight box -->
@@ -59,9 +59,27 @@ async function sendApprovalEmail(to, name) {
             <p style="margin:0;font-size:18px;font-weight:700;color:#f0f4ff;">${to}</p>
           </div>
 
-          <p style="margin:0;font-size:13px;color:#6b7a99;line-height:1.6;">
-            Signing up with any other email address will not work. Make sure to use this exact address when creating your account on the app.
+          <p style="margin:0 0 16px;font-size:13px;color:#6b7a99;line-height:1.6;">
+            Signing up with any other email address will not work.
           </p>
+
+          <!-- Platform note -->
+          <div style="background:#161f30;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding-bottom:12px;">
+                  <span style="font-size:13px;font-weight:700;color:#f0f4ff;">📱 Mobile app</span>
+                  <p style="margin:4px 0 0;font-size:12px;color:#6b7a99;line-height:1.5;">Full experience — log your visited locations, track coverage, and more.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
+                  <span style="font-size:13px;font-weight:700;color:#f0f4ff;">🌐 Web browser</span>
+                  <p style="margin:4px 0 0;font-size:12px;color:#6b7a99;line-height:1.5;">Limited access — sign in to manage your account. Location logging requires the mobile app.</p>
+                </td>
+              </tr>
+            </table>
+          </div>
 
         </td></tr>
 
