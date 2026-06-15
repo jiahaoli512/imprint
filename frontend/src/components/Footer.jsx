@@ -7,12 +7,14 @@ export default function Footer() {
   const [modalOpen, setModalOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
     if (modalOpen) {
       setPassword('');
       setError('');
+      setConfirmLogout(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [modalOpen]);
@@ -20,14 +22,28 @@ export default function Footer() {
   function handleSubmit(e) {
     e.preventDefault();
     if (password === 'imprint') {
-      sessionStorage.setItem('admin_auth', '1');
-      setModalOpen(false);
-      navigate('/admin/waitlist');
+      if (localStorage.getItem('imprint_username')) {
+        setConfirmLogout(true);
+      } else {
+        enterAdmin();
+      }
     } else {
       setError('Incorrect password.');
       setPassword('');
       inputRef.current?.focus();
     }
+  }
+
+  function enterAdmin() {
+    sessionStorage.setItem('admin_auth', '1');
+    localStorage.removeItem('imprint_username');
+    setModalOpen(false);
+    navigate('/admin/waitlist');
+  }
+
+  function handleClose() {
+    setModalOpen(false);
+    setConfirmLogout(false);
   }
 
   return (
@@ -48,8 +64,8 @@ export default function Footer() {
         </ul>
       </footer>
 
-      {modalOpen && (
-        <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+      {modalOpen && !confirmLogout && (
+        <div className="modal-overlay" onClick={handleClose}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-icon">
               <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
@@ -68,7 +84,23 @@ export default function Footer() {
               {error && <p className="modal-error">{error}</p>}
               <button type="submit" className="btn btn-primary modal-submit">Continue</button>
             </form>
-            <button className="modal-cancel" onClick={() => setModalOpen(false)}>Cancel</button>
+            <button className="modal-cancel" onClick={handleClose}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {modalOpen && confirmLogout && (
+        <div className="modal-overlay" onClick={handleClose}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon">
+              <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
+            </div>
+            <h2 className="modal-title">Log out & continue?</h2>
+            <p className="modal-sub" style={{ marginTop: '16px', color: '#ff6b6b' }}>You're currently logged in. Entering the admin panel will log you out of your account.</p>
+            <button className="btn btn-primary modal-submit" onClick={enterAdmin}>
+              Log out & continue
+            </button>
+            <button className="modal-cancel" onClick={handleClose}>Cancel</button>
           </div>
         </div>
       )}

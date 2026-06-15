@@ -92,6 +92,21 @@ router.patch('/profile', async (req, res, next) => {
   }
 });
 
+// GET /api/users/search?q= — username search for user lookup
+router.get('/search', async (req, res, next) => {
+  try {
+    const q = (req.query.q || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!q) return res.json([]);
+    const users = await User.find(
+      { username: { $regex: q, $options: 'i' } },
+      'username firstName lastName'
+    ).limit(8);
+    res.json(users);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/users/by-username/:username — public profile lookup
 router.get('/by-username/:username', async (req, res, next) => {
   try {
@@ -106,10 +121,26 @@ router.get('/by-username/:username', async (req, res, next) => {
   }
 });
 
+// PATCH /api/users/by-username/:username — edit own profile (firstName, lastName)
+router.patch('/by-username/:username', async (req, res, next) => {
+  try {
+    const { firstName, lastName } = req.body;
+    const user = await User.findOneAndUpdate(
+      { username: req.params.username.toLowerCase() },
+      { firstName: firstName?.trim() || '', lastName: lastName?.trim() || '' },
+      { new: true, select: 'username firstName lastName createdAt' }
+    );
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/users — admin list of registered accounts
 router.get('/', async (req, res, next) => {
   try {
-    const users = await User.find({}, 'email createdAt').sort({ createdAt: -1 });
+    const users = await User.find({}, 'email username createdAt').sort({ createdAt: -1 });
     res.json(users);
   } catch (err) {
     next(err);

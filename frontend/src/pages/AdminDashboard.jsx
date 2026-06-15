@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
-import { Fingerprint, ArrowLeft, List, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Fingerprint, List, Eye, Pencil, Trash2, LogOut } from 'lucide-react';
 import L from 'leaflet';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -164,6 +164,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [mode, setMode] = useState('view');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [region, setRegion] = useState('');
   const [saved, setSaved] = useState([]);
   const [draft, setDraft] = useState([]);
@@ -197,15 +198,19 @@ export default function AdminDashboard() {
         <div className="admin-header-right">
           <span className="admin-badge">Admin</span>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/waitlist')}>
-            <List size={15} /> <span className="btn-label">Waitlist</span>
+            <List size={15} /> <span className="btn-label">Admin Waitlist</span>
           </button>
-          <button className="btn btn-ghost" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
-            <ArrowLeft size={15} /> <span className="btn-label">Back to site</span>
+          <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
+            <LogOut size={15} /> <span className="btn-label">Log out of Admin</span>
           </button>
         </div>
       </div>
 
       <div className="dashboard-content">
+        <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
+        <p style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+          Welcome, Admin!
+        </p>
         <div className="dashboard-map-card">
 
           <div className="dashboard-toolbar">
@@ -277,7 +282,26 @@ export default function AdminDashboard() {
             <p className="dashboard-hint">Tap to add a pin · Tap a pin to remove it</p>
           )}
         </div>
+        </div>
       </div>
+
+      {confirmLogout && (
+        <div className="modal-overlay" onClick={() => setConfirmLogout(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-icon">
+              <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
+            </div>
+            <h2 className="modal-title">Log out of Admin?</h2>
+            <p className="modal-sub" style={{ marginTop: '16px', color: '#ff6b6b' }}>
+              You will be returned to the home page and your admin session will end.
+            </p>
+            <button className="btn btn-primary modal-submit" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
+              Log out
+            </button>
+            <button className="modal-cancel" onClick={() => setConfirmLogout(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       {showSavePrompt && (
         <ConfirmModal
