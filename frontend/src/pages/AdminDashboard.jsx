@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import { Fingerprint, ArrowLeft, List, Eye, Pencil, Trash2 } from 'lucide-react';
 import L from 'leaflet';
 import ConfirmModal from '../components/ConfirmModal';
@@ -139,17 +139,29 @@ export default function AdminDashboard() {
               />
               <MapClickHandler editing={editing} onAdd={addMarker} />
               {markers.map((pos, i) => (
-                <Marker
-                  key={i}
-                  position={pos}
-                  icon={editing ? pinIconEdit : pinIcon}
-                  eventHandlers={editing ? {
-                    click(e) {
-                      L.DomEvent.stopPropagation(e);
-                      removeMarker(i);
-                    },
-                  } : {}}
-                />
+                <React.Fragment key={i}>
+                  <Circle
+                    center={pos}
+                    radius={15.24}
+                    pathOptions={{
+                      color: editing ? '#ff6b6b' : '#4fffb0',
+                      fillColor: editing ? '#ff6b6b' : '#4fffb0',
+                      fillOpacity: 0.15,
+                      weight: 1.5,
+                      opacity: 0.6,
+                    }}
+                  />
+                  <Marker
+                    position={pos}
+                    icon={editing ? pinIconEdit : pinIcon}
+                    eventHandlers={editing ? {
+                      click(e) {
+                        L.DomEvent.stopPropagation(e);
+                        removeMarker(i);
+                      },
+                    } : {}}
+                  />
+                </React.Fragment>
               ))}
               <InvalidateOnMount />
             </MapContainer>
