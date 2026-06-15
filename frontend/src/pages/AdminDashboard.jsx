@@ -204,6 +204,11 @@ export default function AdminDashboard() {
         <div className="dashboard-map-card">
 
           <div className="dashboard-toolbar">
+            <div className="dashboard-toolbar-dots">
+              <div className="dot dot-r" />
+              <div className="dot dot-y" />
+              <div className="dot dot-g" />
+            </div>
             <div className="mode-toggle">
               <button className={`mode-btn${!editing ? ' active' : ''}`} onClick={handleViewClick}>
                 <Eye size={13} /> View
