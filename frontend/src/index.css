@@ -1,6 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
 
 :root {
   --bg: #080c14;
@@ -26,6 +35,19 @@ body {
   overflow-x: hidden;
   max-width: 100vw;
   overscroll-behavior-y: auto;
+}
+
+/* ── PAGE TRANSITIONS ── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.home-page,
+.auth-page,
+.admin-page,
+.dashboard-page {
+  animation: pageEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ── NAV ── */
@@ -123,6 +145,14 @@ body {
 .btn-ghost:hover {
   background: var(--surface);
   border-color: rgba(255,255,255,0.15);
+}
+
+.btn:active,
+.btn-primary:active,
+.btn-ghost:active {
+  transform: scale(0.95);
+  box-shadow: none;
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
 }
 
 /* ── HERO ── */
@@ -578,6 +608,7 @@ body {
 }
 
 .feature-card:hover::before { opacity: 1; }
+.feature-card:active { transform: scale(0.98); box-shadow: none; transition: transform 0.06s ease; }
 
 .feature-icon {
   width: 48px;
@@ -681,6 +712,7 @@ body {
   transform: translateY(-2px);
   opacity: 0.85;
 }
+.store-badge-img:active { transform: scale(0.94); opacity: 0.7; transition: transform 0.06s ease, opacity 0.06s ease; }
 
 .apple-badge img {
   height: 54px;
@@ -804,6 +836,7 @@ footer {
   transition: color 0.2s;
 }
 .modal-cancel:hover { color: var(--text); }
+.modal-cancel:active { color: var(--text); transform: scale(0.94); transition: transform 0.06s ease; }
 
 /* ── AUTH PAGES ── */
 .auth-page {
@@ -833,6 +866,7 @@ footer {
   transition: color 0.15s;
 }
 .auth-back:hover { color: var(--text); }
+.auth-back:active { transform: scale(0.92); opacity: 0.7; transition: transform 0.06s ease, opacity 0.06s ease; }
 
 .auth-card {
   width: 100%;
@@ -1195,6 +1229,7 @@ footer {
   color: #ff6b6b;
   background: rgba(255,107,107,0.12);
 }
+.delete-btn:active { transform: scale(0.88); transition: transform 0.06s ease; }
 
 .approve-btn {
   background: none;
@@ -1216,6 +1251,7 @@ footer {
   color: var(--accent);
   background: rgba(79,255,176,0.12);
 }
+.approve-btn:active { transform: scale(0.88); transition: transform 0.06s ease; }
 
 .approve-btn:disabled {
   opacity: 0.4;
@@ -1272,6 +1308,7 @@ footer {
   border-top: 1px solid var(--border);
   margin-top: 16px;
   gap: 2px;
+  animation: pageEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .nav-drawer a {
@@ -1285,6 +1322,8 @@ footer {
 }
 
 .nav-drawer a:hover { color: var(--text); }
+.nav-drawer a:active { color: var(--text); opacity: 0.7; transition: opacity 0.06s ease; }
+.nav-hamburger:active { transform: scale(0.88); transition: transform 0.06s ease; }
 
 .nav-drawer-cta {
   margin-top: 12px;
