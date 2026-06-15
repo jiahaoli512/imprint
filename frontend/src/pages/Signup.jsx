@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
 import ConfirmModal from '../components/ConfirmModal';
@@ -32,6 +32,13 @@ export default function Signup() {
   const [registerError, setRegisterError] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmCreate, setConfirmCreate] = useState(false);
+
+  useEffect(() => {
+    if (step === 'done') {
+      const t = setTimeout(() => navigate('/home'), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
 
   const checks = PW_RULES.map(r => ({ ...r, passed: r.test(password) }));
   const allPassed = checks.every(c => c.passed);
@@ -215,7 +222,17 @@ export default function Signup() {
         {step === 'done' && (
           <div className="auth-success">
             <span className="auth-success-icon">✓</span>
-            <p>Success!</p>
+            <p>Account created!</p>
+            <p className="auth-sub" style={{ marginTop: '8px', textAlign: 'center' }}>
+              You can now log in with your email and password.
+            </p>
+            <button
+              className="btn btn-primary auth-submit"
+              style={{ marginTop: '20px' }}
+              onClick={() => navigate('/login')}
+            >
+              Log In
+            </button>
           </div>
         )}
       </div>

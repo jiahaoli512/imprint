@@ -12,7 +12,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -32,7 +31,7 @@ export default function Login() {
       if (!res.ok) {
         setError(data.error || 'Something went wrong.');
       } else {
-        setDone(true);
+        navigate('/login/profile', { state: { email: email.trim().toLowerCase() } });
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -55,7 +54,6 @@ export default function Login() {
           Imprint
         </div>
 
-        {!done ? (
           <>
             <h1 className="auth-title">Welcome back</h1>
             <p className="auth-sub">Log in to your Imprint account.</p>
@@ -95,12 +93,6 @@ export default function Login() {
               <button className="auth-link-btn" onClick={() => navigate('/signup')}>Sign up</button>
             </p>
           </>
-        ) : (
-          <div className="auth-success">
-            <span className="auth-success-icon">✓</span>
-            <p>Welcome back!</p>
-          </div>
-        )}
       </div>
     </div>
   );

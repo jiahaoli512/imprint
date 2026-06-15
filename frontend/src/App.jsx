@@ -5,6 +5,7 @@ import Admin from './pages/Admin';
 import AdminDashboard from './pages/AdminDashboard';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
+import Profile from './pages/Profile';
 
 function RequireAdminAuth({ children }) {
   if (!sessionStorage.getItem('admin_auth')) {
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/login/profile" element={<Profile />} />
         <Route path="/admin/dashboard" element={
           <RequireAdminAuth>
             <AdminDashboard />
