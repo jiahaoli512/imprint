@@ -131,11 +131,11 @@ export default function Signup() {
               <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
                 {loading ? 'Checking…' : 'Continue'}
               </button>
-              <p className="auth-switch">
-                Already have an account?{' '}
-                <button type="button" className="auth-link-btn" onClick={() => navigate('/login')}>Log in</button>
-              </p>
             </form>
+            <p className="auth-switch">
+              Already have an account?{' '}
+              <button type="button" className="auth-link-btn" onClick={() => navigate('/login')}>Log in</button>
+            </p>
           </>
         )}
 
