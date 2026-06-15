@@ -131,6 +131,10 @@ export default function Signup() {
               <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
                 {loading ? 'Checking…' : 'Continue'}
               </button>
+              <p className="auth-switch">
+                Already have an account?{' '}
+                <button type="button" className="auth-link-btn" onClick={() => navigate('/login')}>Log in</button>
+              </p>
             </form>
           </>
         )}
@@ -215,13 +219,6 @@ export default function Signup() {
           </div>
         )}
       </div>
-
-      {step === 'email' && (
-        <p className="auth-switch">
-          Already have an account?{' '}
-          <button className="auth-link-btn" onClick={() => navigate('/login')}>Log in</button>
-        </p>
-      )}
 
       {confirmCreate && (
         <ConfirmModal
