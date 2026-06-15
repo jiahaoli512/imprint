@@ -14,14 +14,18 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+transporter.verify((err) => {
+  if (err) console.error('[email] Transporter verification failed:', err.message);
+  else console.log('[email] Transporter ready');
+});
+
 async function sendApprovalEmail(to, name) {
   const displayName = name || to.split('@')[0];
-  const adminPassword = process.env.ADMIN_PASSWORD || 'imprint';
 
   await transporter.sendMail({
     from: `"Imprint" <${FROM}>`,
     to,
-    subject: "You're in — Welcome to Imprint 🗺️",
+    subject: "You're approved — Welcome to Imprint 🗺️",
     html: `
 <!DOCTYPE html>
 <html>
@@ -51,16 +55,21 @@ async function sendApprovalEmail(to, name) {
           <!-- Divider -->
           <div style="height:1px;background:rgba(255,255,255,0.07);margin-bottom:32px;"></div>
 
-          <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#6b7a99;text-transform:uppercase;letter-spacing:1px;">Admin access</p>
-          <p style="margin:0 0 16px;font-size:14px;color:#6b7a99;line-height:1.6;">Use the password below to access the admin dashboard from the Imprint site footer.</p>
-          <div style="background:#161f30;border:1px solid rgba(79,255,176,0.2);border-radius:12px;padding:20px 24px;text-align:center;margin-bottom:32px;">
-            <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4fffb0;">Password</p>
-            <p style="margin:0;font-size:24px;font-weight:800;letter-spacing:4px;color:#f0f4ff;">${adminPassword}</p>
+          <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#6b7a99;text-transform:uppercase;letter-spacing:1px;">How to get started</p>
+          <p style="margin:0 0 24px;font-size:14px;color:#6b7a99;line-height:1.6;">
+            Download the Imprint app and create your account using <strong style="color:#f0f4ff;">exactly this email address</strong>:
+          </p>
+
+          <!-- Email highlight box -->
+          <div style="background:#161f30;border:1px solid rgba(79,255,176,0.2);border-radius:12px;padding:20px 24px;text-align:center;margin-bottom:24px;">
+            <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4fffb0;">Your approved email</p>
+            <p style="margin:0;font-size:18px;font-weight:700;color:#f0f4ff;">${to}</p>
           </div>
 
           <p style="margin:0;font-size:13px;color:#6b7a99;line-height:1.6;">
-            Keep this password private. You can change it at any time from the admin dashboard.
+            Signing up with any other email address will not work. Make sure to use this exact address when creating your account on the app.
           </p>
+
         </td></tr>
 
         <!-- Footer -->
