@@ -900,7 +900,15 @@ footer {
   font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
-  text-align: center;
+  text-align: left;
+}
+
+.auth-notice-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .auth-link {
