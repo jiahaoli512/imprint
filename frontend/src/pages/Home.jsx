@@ -18,7 +18,7 @@ export default function Home() {
   }, []);
 
   return (
-    <>
+    <div className="home-page">
       <Nav />
       <Hero waitlistCount={waitlistCount} onJoin={setWaitlistCount} />
       <StatsRow />
@@ -26,6 +26,6 @@ export default function Home() {
       <HowItWorks />
       <CTA onJoin={setWaitlistCount} />
       <Footer />
-    </>
+    </div>
   );
 }
