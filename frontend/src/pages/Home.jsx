@@ -6,7 +6,6 @@ import StatsRow from '../components/StatsRow';
 import Features from '../components/Features';
 import HowItWorks from '../components/HowItWorks';
 import CTA from '../components/CTA';
-import Footer from '../components/Footer';
 
 export default function Home() {
   const [waitlistCount, setWaitlistCount] = useState(2400);
@@ -25,7 +24,6 @@ export default function Home() {
       <Features />
       <HowItWorks />
       <CTA onJoin={setWaitlistCount} />
-      <Footer />
     </div>
   );
 }

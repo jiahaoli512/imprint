@@ -61,7 +61,7 @@ export default function Profile() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!firstName.trim() || !lastName.trim()) { setError('Please enter your first and last name.'); return; }
+    if (!firstName.trim()) { setError('Please enter your first name.'); return; }
     if (!USERNAME_RE.test(username)) { setError('Username must be 3–20 characters: letters, numbers, underscores.'); return; }
     if (usernameStatus === 'taken') { setError('That username is already taken.'); return; }
     if (usernameStatus === 'checking') { setError('Still checking username — please wait a moment.'); return; }
@@ -91,7 +91,7 @@ export default function Profile() {
   }
 
   const canSubmit =
-    firstName.trim() && lastName.trim() &&
+    firstName.trim() &&
     usernameStatus === 'available' &&
     dob && ageOk(dob);
 
@@ -120,7 +120,7 @@ export default function Profile() {
           <input
             type="text"
             className="auth-input"
-            placeholder="Last name"
+            placeholder="Last name (optional)"
             value={lastName}
             onChange={e => { setLastName(e.target.value); setError(''); }}
             autoComplete="family-name"

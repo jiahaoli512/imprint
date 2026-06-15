@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck, LayoutDashboard } from 'lucide-react';
+import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck, LayoutDashboard, LogOut, Map, UserCircle } from 'lucide-react';
 export default function Admin() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
@@ -14,6 +14,7 @@ export default function Admin() {
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [waitlistSearch, setWaitlistSearch] = useState('');
   const [usersSearch, setUsersSearch] = useState('');
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   function apiFetch(path, options) {
     return fetch(`${apiBase}${path}`, options).then((r) => r.json());
@@ -155,8 +156,8 @@ export default function Admin() {
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
             <LayoutDashboard size={15} /> <span className="btn-label">Admin Dashboard</span>
           </button>
-          <button className="btn btn-ghost" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
-            <ArrowLeft size={15} /> <span className="btn-label">Back to site</span>
+          <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
+            <LogOut size={15} /> <span className="btn-label">Log out of Admin</span>
           </button>
         </div>
       </div>
@@ -299,17 +300,40 @@ export default function Admin() {
                       <th className="col-num col-hide-mobile">#</th>
                       <th>Email</th>
                       <th className="col-hide-mobile">Joined</th>
+                      <th className="col-actions" />
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUsers.length === 0 ? (
-                      <tr><td colSpan={3} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
+                      <tr><td colSpan={4} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
                     ) : filteredUsers.map((u, i) => (
                       <tr key={u._id}>
                         <td className="muted col-num col-hide-mobile">{i + 1}</td>
                         <td>{u.email}</td>
                         <td className="muted col-hide-mobile">
                           {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td className="col-actions">
+                          {u.username ? (
+                            <div className="actions-wrap">
+                              <button
+                                className="approve-btn"
+                                title="Edit dashboard"
+                                onClick={() => navigate(`/admin/${u.username}/dashboard`)}
+                              >
+                                <Map size={14} />
+                              </button>
+                              <button
+                                className="approve-btn"
+                                title="Edit profile"
+                                onClick={() => navigate(`/admin/${u.username}/profile`)}
+                              >
+                                <UserCircle size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="muted" style={{ fontSize: '12px' }}>No profile</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -320,6 +344,27 @@ export default function Admin() {
           )}
         </div>
       </div>
+
+      {confirmLogout && (
+        <div className="modal-overlay" onClick={() => setConfirmLogout(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon">
+              <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
+            </div>
+            <h2 className="modal-title">Log out of Admin?</h2>
+            <p className="modal-sub" style={{ marginTop: '16px', color: '#ff6b6b' }}>
+              You will be returned to the home page and your admin session will end.
+            </p>
+            <button
+              className="btn btn-primary modal-submit"
+              onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}
+            >
+              Log out
+            </button>
+            <button className="modal-cancel" onClick={() => setConfirmLogout(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
