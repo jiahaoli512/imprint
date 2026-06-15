@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import { Fingerprint, ArrowLeft, List, Eye, Pencil, Save } from 'lucide-react';
+import { Fingerprint, ArrowLeft, List, Eye, Pencil, Save, Trash2 } from 'lucide-react';
 import L from 'leaflet';
 
 const STORAGE_KEY = 'admin_map_markers';
@@ -108,9 +108,14 @@ export default function AdminDashboard() {
               </button>
             </div>
             {editing && (
-              <button className="btn btn-primary dashboard-save-btn" onClick={saveChanges}>
-                <Save size={13} /> Save changes
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-ghost dashboard-save-btn" onClick={() => setDraft([])}>
+                  <Trash2 size={13} /> Clear all
+                </button>
+                <button className="btn btn-primary dashboard-save-btn" onClick={saveChanges}>
+                  <Save size={13} /> Save changes
+                </button>
+              </div>
             )}
           </div>
 
