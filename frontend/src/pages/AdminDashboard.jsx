@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import { Fingerprint, ArrowLeft, List, Eye, Pencil, Trash2 } from 'lucide-react';
@@ -108,48 +108,54 @@ function MapClickHandler({ editing, onAdd }) {
   return null;
 }
 
-const NOM = (lat, lng, zoom) =>
-  fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=${zoom}&accept-language=en`,
-    { headers: { 'User-Agent': 'ImprintAdminDashboard/1.0' } }
-  ).then(r => r.json());
+async function reverseGeocode(lat, lng) {
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&addressdetails=1`
+  );
+  const data = await res.json();
+  if (data.error) return null;
+  return data.address || null;
+}
 
 function RegionDetector({ onRegion }) {
   const map = useMap();
 
-  const detect = useCallback(async () => {
-    const zoom = map.getZoom();
-    const level = getLevel(zoom);
+  useEffect(() => {
+    let timer;
 
-    if (level === 'earth') { onRegion('Earth'); return; }
+    async function detect() {
+      const zoom = map.getZoom();
+      const level = getLevel(zoom);
 
-    const { lat, lng } = map.getCenter();
-    try {
-      const data = await NOM(lat, lng, 18);
-      const addr = data.address || {};
+      if (level === 'earth') { onRegion('Earth'); return; }
+
+      const { lat, lng } = map.getCenter();
+      const addr = await reverseGeocode(lat, lng);
+      if (!addr) { onRegion(''); return; }
+
       let name = pickName(addr, level);
 
       if (level === 'city' && !name) {
-        const fallback = await NOM(lat, lng, 14);
-        const fa = fallback.address || {};
-        const city = fa.city || fa.town || fa.village || fa.hamlet;
-        name = city ? `Near ${city}` : (fa.county || addr.county || '');
+        const fa = await reverseGeocode(lat, lng);
+        const city = fa?.city || fa?.town || fa?.village || fa?.hamlet;
+        name = city ? `Near ${city}` : (fa?.county || '');
       }
 
       onRegion(name);
-    } catch {
-      onRegion('');
     }
-  }, [map, onRegion]);
 
-  useEffect(() => {
-    let timer;
     const debounced = () => { clearTimeout(timer); timer = setTimeout(detect, 700); };
+
     map.on('moveend', debounced);
     map.on('zoomend', debounced);
     detect();
-    return () => { map.off('moveend', debounced); map.off('zoomend', debounced); clearTimeout(timer); };
-  }, [map, detect]);
+
+    return () => {
+      map.off('moveend', debounced);
+      map.off('zoomend', debounced);
+      clearTimeout(timer);
+    };
+  }, [map, onRegion]);
 
   return null;
 }
@@ -178,7 +184,6 @@ export default function AdminDashboard() {
 
   function discardAndView() { setDraft([]); setMode('view'); setShowSavePrompt(false); }
 
-  const handleRegion = useCallback((r) => setRegion(r), []);
 
   return (
     <div className="dashboard-page">
@@ -241,7 +246,7 @@ export default function AdminDashboard() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
               />
               <MapClickHandler editing={editing} onAdd={(pos) => setDraft(d => [...d, pos])} />
-              <RegionDetector onRegion={handleRegion} />
+              <RegionDetector onRegion={setRegion} />
               {markers.map((pos, i) => (
                 <React.Fragment key={i}>
                   <Circle
