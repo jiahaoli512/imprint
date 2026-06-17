@@ -17,39 +17,29 @@ export const clearAdminSession = () => {
   sessionStorage.removeItem('admin_token');
 };
 
-async function request(path, options = {}) {
-  const token = getToken();
-  const url = `${BASE}${path}`;
-  const headers = {
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+// Builds a request function bound to a token source (user vs. admin). Both
+// variants share identical URL/header/error handling — only the token differs.
+function makeRequest(getTokenFn) {
+  return async function request(path, options = {}) {
+    const token = getTokenFn();
+    const url = `${BASE}${path}`;
+    const headers = {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+    const res = await fetch(url, { ...options, headers });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.error || 'Request failed');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
   };
-  const res = await fetch(url, { ...options, headers });
-  const data = await res.json();
-  if (!res.ok) {
-    const err = new Error(data.error || 'Request failed');
-    err.status = res.status;
-    throw err;
-  }
-  return data;
 }
 
-async function adminRequest(path, options = {}) {
-  const token = getAdminToken();
-  const url = `${BASE}${path}`;
-  const headers = {
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-  const res = await fetch(url, { ...options, headers });
-  const data = await res.json();
-  if (!res.ok) {
-    const err = new Error(data.error || 'Request failed');
-    err.status = res.status;
-    throw err;
-  }
-  return data;
-}
+const request = makeRequest(getToken);
+const adminRequest = makeRequest(getAdminToken);
 
 export const api = {
   // Users / Auth

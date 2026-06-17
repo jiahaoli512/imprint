@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../api/client';
 import ConfirmModal from '../../components/ConfirmModal';
 
-// Owns all map-marker state for a user's dashboard: loading, the read-only
-// display, and (in admin view) the editable draft plus the entire save/discard
-// confirmation flow. The save prompt is fully encapsulated — callers render the
-// returned `savePrompt` element without knowing it exists as state.
-export function useMarkers(username, isAdminView) {
+// Owns map-marker state for a dashboard: loading, the read-only display, and
+// (when `editable`) an editable draft plus the entire save/discard confirmation
+// flow. Persistence is injected via `load`/`save` so both the per-user dashboard
+// and the admin singleton dashboard can share the same machine.
+//
+//   load    — () => Promise<number[][]>   fetch the current markers
+//   save    — (points) => Promise<any>    persist edited markers
+//   editable— whether edit mode is allowed
+//   deps    — effect deps that trigger a reload (e.g. [username])
+export function useMarkers({ load, save, editable = false, deps = [] }) {
   const [saved, setSaved] = useState([]);
   const [draft, setDraft] = useState([]);
   const [mode, setMode] = useState('view');
@@ -14,13 +18,13 @@ export function useMarkers(username, isAdminView) {
 
   useEffect(() => {
     let active = true;
-    api.getMarkers(username)
-      .then(data => { if (active) setSaved(data); })
+    Promise.resolve(load())
+      .then(data => { if (active) setSaved(Array.isArray(data) ? data : []); })
       .catch(() => { if (active) setSaved([]); });
     return () => { active = false; };
-  }, [username]);
+  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const editing = isAdminView && mode === 'edit';
+  const editing = editable && mode === 'edit';
   const displayMarkers = editing ? draft : saved;
 
   function enterEdit() { setDraft([...saved]); setMode('edit'); }
@@ -30,8 +34,8 @@ export function useMarkers(username, isAdminView) {
   function removeMarker(i) { setDraft(d => d.filter((_, idx) => idx !== i)); }
   function clearDraft() { setDraft([]); }
 
-  async function save() {
-    try { await api.saveMarkers(draft); } catch { /* silently fail — user keeps stale view */ }
+  async function commit() {
+    try { await save(draft); } catch { /* silently fail — user keeps stale view */ }
     setSaved(draft);
     setDraft([]);
     setMode('view');
@@ -50,7 +54,7 @@ export function useMarkers(username, isAdminView) {
       message="Do you want to save your changes to the map?"
       confirmLabel="Save"
       altLabel="Discard"
-      onConfirm={save}
+      onConfirm={commit}
       onAlt={discard}
       onCancel={() => setPromptOpen(false)}
     />
