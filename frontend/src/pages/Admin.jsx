@@ -134,7 +134,8 @@ export default function Admin() {
 
   const filteredUsers = registeredUsers.filter((u) => {
     const q = usersSearch.toLowerCase();
-    return !q || u.email.toLowerCase().includes(q);
+    const fullName = [u.firstName, u.lastName].filter(Boolean).join(' ').toLowerCase();
+    return !q || u.email.toLowerCase().includes(q) || fullName.includes(q);
   });
 
   return (
@@ -284,7 +285,7 @@ export default function Admin() {
             <>
               <input
                 className="admin-search"
-                placeholder="Search by email…"
+                placeholder="Search by email or name…"
                 value={usersSearch}
                 onChange={(e) => setUsersSearch(e.target.value)}
               />
@@ -294,17 +295,27 @@ export default function Admin() {
                     <tr>
                       <th className="col-num col-hide-mobile">#</th>
                       <th>Email</th>
+                      <th className="col-hide-mobile">Name</th>
+                      <th className="col-hide-mobile">Date of Birth</th>
                       <th className="col-hide-mobile">Joined</th>
                       <th className="col-actions" />
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUsers.length === 0 ? (
-                      <tr><td colSpan={4} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
+                      <tr><td colSpan={6} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
                     ) : filteredUsers.map((u, i) => (
                       <tr key={u._id}>
                         <td className="muted col-num col-hide-mobile">{i + 1}</td>
                         <td>{u.email}</td>
+                        <td className="muted col-hide-mobile">
+                          {[u.firstName, u.lastName].filter(Boolean).join(' ') || '—'}
+                        </td>
+                        <td className="muted col-hide-mobile">
+                          {u.dateOfBirth
+                            ? new Date(u.dateOfBirth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                            : '—'}
+                        </td>
                         <td className="muted col-hide-mobile">
                           {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>

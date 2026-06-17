@@ -48,6 +48,9 @@ async function checkUsername(username) {
 }
 
 async function setupProfile(email, { firstName, lastName, username, dateOfBirth }) {
+  const year = new Date(dateOfBirth).getFullYear();
+  if (year < 1000 || year > 9999)
+    throw Object.assign(new Error('Please enter a valid 4-digit birth year.'), { status: 400 });
   if (ageFromDob(dateOfBirth) < 18)
     throw Object.assign(new Error('You must be at least 18 years old.'), { status: 400 });
 
@@ -89,7 +92,7 @@ async function updateUserByUsername(username, { firstName, lastName }) {
 }
 
 async function listUsers() {
-  return User.find({}, 'email username createdAt').sort({ createdAt: -1 });
+  return User.find({}, 'email username firstName lastName dateOfBirth createdAt').sort({ createdAt: -1 });
 }
 
 module.exports = { registerUser, loginUser, checkUsername, setupProfile, searchUsers, getUserByUsername, updateUserByUsername, listUsers };

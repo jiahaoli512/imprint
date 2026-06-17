@@ -65,6 +65,8 @@ export default function Profile() {
     if (usernameStatus === 'taken') { setError('That username is already taken.'); return; }
     if (usernameStatus === 'checking') { setError('Still checking username — please wait a moment.'); return; }
     if (!dob) { setError('Please enter your date of birth.'); return; }
+    const dobYear = new Date(dob).getFullYear();
+    if (dobYear < 1000 || dobYear > 9999) { setError('Please enter a valid 4-digit birth year.'); return; }
     if (!ageOk(dob)) { setError('You must be at least 18 years old to use Imprint.'); return; }
 
     setLoading(true);
