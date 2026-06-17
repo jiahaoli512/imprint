@@ -1,3 +1,5 @@
+const httpError = require('./httpError');
+
 // Field length limits, shared between validation and schema definitions.
 const LIMITS = {
   email:     254, // RFC 5321
@@ -12,16 +14,16 @@ const LIMITS = {
 function checkLength(field, value) {
   if (value == null) return;
   if (typeof value !== 'string')
-    throw Object.assign(new Error(`${field} must be a string.`), { status: 400 });
+    throw httpError(400, `${field} must be a string.`);
   if (value.length > LIMITS[field])
-    throw Object.assign(new Error(`${field} must be ${LIMITS[field]} characters or fewer.`), { status: 400 });
+    throw httpError(400, `${field} must be ${LIMITS[field]} characters or fewer.`);
 }
 
 // Throws a 400 error if the trimmed value contains any internal whitespace.
 function checkNoSpaces(label, value) {
   if (value == null) return;
   if (/\s/.test(value.trim()))
-    throw Object.assign(new Error(`${label} cannot contain spaces.`), { status: 400 });
+    throw httpError(400, `${label} cannot contain spaces.`);
 }
 
 // Letters (any language), hyphens and apostrophes. Optionally allow spaces.
@@ -50,18 +52,18 @@ const SPECIAL_RE = /[~`!@#$%^&*()\-_+=[\]{}|\\;:"<>,.\/?]/;
 
 function checkPassword(password) {
   if (typeof password !== 'string')
-    throw Object.assign(new Error('Password is required.'), { status: 400 });
+    throw httpError(400, 'Password is required.');
   if (password.length < 12)
-    throw Object.assign(new Error('Password must be at least 12 characters.'), { status: 400 });
+    throw httpError(400, 'Password must be at least 12 characters.');
   if (!/[A-Z]/.test(password))
-    throw Object.assign(new Error('Password must contain an uppercase letter.'), { status: 400 });
+    throw httpError(400, 'Password must contain an uppercase letter.');
   if (!/[a-z]/.test(password))
-    throw Object.assign(new Error('Password must contain a lowercase letter.'), { status: 400 });
+    throw httpError(400, 'Password must contain a lowercase letter.');
   if (!/[0-9]/.test(password))
-    throw Object.assign(new Error('Password must contain a number.'), { status: 400 });
+    throw httpError(400, 'Password must contain a number.');
   // Special character required, but not as the first or last character.
   if (!SPECIAL_RE.test(password.slice(1, -1)))
-    throw Object.assign(new Error('Password must contain a special character (not at the start or end).'), { status: 400 });
+    throw httpError(400, 'Password must contain a special character (not at the start or end).');
 }
 
 module.exports = { LIMITS, checkLength, checkNoSpaces, checkNameChars, checkPassword, NAME_RE, NAME_SPACES_RE };
