@@ -47,6 +47,8 @@ export const api = {
   getAdminMarkers: ()         => request('/api/markers'),
 
   // Waitlist (admin)
+  joinWaitlist:         (body) => request('/api/waitlist', { method: 'POST', body: JSON.stringify(body) }),
+  waitlistCount:        ()    => request('/api/waitlist/count'),
   getWaitlist:          ()    => request('/api/waitlist'),
   deleteWaitlistEntry:  (id)  => request(`/api/waitlist/${id}`, { method: 'DELETE' }),
   reorderWaitlist:      (ids) => request('/api/waitlist/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
