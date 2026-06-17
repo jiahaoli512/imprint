@@ -1,6 +1,7 @@
 const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const { sendApprovalEmail } = require('../utils/email');
+const { checkLength } = require('../utils/validate');
 
 async function normalizePositions() {
   const all = await Waitlist.find({}).sort({ position: 1, createdAt: 1 });
@@ -8,6 +9,9 @@ async function normalizePositions() {
 }
 
 async function joinWaitlist(email, name) {
+  checkLength('email', email);
+  checkLength('name', name);
+
   const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) throw Object.assign(new Error('An account with this email is already registered.'), { status: 409 });
 
