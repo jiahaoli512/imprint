@@ -5,6 +5,9 @@ import AdminLogoutModal from '../components/AdminLogoutModal';
 import Spinner from '../components/Spinner';
 import { api, getUsername } from '../api/client';
 
+const NAME_RE = /^[\p{L}'’-]+$/u;          // first name: letters, hyphens, apostrophes
+const NAME_SPACES_RE = /^[\p{L}'’ -]+$/u;  // last name: also allows spaces
+
 export default function UserProfile() {
   const { username } = useParams();
   const navigate = useNavigate();
@@ -47,10 +50,32 @@ export default function UserProfile() {
       setEditError('First name is required.');
       return;
     }
+    if (editFirst.trim().length > 50) {
+      setEditError('First name must be 50 characters or fewer.');
+      return;
+    }
+    if (/\s/.test(editFirst.trim())) {
+      setEditError('First name cannot contain spaces.');
+      return;
+    }
+    if (!NAME_RE.test(editFirst.trim())) {
+      setEditError('First name can only contain letters, hyphens, and apostrophes.');
+      return;
+    }
+    if (editLast.trim().length > 50) {
+      setEditError('Last name must be 50 characters or fewer.');
+      return;
+    }
+    if (editLast.trim() && !NAME_SPACES_RE.test(editLast.trim())) {
+      setEditError('Last name can only contain letters, spaces, hyphens, and apostrophes.');
+      return;
+    }
     setSaving(true);
     setEditError('');
     try {
-      const data = await api.updateUser(username, { firstName: editFirst, lastName: editLast });
+      const data = isAdminView
+        ? await api.adminUpdateUser(username, { firstName: editFirst, lastName: editLast })
+        : await api.updateUser(username, { firstName: editFirst, lastName: editLast });
       setUser(data);
       setEditing(false);
     } catch (err) {
@@ -117,6 +142,7 @@ export default function UserProfile() {
                 className="auth-input"
                 placeholder="First name"
                 value={editFirst}
+                maxLength={50}
                 onChange={e => { setEditFirst(e.target.value); setEditError(''); }}
                 autoFocus
               />
@@ -124,6 +150,7 @@ export default function UserProfile() {
                 className="auth-input"
                 placeholder="Last name (optional)"
                 value={editLast}
+                maxLength={50}
                 onChange={e => { setEditLast(e.target.value); setEditError(''); }}
               />
               {editError && <p className="auth-error">{editError}</p>}

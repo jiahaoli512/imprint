@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Waitlist = require('../models/Waitlist');
-const { checkLength } = require('../utils/validate');
+const { checkLength, checkNoSpaces, checkNameChars } = require('../utils/validate');
 
 function ageFromDob(dob) {
   const today = new Date();
@@ -55,6 +55,9 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
   checkLength('firstName', firstName);
   checkLength('lastName', lastName);
   checkLength('username', username);
+  checkNoSpaces('First name', firstName);
+  checkNameChars('First name', firstName);
+  checkNameChars('Last name', lastName, { allowSpaces: true });
 
   const year = new Date(dateOfBirth).getFullYear();
   if (year < 1000 || year > 9999)
@@ -92,6 +95,9 @@ async function getUserByUsername(username) {
 async function updateUserByUsername(username, { firstName, lastName }) {
   checkLength('firstName', firstName);
   checkLength('lastName', lastName);
+  checkNoSpaces('First name', firstName);
+  checkNameChars('First name', firstName);
+  checkNameChars('Last name', lastName, { allowSpaces: true });
 
   const user = await User.findOneAndUpdate(
     { username: username.toLowerCase() },

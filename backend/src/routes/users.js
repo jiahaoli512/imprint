@@ -2,6 +2,7 @@ const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
 const requireAdminAuth = require('../middleware/adminAuth');
+const requireUserOrAdmin = require('../middleware/userOrAdmin');
 const { authLimiter } = require('../middleware/rateLimit');
 const { registerUser, loginUser, checkUsername, setupProfile, searchUsers, getUserByUsername, updateUserByUsername, listUsers } = require('../services/userService');
 
@@ -40,10 +41,13 @@ router.get('/by-username/:username', handle(async (req, res) => {
   res.json(await getUserByUsername(req.params.username));
 }));
 
-router.patch('/by-username/:username', requireAuth, handle(async (req, res) => {
-  const user = await getUserByUsername(req.params.username);
-  if (user._id.toString() !== req.user.id)
-    return res.status(403).json({ error: 'Forbidden' });
+router.patch('/by-username/:username', requireUserOrAdmin, handle(async (req, res) => {
+  // Admins may edit any profile; users may only edit their own.
+  if (!req.admin) {
+    const user = await getUserByUsername(req.params.username);
+    if (user._id.toString() !== req.user.id)
+      return res.status(403).json({ error: 'Forbidden' });
+  }
   const { firstName, lastName } = req.body;
   res.json(await updateUserByUsername(req.params.username, { firstName, lastName }));
 }));
