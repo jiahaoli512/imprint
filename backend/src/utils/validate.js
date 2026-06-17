@@ -44,4 +44,24 @@ function checkNameChars(label, value, { allowSpaces = false } = {}) {
   }
 }
 
-module.exports = { LIMITS, checkLength, checkNoSpaces, checkNameChars, NAME_RE, NAME_SPACES_RE };
+// Password policy — mirrors the rules enforced in the Signup UI so the API
+// can't be used to bypass them.
+const SPECIAL_RE = /[~`!@#$%^&*()\-_+=[\]{}|\\;:"<>,.\/?]/;
+
+function checkPassword(password) {
+  if (typeof password !== 'string')
+    throw Object.assign(new Error('Password is required.'), { status: 400 });
+  if (password.length < 12)
+    throw Object.assign(new Error('Password must be at least 12 characters.'), { status: 400 });
+  if (!/[A-Z]/.test(password))
+    throw Object.assign(new Error('Password must contain an uppercase letter.'), { status: 400 });
+  if (!/[a-z]/.test(password))
+    throw Object.assign(new Error('Password must contain a lowercase letter.'), { status: 400 });
+  if (!/[0-9]/.test(password))
+    throw Object.assign(new Error('Password must contain a number.'), { status: 400 });
+  // Special character required, but not as the first or last character.
+  if (!SPECIAL_RE.test(password.slice(1, -1)))
+    throw Object.assign(new Error('Password must contain a special character (not at the start or end).'), { status: 400 });
+}
+
+module.exports = { LIMITS, checkLength, checkNoSpaces, checkNameChars, checkPassword, NAME_RE, NAME_SPACES_RE };

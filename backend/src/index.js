@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const connectDB = require('./db');
 const { apiLimiter } = require('./middleware/rateLimit');
+const sanitizeBody = require('./middleware/sanitize');
 
 const adminRoutes = require('./routes/admin');
 const waitlistRoutes = require('./routes/waitlist');
@@ -50,6 +51,7 @@ app.use(cors({
   },
 }));
 app.use(express.json({ limit: '100kb' }));
+app.use(sanitizeBody);
 app.use('/api', apiLimiter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
@@ -67,7 +69,11 @@ app.use((err, req, res, next) => {
     return res.status(409).json({ error: 'User already on the waitlist!' });
   }
   console.error(err.stack);
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+  // Only surface messages for intentional (status-tagged) errors; never leak
+  // internal error details on unexpected 500s.
+  const status = err.status || 500;
+  const message = err.status ? err.message : 'Internal server error';
+  res.status(status).json({ error: message });
 });
 
 connectDB()
