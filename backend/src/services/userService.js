@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Waitlist = require('../models/Waitlist');
-const { checkLength, checkNoSpaces, checkNameChars } = require('../utils/validate');
+const { checkLength, checkNoSpaces, checkNameChars, checkPassword } = require('../utils/validate');
 
 function ageFromDob(dob) {
   const today = new Date();
@@ -24,6 +24,7 @@ function signToken(user) {
 async function registerUser(email, password) {
   checkLength('email', email);
   checkLength('password', password);
+  checkPassword(password);
 
   const entry = await Waitlist.findOne({ email: email.toLowerCase() });
   if (!entry || !entry.approved) throw Object.assign(new Error('Email is not approved'), { status: 403 });
@@ -37,6 +38,9 @@ async function registerUser(email, password) {
 }
 
 async function loginUser(email, password) {
+  if (typeof email !== 'string' || typeof password !== 'string')
+    throw Object.assign(new Error('Invalid email or password.'), { status: 401 });
+
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) throw Object.assign(new Error('Invalid email or password.'), { status: 401 });
 
