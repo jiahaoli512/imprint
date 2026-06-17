@@ -2,16 +2,17 @@ const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
 const requireAdminAuth = require('../middleware/adminAuth');
+const { authLimiter } = require('../middleware/rateLimit');
 const { registerUser, loginUser, checkUsername, setupProfile, searchUsers, getUserByUsername, updateUserByUsername, listUsers } = require('../services/userService');
 
-router.post('/', handle(async (req, res) => {
+router.post('/', authLimiter, handle(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
   await registerUser(email, password);
   res.status(201).json({ ok: true });
 }));
 
-router.post('/login', handle(async (req, res) => {
+router.post('/login', authLimiter, handle(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
   const result = await loginUser(email, password);
