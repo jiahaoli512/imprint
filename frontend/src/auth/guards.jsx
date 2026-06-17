@@ -23,6 +23,13 @@ export function RequireAdminAuth({ children }) {
   return children;
 }
 
+export function RequireAuthOrAdmin({ children }) {
+  if (!getUsername() && !sessionStorage.getItem('admin_auth')) {
+    return <Navigate to="/home" replace />;
+  }
+  return children;
+}
+
 export function SmartHome() {
   const username = getUsername();
   if (username) return <Navigate to={`/${username}/dashboard`} replace />;

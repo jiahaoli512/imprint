@@ -1,14 +1,22 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Fingerprint } from 'lucide-react';
 import { api, getUsername } from '../api/client';
+import Spinner from '../components/Spinner';
 
 export default function UserRouter() {
   const { username } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
+    const isAdmin = !!sessionStorage.getItem('admin_auth');
     const me = getUsername();
+
+    if (isAdmin) {
+      api.getUser(username)
+        .then(() => navigate(`/admin/${username}/dashboard`, { replace: true }))
+        .catch(() => navigate('/user-not-found', { replace: true }));
+      return;
+    }
 
     if (me === username) {
       navigate(`/${username}/dashboard`, { replace: true });
@@ -23,11 +31,5 @@ export default function UserRouter() {
       });
   }, [username]);
 
-  return (
-    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-      <div className="logo-icon" style={{ width: '48px', height: '48px', opacity: 0.5 }}>
-        <Fingerprint size={26} strokeWidth={2} color="#080c14" />
-      </div>
-    </div>
-  );
+  return <Spinner />;
 }
