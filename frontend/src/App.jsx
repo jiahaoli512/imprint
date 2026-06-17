@@ -11,6 +11,7 @@ import Footer from './components/Footer';
 import {
   RequireAuth,
   RequireAdminAuth,
+  RequireAuthOrAdmin,
   SmartHome,
   SmartLogin,
   SmartLoginProfile,
@@ -27,7 +28,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<SmartLogin />} />
         <Route path="/login/profile" element={<SmartLoginProfile />} />
-        <Route path="/user-not-found" element={<RequireAuth><NotFound /></RequireAuth>} />
+        <Route path="/user-not-found" element={<RequireAuthOrAdmin><NotFound /></RequireAuthOrAdmin>} />
         <Route path="/admin/dashboard" element={
           <RequireAdminAuth><AdminDashboard /></RequireAdminAuth>
         } />
@@ -42,8 +43,8 @@ export default function App() {
         } />
         <Route path="/:username/dashboard" element={<RequireAuth><OwnDashboardOnly><Dashboard /></OwnDashboardOnly></RequireAuth>} />
         <Route path="/:username/profile" element={<RequireAuth><UserProfile /></RequireAuth>} />
-        <Route path="/:username" element={<RequireAuth><UserRouter /></RequireAuth>} />
-        <Route path="/:username/*" element={<RequireAuth><UserRouter /></RequireAuth>} />
+        <Route path="/:username" element={<RequireAuthOrAdmin><UserRouter /></RequireAuthOrAdmin>} />
+        <Route path="/:username/*" element={<RequireAuthOrAdmin><UserRouter /></RequireAuthOrAdmin>} />
         <Route path="*" element={<CatchAll />} />
       </Routes>
       <Footer />

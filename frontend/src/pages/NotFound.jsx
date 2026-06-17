@@ -23,7 +23,10 @@ export default function NotFound() {
       <p style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, textAlign: 'center', maxWidth: '280px' }}>
         That username doesn't exist on Imprint.
       </p>
-      <button className="btn btn-ghost" style={{ marginTop: '8px' }} onClick={() => navigate('/home')}>
+      <button className="btn btn-ghost" style={{ marginTop: '8px' }} onClick={() => {
+        const isAdmin = !!sessionStorage.getItem('admin_auth');
+        navigate(isAdmin ? '/admin/dashboard' : '/home');
+      }}>
         Go home
       </button>
     </div>
