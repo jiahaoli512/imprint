@@ -6,9 +6,10 @@ import L from 'leaflet';
 import { Capacitor } from '@capacitor/core';
 import ConfirmModal from '../components/ConfirmModal';
 import AdminLogoutModal from '../components/AdminLogoutModal';
+import LogoutModal from '../components/LogoutModal';
 import Spinner from '../components/Spinner';
 import { pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector } from '../features/map/mapUtils';
-import { api, clearSession } from '../api/client';
+import { api } from '../api/client';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -239,11 +240,8 @@ export default function Dashboard() {
             ? <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
                 <LogOut size={15} /> <span className="btn-label">Log out of Admin</span>
               </button>
-            : <button className="btn btn-ghost" onClick={() => {
-                clearSession();
-                navigate('/home');
-              }}>
-                Log out
+            : <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
+                <LogOut size={15} /> <span className="btn-label">Log out</span>
               </button>
           }
         </div>
@@ -265,7 +263,7 @@ export default function Dashboard() {
                 border: '1px solid var(--border)',
                 borderRadius: '12px',
                 padding: '10px 16px',
-                fontSize: '14px',
+                fontSize: isNative ? '16px' : '14px', // 16px avoids iOS focus auto-zoom
                 color: 'var(--text)',
                 fontFamily: 'inherit',
                 outline: 'none',
@@ -316,7 +314,7 @@ export default function Dashboard() {
         )}
         {firstName && (
           <p style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>
-            Welcome, {firstName}!{isAdminView && <span style={{ fontSize: '18px', fontWeight: '600', color: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
+            Welcome back, {firstName}!{isAdminView && <span style={{ fontSize: '18px', fontWeight: '600', color: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
           </p>
         )}
         <div className="dashboard-map-card">
@@ -427,7 +425,11 @@ export default function Dashboard() {
         />
       )}
 
-      {confirmLogout && <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />}
+      {confirmLogout && (
+        isAdminView
+          ? <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />
+          : <LogoutModal onCancel={() => setConfirmLogout(false)} />
+      )}
     </div>
   );
 }
