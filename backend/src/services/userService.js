@@ -87,7 +87,7 @@ async function searchUsers(q) {
 }
 
 async function getUserByUsername(username) {
-  const user = await User.findOne({ username: username.toLowerCase() }, 'username firstName lastName createdAt');
+  const user = await User.findOne({ username: username.toLowerCase() }, 'username firstName lastName dateOfBirth createdAt');
   if (!user) throw Object.assign(new Error('User not found.'), { status: 404 });
   return user;
 }
@@ -102,7 +102,7 @@ async function updateUserByUsername(username, { firstName, lastName }) {
   const user = await User.findOneAndUpdate(
     { username: username.toLowerCase() },
     { firstName: firstName?.trim() || '', lastName: lastName?.trim() || '' },
-    { new: true, select: 'username firstName lastName createdAt' }
+    { new: true, select: 'username firstName lastName dateOfBirth createdAt' }
   );
   if (!user) throw Object.assign(new Error('User not found.'), { status: 404 });
   return user;

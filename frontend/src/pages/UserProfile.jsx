@@ -25,7 +25,8 @@ export default function UserProfile() {
   const [editError, setEditError] = useState('');
 
   useEffect(() => {
-    api.getUser(username)
+    const fetchUser = isAdminView ? api.adminGetUser : api.getUser;
+    fetchUser(username)
       .then(data => setUser(data))
       .catch(err => {
         if (err.status === 404) navigate('/user-not-found', { replace: true });
@@ -153,6 +154,23 @@ export default function UserProfile() {
                 maxLength={50}
                 onChange={e => { setEditLast(e.target.value); setEditError(''); }}
               />
+              {user.dateOfBirth && (
+                <div>
+                  <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
+                    Date of birth
+                  </label>
+                  <input
+                    className="auth-input"
+                    value={new Date(user.dateOfBirth).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    disabled
+                    readOnly
+                    style={{ opacity: 0.55, cursor: 'not-allowed' }}
+                  />
+                  <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
+                    Date of birth can't be changed.
+                  </p>
+                </div>
+              )}
               {editError && <p className="auth-error">{editError}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveEdit} disabled={saving}>
