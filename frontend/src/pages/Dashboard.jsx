@@ -26,7 +26,12 @@ export default function Dashboard() {
     displayMarkers, editing,
     enterEdit, enterView, addMarker, removeMarker, clearDraft,
     savePrompt,
-  } = useMarkers(username, isAdminView);
+  } = useMarkers({
+    load: () => api.getMarkers(username),
+    save: api.saveMarkers,
+    editable: isAdminView,
+    deps: [username],
+  });
 
   const { userLocation, locating, locationError, locate } = useGeolocation();
 
