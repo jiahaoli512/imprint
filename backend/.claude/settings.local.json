@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(printenv EMAIL_PASS)"
+      "Bash(printenv EMAIL_PASS)",
+      "Bash(curl *)",
+      "Read(//Users/jiahaoli/imprint/frontend/**)",
+      "Bash(npx vite *)",
+      "Bash(npm install *)",
+      "Bash(npx cap *)",
+      "Bash(npm run *)"
     ]
   }
 }

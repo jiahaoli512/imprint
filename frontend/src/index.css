@@ -730,6 +730,7 @@ body {
 footer {
   border-top: 1px solid var(--border);
   padding: 40px 48px;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -871,6 +872,7 @@ footer {
   padding: 24px;
   padding-top: calc(24px + env(safe-area-inset-top));
   overflow-x: hidden;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
 .auth-back {
@@ -1549,6 +1551,10 @@ footer {
   .admin-body { padding: 28px 16px; }
   .admin-top { flex-direction: column; align-items: flex-start; gap: 16px; }
   .admin-title { font-size: 28px; }
+
+  /* Dashboard mobile */
+  .dashboard-content { padding: 20px 16px; }
+  .dashboard-map-wrap { height: 50vh; }
 }
 
 @media (max-width: 480px) {
