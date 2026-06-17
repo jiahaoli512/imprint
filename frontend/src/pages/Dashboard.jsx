@@ -161,6 +161,68 @@ export default function Dashboard() {
             </>
           )}
         </div>
+
+        {!isNative && !isAdminView && (
+          <div ref={searchRef} style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
+            <input
+              value={search}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              onFocus={() => results.length > 0 && setShowResults(true)}
+              placeholder="Search users…"
+              style={{
+                width: '100%',
+                background: 'var(--surface2)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '7px 14px',
+                fontSize: '14px',
+                color: 'var(--text)',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+            />
+            {showResults && results.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                left: 0,
+                right: 0,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                zIndex: 1000,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              }}>
+                {results.map(u => (
+                  <div
+                    key={u.username}
+                    onClick={() => handleSelectUser(u)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '10px 14px',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--border)',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span style={{ fontSize: '13px', fontWeight: '600' }}>@{u.username}</span>
+                    {(u.firstName || u.lastName) && (
+                      <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                        {[u.firstName, u.lastName].filter(Boolean).join(' ')}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="admin-header-right">
           {isAdminView ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
@@ -189,64 +251,66 @@ export default function Dashboard() {
 
       <div className="dashboard-content">
         <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
-        <div ref={searchRef} style={{ position: 'relative' }}>
-          <input
-            value={search}
-            onChange={handleSearchChange}
-            onKeyDown={handleSearchKeyDown}
-            onFocus={() => results.length > 0 && setShowResults(true)}
-            placeholder="Search users…"
-            style={{
-              width: '100%',
-              background: 'var(--surface2)',
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              padding: '10px 16px',
-              fontSize: '14px',
-              color: 'var(--text)',
-              fontFamily: 'inherit',
-              outline: 'none',
-            }}
-          />
-          {showResults && results.length > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: 'calc(100% + 6px)',
-              left: 0,
-              right: 0,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              zIndex: 100,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            }}>
-              {results.map(u => (
-                <div
-                  key={u.username}
-                  onClick={() => handleSelectUser(u)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '10px 14px',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid var(--border)',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <span style={{ fontSize: '13px', fontWeight: '600' }}>@{u.username}</span>
-                  {(u.firstName || u.lastName) && (
-                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                      {[u.firstName, u.lastName].filter(Boolean).join(' ')}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {(isNative || isAdminView) && (
+          <div ref={searchRef} style={{ position: 'relative' }}>
+            <input
+              value={search}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              onFocus={() => results.length > 0 && setShowResults(true)}
+              placeholder="Search users…"
+              style={{
+                width: '100%',
+                background: 'var(--surface2)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '10px 16px',
+                fontSize: '14px',
+                color: 'var(--text)',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+            />
+            {showResults && results.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                left: 0,
+                right: 0,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                zIndex: 100,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              }}>
+                {results.map(u => (
+                  <div
+                    key={u.username}
+                    onClick={() => handleSelectUser(u)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '10px 14px',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--border)',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span style={{ fontSize: '13px', fontWeight: '600' }}>@{u.username}</span>
+                    {(u.firstName || u.lastName) && (
+                      <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                        {[u.firstName, u.lastName].filter(Boolean).join(' ')}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {locationError && (
           <p style={{ fontSize: '12px', color: '#ff6b6b', marginTop: '-8px' }}>{locationError}</p>
         )}
