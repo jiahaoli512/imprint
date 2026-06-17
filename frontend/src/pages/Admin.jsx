@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck, LayoutDashboard, LogOut, Map, UserCircle } from 'lucide-react';
+import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck, LayoutDashboard, LogOut, Map, UserCircle } from 'lucide-react';
 import AdminLogoutModal from '../components/AdminLogoutModal';
 import { api } from '../api/client';
 export default function Admin() {
