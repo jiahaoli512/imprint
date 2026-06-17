@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-
-const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+import { api, setUsername, setToken } from '../api/client';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
@@ -22,22 +21,16 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase}/api/users/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Something went wrong.');
-      } else if (data.username) {
-        localStorage.setItem('imprint_username', data.username);
+      const data = await api.login({ email: email.trim().toLowerCase(), password });
+      if (data.token) setToken(data.token);
+      if (data.username) {
+        setUsername(data.username);
         navigate(`/${data.username}/dashboard`);
       } else {
         navigate('/login/profile', { state: { email: email.trim().toLowerCase() } });
       }
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

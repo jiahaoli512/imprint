@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
 import ConfirmModal from '../components/ConfirmModal';
-
-const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+import { api } from '../api/client';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SPECIAL_RE = /[~`!@#$%^&*()\-_+=\[\]{}|\\;:"<>,./?]/;
 
@@ -48,20 +47,11 @@ export default function Signup() {
     setLoading(true);
     setRegisterError('');
     try {
-      const res = await fetch(`${apiBase}/api/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setRegisterError(data.error || 'Something went wrong.');
-        setConfirmPassword('');
-      } else {
-        setStep('done');
-      }
-    } catch {
-      setRegisterError('Something went wrong. Please try again.');
+      await api.register({ email, password });
+      setStep('done');
+    } catch (err) {
+      setRegisterError(err.message || 'Something went wrong. Please try again.');
+      setConfirmPassword('');
     } finally {
       setLoading(false);
     }
@@ -77,8 +67,7 @@ export default function Signup() {
     setEmailError('');
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase}/api/waitlist/check?email=${encodeURIComponent(trimmed)}`);
-      const data = await res.json();
+      const data = await api.checkWaitlist(trimmed);
       if (data.status === 'approved') {
         setStep('success');
         setTimeout(() => setStep('password'), 2000);

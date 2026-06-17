@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck, LayoutDashboard, LogOut, Map, UserCircle } from 'lucide-react';
+import { ArrowLeft, Users, Download, Trash2, GripVertical, CheckCircle, Clock, UserCheck, LayoutDashboard, LogOut, Map, UserCircle } from 'lucide-react';
+import AdminLogoutModal from '../components/AdminLogoutModal';
+import { api } from '../api/client';
 export default function Admin() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
@@ -10,25 +12,18 @@ export default function Admin() {
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
-  const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [waitlistSearch, setWaitlistSearch] = useState('');
   const [usersSearch, setUsersSearch] = useState('');
   const [confirmLogout, setConfirmLogout] = useState(false);
 
-  function apiFetch(path, options) {
-    return fetch(`${apiBase}${path}`, options).then((r) => r.json());
-  }
-
   useEffect(() => {
-    fetch(`${apiBase}/api/waitlist`)
-      .then((r) => r.json())
+    api.getWaitlist()
       .then(setEntries)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
-    fetch(`${apiBase}/api/users`)
-      .then((r) => r.json())
+    api.listUsers()
       .then(setRegisteredUsers)
       .catch(() => {});
   }, []);
@@ -51,7 +46,7 @@ export default function Admin() {
   async function handleApprove(id) {
     setApprovingId(id);
     try {
-      await apiFetch(`/api/waitlist/${id}/approve`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' } });
+      await api.approveWaitlistEntry(id);
       setEntries((es) => es.map((e) => e._id === id ? { ...e, approved: true } : e));
     } catch (err) {
       alert(`Failed to approve: ${err.message}`);
@@ -64,7 +59,7 @@ export default function Admin() {
     const prev = entries;
     setEntries((es) => es.filter((e) => e._id !== id));
     try {
-      await apiFetch(`/api/waitlist/${id}`, { method: 'DELETE' });
+      await api.deleteWaitlistEntry(id);
     } catch {
       setEntries(prev);
     }
@@ -77,9 +72,9 @@ export default function Admin() {
     reordered.splice(to, 0, moved);
     setEntries(reordered);
     try {
-      await apiFetch('/api/waitlist/reorder', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: reordered.map((entry) => entry._id) }) });
+      await api.reorderWaitlist(reordered.map((entry) => entry._id));
     } catch {
-      fetch(`${apiBase}/api/waitlist`).then((r) => r.json()).then(setEntries).catch(() => {});
+      api.getWaitlist().then(setEntries).catch(() => {});
     }
   }
 
@@ -345,26 +340,7 @@ export default function Admin() {
         </div>
       </div>
 
-      {confirmLogout && (
-        <div className="modal-overlay" onClick={() => setConfirmLogout(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-icon">
-              <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
-            </div>
-            <h2 className="modal-title">Log out of Admin?</h2>
-            <p className="modal-sub" style={{ marginTop: '16px', color: '#ff6b6b' }}>
-              You will be returned to the home page and your admin session will end.
-            </p>
-            <button
-              className="btn btn-primary modal-submit"
-              onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}
-            >
-              Log out
-            </button>
-            <button className="modal-cancel" onClick={() => setConfirmLogout(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
+      {confirmLogout && <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }

@@ -1,108 +1,42 @@
 const router = require('express').Router();
-const Waitlist = require('../models/Waitlist');
-const User = require('../models/User');
-const { sendApprovalEmail } = require('../utils/email');
+const handle = require('../middleware/handle');
+const { joinWaitlist, listWaitlist, countWaitlist, checkWaitlist, reorderWaitlist, approveEntry, deleteEntry } = require('../services/waitlistService');
 
-async function normalizePositions() {
-  const all = await Waitlist.find({}).sort({ position: 1, createdAt: 1 });
-  await Promise.all(all.map((e, i) => Waitlist.updateOne({ _id: e._id }, { position: i })));
-}
+router.post('/', handle(async (req, res) => {
+  const { email, name } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+  const result = await joinWaitlist(email, name);
+  res.status(201).json({ message: "You're on the list!", ...result });
+}));
 
-// POST /api/waitlist
-router.post('/', async (req, res, next) => {
-  try {
-    const { email, name } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
+router.get('/', handle(async (req, res) => {
+  res.json(await listWaitlist());
+}));
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) return res.status(409).json({ error: 'An account with this email is already registered.' });
+router.get('/count', handle(async (req, res) => {
+  const count = await countWaitlist();
+  res.json({ count });
+}));
 
-    const existing = await Waitlist.findOne({ email: email.toLowerCase() });
-    if (existing) return res.status(409).json({ error: 'This email is already on the waitlist.' });
+router.get('/check', handle(async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+  res.json(await checkWaitlist(email));
+}));
 
-    const count = await Waitlist.countDocuments();
-    await Waitlist.create({ email, name: name || null, position: count });
-    res.status(201).json({ message: "You're on the list!", position: count + 1 });
-  } catch (err) {
-    next(err);
-  }
-});
+router.patch('/reorder', handle(async (req, res) => {
+  await reorderWaitlist(req.body.ids);
+  res.json({ ok: true });
+}));
 
-// GET /api/waitlist
-router.get('/', async (req, res, next) => {
-  try {
-    const entries = await Waitlist.find({}, 'email name createdAt position approved').sort({ position: 1, createdAt: 1 });
-    res.json(entries);
-  } catch (err) {
-    next(err);
-  }
-});
+router.patch('/:id/approve', handle(async (req, res) => {
+  await approveEntry(req.params.id);
+  res.json({ ok: true });
+}));
 
-// GET /api/waitlist/count
-router.get('/count', async (req, res, next) => {
-  try {
-    const count = await Waitlist.countDocuments();
-    res.json({ count });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /api/waitlist/check?email=...
-router.get('/check', async (req, res, next) => {
-  try {
-    const { email } = req.query;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-    const entry = await Waitlist.findOne({ email: email.toLowerCase() });
-    if (!entry) return res.json({ status: 'not_found' });
-    if (!entry.approved) return res.json({ status: 'pending' });
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) return res.json({ status: 'already_registered' });
-    return res.json({ status: 'approved' });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PATCH /api/waitlist/reorder
-router.patch('/reorder', async (req, res, next) => {
-  try {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) return res.status(400).json({ error: 'ids must be an array' });
-    await Promise.all(ids.map((id, i) => Waitlist.updateOne({ _id: id }, { position: i })));
-    res.json({ ok: true });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PATCH /api/waitlist/:id/approve
-router.patch('/:id/approve', async (req, res, next) => {
-  try {
-    const entry = await Waitlist.findByIdAndUpdate(
-      req.params.id,
-      { approved: true },
-      { new: true }
-    );
-    if (!entry) return res.status(404).json({ error: 'Entry not found' });
-    sendApprovalEmail(entry.email, entry.name).catch((err) =>
-      console.error('[email] Failed to send approval email:', err.message)
-    );
-    res.json({ ok: true });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// DELETE /api/waitlist/:id
-router.delete('/:id', async (req, res, next) => {
-  try {
-    await Waitlist.findByIdAndDelete(req.params.id);
-    await normalizePositions();
-    res.json({ ok: true });
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete('/:id', handle(async (req, res) => {
+  await deleteEntry(req.params.id);
+  res.json({ ok: true });
+}));
 
 module.exports = router;
