@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Fingerprint, Check, X, Loader } from 'lucide-react';
 import { api, setUsername as saveUsername } from '../api/client';
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
+const NAME_RE = /^[\p{L}'’-]+$/u;          // first name: letters, hyphens, apostrophes
+const NAME_SPACES_RE = /^[\p{L}'’ -]+$/u;  // last name: also allows spaces
 
 const maxDob = new Date();
 maxDob.setFullYear(maxDob.getFullYear() - 18);
@@ -61,6 +63,11 @@ export default function Profile() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!firstName.trim()) { setError('Please enter your first name.'); return; }
+    if (firstName.trim().length > 50) { setError('First name must be 50 characters or fewer.'); return; }
+    if (/\s/.test(firstName.trim())) { setError('First name cannot contain spaces.'); return; }
+    if (!NAME_RE.test(firstName.trim())) { setError('First name can only contain letters, hyphens, and apostrophes.'); return; }
+    if (lastName.trim().length > 50) { setError('Last name must be 50 characters or fewer.'); return; }
+    if (lastName.trim() && !NAME_SPACES_RE.test(lastName.trim())) { setError('Last name can only contain letters, spaces, hyphens, and apostrophes.'); return; }
     if (!USERNAME_RE.test(username)) { setError('Username must be 3–20 characters: letters, numbers, underscores.'); return; }
     if (usernameStatus === 'taken') { setError('That username is already taken.'); return; }
     if (usernameStatus === 'checking') { setError('Still checking username — please wait a moment.'); return; }
@@ -75,8 +82,8 @@ export default function Profile() {
       const data = await api.setupProfile({ email, firstName, lastName, username, dateOfBirth: dob });
       saveUsername(data.username);
       navigate(`/${data.username}/dashboard`);
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -106,6 +113,7 @@ export default function Profile() {
             className="auth-input"
             placeholder="First name"
             value={firstName}
+            maxLength={50}
             onChange={e => { setFirstName(e.target.value); setError(''); }}
             autoComplete="given-name"
           />
@@ -114,6 +122,7 @@ export default function Profile() {
             className="auth-input"
             placeholder="Last name (optional)"
             value={lastName}
+            maxLength={50}
             onChange={e => { setLastName(e.target.value); setError(''); }}
             autoComplete="family-name"
           />

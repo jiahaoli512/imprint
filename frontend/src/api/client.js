@@ -72,8 +72,9 @@ export const api = {
   waitlistCount: ()      => request('/api/waitlist/count'),
 
   // Admin
-  adminLogin:           (password) => request('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) }),
-  listUsers:            ()         => adminRequest('/api/users'),
+  adminLogin:           (password)       => request('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) }),
+  adminUpdateUser:      (username, body) => adminRequest(`/api/users/by-username/${encodeURIComponent(username)}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  listUsers:            ()               => adminRequest('/api/users'),
   getWaitlist:          ()         => adminRequest('/api/waitlist'),
   deleteWaitlistEntry:  (id)       => adminRequest(`/api/waitlist/${id}`, { method: 'DELETE' }),
   reorderWaitlist:      (ids)      => adminRequest('/api/waitlist/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
