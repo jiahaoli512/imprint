@@ -2,6 +2,7 @@ const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const { sendApprovalEmail } = require('../utils/email');
 const { checkLength } = require('../utils/validate');
+const httpError = require('../utils/httpError');
 
 async function normalizePositions() {
   const all = await Waitlist.find({}).sort({ position: 1, createdAt: 1 });
@@ -13,10 +14,10 @@ async function joinWaitlist(email, name) {
   checkLength('name', name);
 
   const existingUser = await User.findOne({ email: email.toLowerCase() });
-  if (existingUser) throw Object.assign(new Error('An account with this email is already registered.'), { status: 409 });
+  if (existingUser) throw httpError(409, 'An account with this email is already registered.');
 
   const existing = await Waitlist.findOne({ email: email.toLowerCase() });
-  if (existing) throw Object.assign(new Error('This email is already on the waitlist.'), { status: 409 });
+  if (existing) throw httpError(409, 'This email is already on the waitlist.');
 
   const count = await Waitlist.countDocuments();
   await Waitlist.create({ email, name: name || null, position: count });
@@ -41,13 +42,13 @@ async function checkWaitlist(email) {
 }
 
 async function reorderWaitlist(ids) {
-  if (!Array.isArray(ids)) throw Object.assign(new Error('ids must be an array'), { status: 400 });
+  if (!Array.isArray(ids)) throw httpError(400, 'ids must be an array');
   await Promise.all(ids.map((id, i) => Waitlist.updateOne({ _id: id }, { position: i })));
 }
 
 async function approveEntry(id) {
   const entry = await Waitlist.findByIdAndUpdate(id, { approved: true }, { new: true });
-  if (!entry) throw Object.assign(new Error('Entry not found'), { status: 404 });
+  if (!entry) throw httpError(404, 'Entry not found');
   sendApprovalEmail(entry.email, entry.name).catch(err =>
     console.error('[email] Failed to send approval email:', err.message)
   );

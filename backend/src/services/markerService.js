@@ -1,5 +1,6 @@
 const MapMarkers = require('../models/MapMarkers');
 const User = require('../models/User');
+const httpError = require('../utils/httpError');
 
 async function getAdminMarkers() {
   const doc = await MapMarkers.findById('singleton');
@@ -8,7 +9,7 @@ async function getAdminMarkers() {
 
 async function getUserMarkers(username) {
   const user = await User.findOne({ username: username.toLowerCase() });
-  if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
+  if (!user) throw httpError(404, 'User not found');
   const doc = await MapMarkers.findById(user._id.toString());
   return doc ? doc.points : [];
 }

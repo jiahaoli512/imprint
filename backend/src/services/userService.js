@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Waitlist = require('../models/Waitlist');
 const { checkLength, checkNoSpaces, checkNameChars, checkPassword } = require('../utils/validate');
+const httpError = require('../utils/httpError');
 
 function ageFromDob(dob) {
   const today = new Date();
@@ -27,10 +28,10 @@ async function registerUser(email, password) {
   checkPassword(password);
 
   const entry = await Waitlist.findOne({ email: email.toLowerCase() });
-  if (!entry || !entry.approved) throw Object.assign(new Error('Email is not approved'), { status: 403 });
+  if (!entry || !entry.approved) throw httpError(403, 'Email is not approved');
 
   const existing = await User.findOne({ email: email.toLowerCase() });
-  if (existing) throw Object.assign(new Error('An account with this email already exists'), { status: 409 });
+  if (existing) throw httpError(409, 'An account with this email already exists');
 
   const passwordHash = await bcrypt.hash(password, 12);
   await User.create({ email, passwordHash });
@@ -39,13 +40,13 @@ async function registerUser(email, password) {
 
 async function loginUser(email, password) {
   if (typeof email !== 'string' || typeof password !== 'string')
-    throw Object.assign(new Error('Invalid email or password.'), { status: 401 });
+    throw httpError(401, 'Invalid email or password.');
 
   const user = await User.findOne({ email: email.toLowerCase() });
-  if (!user) throw Object.assign(new Error('Invalid email or password.'), { status: 401 });
+  if (!user) throw httpError(401, 'Invalid email or password.');
 
   const match = await bcrypt.compare(password, user.passwordHash);
-  if (!match) throw Object.assign(new Error('Invalid email or password.'), { status: 401 });
+  if (!match) throw httpError(401, 'Invalid email or password.');
 
   return { token: signToken(user), username: user.username || null };
 }
@@ -65,12 +66,12 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
 
   const year = new Date(dateOfBirth).getFullYear();
   if (year < 1000 || year > 9999)
-    throw Object.assign(new Error('Please enter a valid 4-digit birth year.'), { status: 400 });
+    throw httpError(400, 'Please enter a valid 4-digit birth year.');
   if (ageFromDob(dateOfBirth) < 18)
-    throw Object.assign(new Error('You must be at least 18 years old.'), { status: 400 });
+    throw httpError(400, 'You must be at least 18 years old.');
 
   const taken = await User.findOne({ username: username.trim().toLowerCase(), email: { $ne: email.toLowerCase() } });
-  if (taken) throw Object.assign(new Error('That username is already taken.'), { status: 409 });
+  if (taken) throw httpError(409, 'That username is already taken.');
 
   await User.findOneAndUpdate(
     { email: email.toLowerCase() },
@@ -92,7 +93,7 @@ async function searchUsers(q) {
 
 async function getUserByUsername(username) {
   const user = await User.findOne({ username: username.toLowerCase() }, 'username firstName lastName dateOfBirth createdAt');
-  if (!user) throw Object.assign(new Error('User not found.'), { status: 404 });
+  if (!user) throw httpError(404, 'User not found.');
   return user;
 }
 
@@ -108,7 +109,7 @@ async function updateUserByUsername(username, { firstName, lastName }) {
     { firstName: firstName?.trim() || '', lastName: lastName?.trim() || '' },
     { new: true, select: 'username firstName lastName dateOfBirth createdAt' }
   );
-  if (!user) throw Object.assign(new Error('User not found.'), { status: 404 });
+  if (!user) throw httpError(404, 'User not found.');
   return user;
 }
 
