@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Waitlist = require('../models/Waitlist');
+const { checkLength } = require('../utils/validate');
 
 function ageFromDob(dob) {
   const today = new Date();
@@ -21,6 +22,9 @@ function signToken(user) {
 }
 
 async function registerUser(email, password) {
+  checkLength('email', email);
+  checkLength('password', password);
+
   const entry = await Waitlist.findOne({ email: email.toLowerCase() });
   if (!entry || !entry.approved) throw Object.assign(new Error('Email is not approved'), { status: 403 });
 
@@ -48,6 +52,10 @@ async function checkUsername(username) {
 }
 
 async function setupProfile(email, { firstName, lastName, username, dateOfBirth }) {
+  checkLength('firstName', firstName);
+  checkLength('lastName', lastName);
+  checkLength('username', username);
+
   const year = new Date(dateOfBirth).getFullYear();
   if (year < 1000 || year > 9999)
     throw Object.assign(new Error('Please enter a valid 4-digit birth year.'), { status: 400 });
@@ -82,6 +90,9 @@ async function getUserByUsername(username) {
 }
 
 async function updateUserByUsername(username, { firstName, lastName }) {
+  checkLength('firstName', firstName);
+  checkLength('lastName', lastName);
+
   const user = await User.findOneAndUpdate(
     { username: username.toLowerCase() },
     { firstName: firstName?.trim() || '', lastName: lastName?.trim() || '' },

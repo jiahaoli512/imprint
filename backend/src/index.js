@@ -23,22 +23,29 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .filter(Boolean);
 
 const defaultOrigins = [
-  'http://localhost:5173',
-  'http://localhost:4173',
   'capacitor://localhost', // iOS native (Capacitor)
   'ionic://localhost',
 ];
 
 const originAllowlist = new Set([...defaultOrigins, ...allowedOrigins]);
 
+function isAllowedOrigin(origin) {
+  if (originAllowlist.has(origin)) return true;
+  let hostname;
+  try { hostname = new URL(origin).hostname; } catch { return false; }
+  // Any localhost / loopback port (Vite may pick 5173, 5174, 5180, … in dev)
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') return true;
+  // Vercel preview + production deployments
+  if (/\.vercel\.app$/.test(hostname)) return true;
+  return false;
+}
+
 app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
     // Allow requests with no origin (native apps, curl, server-to-server)
     if (!origin) return callback(null, true);
-    if (originAllowlist.has(origin) || /\.vercel\.app$/.test(new URL(origin).hostname)) {
-      return callback(null, true);
-    }
+    if (isAllowedOrigin(origin)) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
   },
 }));
