@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Users, Download, Trash2, GripVertical, CheckCircle, Clock } from 'lucide-react';
 import { useDragReorder } from './useDragReorder';
+import { formatDate } from '../../utils/formatDate';
 
 export default function WaitlistTable({ entries, loading, error, approvingId, onApprove, onDelete, onReorder, onExport }) {
   const [search, setSearch] = useState('');
@@ -70,9 +71,7 @@ export default function WaitlistTable({ entries, loading, error, approvingId, on
                   <td className="muted col-num col-hide-mobile">{i + 1}</td>
                   <td>{e.email}</td>
                   <td className="muted col-hide-mobile">{e.name || '—'}</td>
-                  <td className="muted col-hide-mobile">
-                    {new Date(e.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
+                  <td className="muted col-hide-mobile">{formatDate(e.createdAt)}</td>
                   <td className="col-status">
                     {e.approved
                       ? <span className="status-badge approved"><CheckCircle size={11} /> Approved</span>

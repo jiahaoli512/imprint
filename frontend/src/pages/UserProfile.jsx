@@ -4,6 +4,7 @@ import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from
 import AdminLogoutModal from '../components/AdminLogoutModal';
 import Spinner from '../components/Spinner';
 import { api, getUsername } from '../api/client';
+import { formatDate } from '../utils/formatDate';
 
 const NAME_RE = /^[\p{L}'’-]+$/u;          // first name: letters, hyphens, apostrophes
 const NAME_SPACES_RE = /^[\p{L}'’ -]+$/u;  // last name: also allows spaces
@@ -90,7 +91,7 @@ export default function UserProfile() {
 
   if (!user) return null;
 
-  const joined = new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const joined = formatDate(user.createdAt, { long: true });
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
 
   return (
@@ -161,7 +162,7 @@ export default function UserProfile() {
                   </label>
                   <input
                     className="auth-input"
-                    value={new Date(user.dateOfBirth).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    value={formatDate(user.dateOfBirth, { long: true })}
                     disabled
                     readOnly
                     style={{ opacity: 0.55, cursor: 'not-allowed' }}
