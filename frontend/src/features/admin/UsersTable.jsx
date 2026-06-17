@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, Map, UserCircle } from 'lucide-react';
-
-const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+import { formatDate } from '../../utils/formatDate';
 
 export default function UsersTable({ users }) {
   const navigate = useNavigate();
@@ -58,8 +57,8 @@ export default function UsersTable({ users }) {
                     <td className="muted col-hide-mobile">
                       {[u.firstName, u.lastName].filter(Boolean).join(' ') || '—'}
                     </td>
-                    <td className="muted col-hide-mobile">{u.dateOfBirth ? fmtDate(u.dateOfBirth) : '—'}</td>
-                    <td className="muted col-hide-mobile">{fmtDate(u.createdAt)}</td>
+                    <td className="muted col-hide-mobile">{u.dateOfBirth ? formatDate(u.dateOfBirth) : '—'}</td>
+                    <td className="muted col-hide-mobile">{formatDate(u.createdAt)}</td>
                     <td className="col-actions">
                       {u.username ? (
                         <div className="actions-wrap">
