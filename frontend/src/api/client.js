@@ -73,6 +73,7 @@ export const api = {
 
   // Admin
   adminLogin:           (password)       => request('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) }),
+  adminGetUser:         (username)       => adminRequest(`/api/users/by-username/${encodeURIComponent(username)}`),
   adminUpdateUser:      (username, body) => adminRequest(`/api/users/by-username/${encodeURIComponent(username)}`, { method: 'PATCH', body: JSON.stringify(body) }),
   listUsers:            ()               => adminRequest('/api/users'),
   getWaitlist:          ()         => adminRequest('/api/waitlist'),
