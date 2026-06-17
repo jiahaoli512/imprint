@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Fingerprint, ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from 'lucide-react';
-
-const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from 'lucide-react';
+import AdminLogoutModal from '../components/AdminLogoutModal';
+import Spinner from '../components/Spinner';
+import { api, getUsername } from '../api/client';
 
 export default function UserProfile() {
   const { username } = useParams();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isAdminView = pathname.startsWith('/admin/');
-  const isMe = isAdminView || username === localStorage.getItem('imprint_username');
+  const isMe = isAdminView || username === getUsername();
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,13 +22,11 @@ export default function UserProfile() {
   const [editError, setEditError] = useState('');
 
   useEffect(() => {
-    fetch(`${apiBase}/api/users/by-username/${encodeURIComponent(username)}`)
-      .then(res => {
-        if (res.status === 404) { navigate('/user-not-found', { replace: true }); return null; }
-        return res.json();
+    api.getUser(username)
+      .then(data => setUser(data))
+      .catch(err => {
+        if (err.status === 404) navigate('/user-not-found', { replace: true });
       })
-      .then(data => { if (data) setUser(data); })
-      .catch(() => navigate('/user-not-found', { replace: true }))
       .finally(() => setLoading(false));
   }, [username]);
 
@@ -51,29 +50,17 @@ export default function UserProfile() {
     setSaving(true);
     setEditError('');
     try {
-      const res = await fetch(`${apiBase}/api/users/by-username/${encodeURIComponent(username)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName: editFirst, lastName: editLast }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setEditError(data.error || 'Something went wrong.'); return; }
+      const data = await api.updateUser(username, { firstName: editFirst, lastName: editLast });
       setUser(data);
       setEditing(false);
-    } catch {
-      setEditError('Something went wrong. Please try again.');
+    } catch (err) {
+      setEditError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return (
-    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-      <div className="logo-icon" style={{ width: '48px', height: '48px', opacity: 0.5 }}>
-        <Fingerprint size={26} strokeWidth={2} color="#080c14" />
-      </div>
-    </div>
-  );
+  if (loading) return <Spinner />;
 
   if (!user) return null;
 
@@ -81,14 +68,14 @@ export default function UserProfile() {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" style={isAdminView ? { paddingTop: 'calc(80px + env(safe-area-inset-top))' } : {}}>
       {isAdminView && (
         <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top))', right: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
           <span className="admin-badge">Admin</span>
           <span style={{ fontSize: '11px', color: 'var(--muted)' }}>viewing @{username}</span>
         </div>
       )}
-      <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top))', left: '20px', display: 'flex', gap: '8px' }}>
+      <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top))', left: '20px', display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: 'calc(100vw - 100px)' }}>
         <button
           className="btn btn-ghost"
           onClick={() => {
@@ -97,7 +84,7 @@ export default function UserProfile() {
             else navigate(-1);
           }}
         >
-          <ArrowLeft size={16} /> {isAdminView ? `@${username}'s dashboard` : isMe ? 'Dashboard' : 'Back'}
+          <ArrowLeft size={16} /> <span className="btn-label">{isAdminView ? `@${username}'s dashboard` : isMe ? 'Dashboard' : 'Back'}</span>
         </button>
         {isAdminView && (
           <>
@@ -177,23 +164,7 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
-      {confirmLogout && (
-        <div className="modal-overlay" onClick={() => setConfirmLogout(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-icon">
-              <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
-            </div>
-            <h2 className="modal-title">Log out of Admin?</h2>
-            <p className="modal-sub" style={{ marginTop: '16px', color: '#ff6b6b' }}>
-              You will be returned to the home page and your admin session will end.
-            </p>
-            <button className="btn btn-primary modal-submit" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
-              Log out
-            </button>
-            <button className="modal-cancel" onClick={() => setConfirmLogout(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
+      {confirmLogout && <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }

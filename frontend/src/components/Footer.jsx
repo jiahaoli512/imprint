@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { getUsername, clearSession } from '../api/client';
+
+const isNative = Capacitor.isNativePlatform();
 
 export default function Footer() {
   const navigate = useNavigate();
@@ -22,7 +26,7 @@ export default function Footer() {
   function handleSubmit(e) {
     e.preventDefault();
     if (password === 'imprint') {
-      if (localStorage.getItem('imprint_username')) {
+      if (getUsername()) {
         setConfirmLogout(true);
       } else {
         enterAdmin();
@@ -36,7 +40,7 @@ export default function Footer() {
 
   function enterAdmin() {
     sessionStorage.setItem('admin_auth', '1');
-    localStorage.removeItem('imprint_username');
+    clearSession();
     setModalOpen(false);
     navigate('/admin/waitlist');
   }
@@ -60,7 +64,7 @@ export default function Footer() {
           <li><a href="#">Privacy</a></li>
           <li><a href="#">Terms</a></li>
           <li><a href="#">Contact</a></li>
-          <li><button className="footer-admin-btn" onClick={() => setModalOpen(true)}>Admin</button></li>
+          {!isNative && <li><button className="footer-admin-btn" onClick={() => setModalOpen(true)}>Admin</button></li>}
         </ul>
       </footer>
 

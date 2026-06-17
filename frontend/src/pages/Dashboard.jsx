@@ -1,162 +1,51 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
-import { Fingerprint, User, List, LayoutDashboard, LogOut, Eye, Pencil, Trash2 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
+import { User, List, LayoutDashboard, LogOut, Eye, Pencil, Trash2, LocateFixed } from 'lucide-react';
 import L from 'leaflet';
+import { Capacitor } from '@capacitor/core';
 import ConfirmModal from '../components/ConfirmModal';
+import AdminLogoutModal from '../components/AdminLogoutModal';
+import Spinner from '../components/Spinner';
+import { pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector } from '../features/map/mapUtils';
+import { api, clearSession } from '../api/client';
 
-const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+const isNative = Capacitor.isNativePlatform();
 
-async function loadMarkers() {
-  try {
-    const res = await fetch(`${apiBase}/api/markers`);
-    return await res.json();
-  } catch { return []; }
+async function loadMarkers(username) {
+  try { return await api.getMarkers(username); }
+  catch { return []; }
 }
 
 async function saveMarkers(points) {
-  await fetch(`${apiBase}/api/markers`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ points }),
-  });
+  try { await api.saveMarkers(points); }
+  catch { /* silently fail — user will see stale state */ }
 }
 
-const CONTINENT = {
-  AF:'Asia',AM:'Asia',AZ:'Asia',BH:'Asia',BD:'Asia',BT:'Asia',BN:'Asia',KH:'Asia',CN:'Asia',
-  CY:'Asia',GE:'Asia',IN:'Asia',ID:'Asia',IR:'Asia',IQ:'Asia',IL:'Asia',JP:'Asia',JO:'Asia',
-  KZ:'Asia',KW:'Asia',KG:'Asia',LA:'Asia',LB:'Asia',MY:'Asia',MV:'Asia',MN:'Asia',MM:'Asia',
-  NP:'Asia',KP:'Asia',OM:'Asia',PK:'Asia',PS:'Asia',PH:'Asia',QA:'Asia',SA:'Asia',SG:'Asia',
-  KR:'Asia',LK:'Asia',SY:'Asia',TW:'Asia',TJ:'Asia',TH:'Asia',TL:'Asia',TR:'Asia',TM:'Asia',
-  AE:'Asia',UZ:'Asia',VN:'Asia',YE:'Asia',
-  AL:'Europe',AD:'Europe',AT:'Europe',BY:'Europe',BE:'Europe',BA:'Europe',BG:'Europe',
-  HR:'Europe',CZ:'Europe',DK:'Europe',EE:'Europe',FI:'Europe',FR:'Europe',DE:'Europe',
-  GR:'Europe',HU:'Europe',IS:'Europe',IE:'Europe',IT:'Europe',XK:'Europe',LV:'Europe',
-  LI:'Europe',LT:'Europe',LU:'Europe',MT:'Europe',MD:'Europe',MC:'Europe',ME:'Europe',
-  NL:'Europe',MK:'Europe',NO:'Europe',PL:'Europe',PT:'Europe',RO:'Europe',RU:'Europe',
-  SM:'Europe',RS:'Europe',SK:'Europe',SI:'Europe',ES:'Europe',SE:'Europe',CH:'Europe',
-  UA:'Europe',GB:'Europe',VA:'Europe',AX:'Europe',FO:'Europe',GI:'Europe',IM:'Europe',
-  DZ:'Africa',AO:'Africa',BJ:'Africa',BW:'Africa',BF:'Africa',BI:'Africa',CV:'Africa',
-  CM:'Africa',CF:'Africa',TD:'Africa',KM:'Africa',CG:'Africa',CD:'Africa',CI:'Africa',
-  DJ:'Africa',EG:'Africa',GQ:'Africa',ER:'Africa',SZ:'Africa',ET:'Africa',GA:'Africa',
-  GM:'Africa',GH:'Africa',GN:'Africa',GW:'Africa',KE:'Africa',LS:'Africa',LR:'Africa',
-  LY:'Africa',MG:'Africa',MW:'Africa',ML:'Africa',MR:'Africa',MU:'Africa',MA:'Africa',
-  MZ:'Africa',NA:'Africa',NE:'Africa',NG:'Africa',RW:'Africa',ST:'Africa',SN:'Africa',
-  SL:'Africa',SO:'Africa',ZA:'Africa',SS:'Africa',SD:'Africa',TZ:'Africa',TG:'Africa',
-  TN:'Africa',UG:'Africa',ZM:'Africa',ZW:'Africa',EH:'Africa',
-  AG:'North America',BS:'North America',BB:'North America',BZ:'North America',
-  CA:'North America',CR:'North America',CU:'North America',DM:'North America',
-  DO:'North America',SV:'North America',GD:'North America',GT:'North America',
-  HT:'North America',HN:'North America',JM:'North America',MX:'North America',
-  NI:'North America',PA:'North America',KN:'North America',LC:'North America',
-  VC:'North America',TT:'North America',US:'North America',PR:'North America',
-  GL:'North America',BM:'North America',KY:'North America',
-  AR:'South America',BO:'South America',BR:'South America',CL:'South America',
-  CO:'South America',EC:'South America',GY:'South America',PY:'South America',
-  PE:'South America',SR:'South America',UY:'South America',VE:'South America',
-  GF:'South America',FK:'South America',
-  AU:'Oceania',FJ:'Oceania',KI:'Oceania',MH:'Oceania',FM:'Oceania',NR:'Oceania',
-  NZ:'Oceania',PW:'Oceania',PG:'Oceania',WS:'Oceania',SB:'Oceania',TO:'Oceania',
-  TV:'Oceania',VU:'Oceania',CK:'Oceania',PF:'Oceania',NC:'Oceania',GU:'Oceania',
-  AS:'Oceania',MP:'Oceania',NF:'Oceania',
-  AQ:'Antarctica',
-};
-
-function getLevel(zoom) {
-  if (zoom <= 2)  return 'earth';
-  if (zoom <= 4)  return 'continent';
-  if (zoom <= 6)  return 'country';
-  if (zoom <= 9)  return 'state';
-  if (zoom <= 12) return 'county';
-  return 'city';
-}
-
-function pickName(addr, level) {
-  if (level === 'earth')     return 'Earth';
-  if (level === 'continent') return CONTINENT[addr.country_code?.toUpperCase()] || addr.country || '';
-  if (level === 'country')   return addr.country || '';
-  if (level === 'state')     return addr.state || addr.country || '';
-  if (level === 'county')    return addr.county || addr.municipality || addr.state || '';
-  return addr.city || addr.town || addr.village || addr.hamlet || addr.county || '';
-}
-
-const pinIcon = L.divIcon({
+const locationIcon = L.divIcon({
   className: '',
-  html: `<div style="width:10px;height:10px;background:#4fffb0;border:2px solid #080c14;border-radius:50%;box-shadow:0 0 8px rgba(79,255,176,0.7)"></div>`,
-  iconSize: [10, 10],
-  iconAnchor: [5, 5],
+  html: `<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(74,158,255,0.25),0 0 12px rgba(74,158,255,0.6)"></div>`,
+  iconSize: [14, 14],
+  iconAnchor: [7, 7],
 });
 
-const pinIconEdit = L.divIcon({
-  className: '',
-  html: `<div style="width:10px;height:10px;background:#ff6b6b;border:2px solid #080c14;border-radius:50%;box-shadow:0 0 8px rgba(255,107,107,0.7);cursor:pointer"></div>`,
-  iconSize: [10, 10],
-  iconAnchor: [5, 5],
-});
-
-function MapClickHandler({ editing, onAdd }) {
-  useMapEvents({
-    click(e) { if (editing) onAdd([e.latlng.lat, e.latlng.lng]); },
-  });
-  return null;
-}
-
-function InvalidateOnMount() {
+function FlyToLocation({ position }) {
   const map = useMap();
-  useEffect(() => { setTimeout(() => map.invalidateSize(), 100); }, [map]);
-  return null;
-}
-
-async function reverseGeocode(lat, lng) {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&addressdetails=1`
-  );
-  const data = await res.json();
-  if (data.error) return null;
-  return data.address || null;
-}
-
-function RegionDetector({ onRegion }) {
-  const map = useMap();
-
   useEffect(() => {
-    let timer;
-
-    async function detect() {
-      const zoom = map.getZoom();
-      const level = getLevel(zoom);
-
-      if (level === 'earth') { onRegion('Earth'); return; }
-
-      const { lat, lng } = map.getCenter();
-      const addr = await reverseGeocode(lat, lng);
-      if (!addr) { onRegion(''); return; }
-
-      let name = pickName(addr, level);
-
-      if (level === 'city' && !name) {
-        const fa = await reverseGeocode(lat, lng);
-        const city = fa?.city || fa?.town || fa?.village || fa?.hamlet;
-        name = city ? `Near ${city}` : (fa?.county || '');
-      }
-
-      onRegion(name);
-    }
-
-    const debounced = () => { clearTimeout(timer); timer = setTimeout(detect, 700); };
-
-    map.on('moveend', debounced);
-    map.on('zoomend', debounced);
-    detect();
-
-    return () => {
-      map.off('moveend', debounced);
-      map.off('zoomend', debounced);
-      clearTimeout(timer);
-    };
-  }, [map, onRegion]);
-
+    if (position) map.flyTo(position, Math.max(map.getZoom(), 10), { duration: 1.2 });
+  }, [position]);
   return null;
+}
+
+function getLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) { reject(new Error('Geolocation not supported.')); return; }
+    navigator.geolocation.getCurrentPosition(
+      p => resolve([p.coords.latitude, p.coords.longitude]),
+      e => reject(new Error(e.code === 1 ? 'Location permission denied.' : 'Could not get location.')),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
 }
 
 export default function Dashboard() {
@@ -175,8 +64,24 @@ export default function Dashboard() {
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
   const searchRef = useRef(null);
   const timerRef = useRef(null);
+
+  async function handleLocate() {
+    setLocating(true);
+    setLocationError('');
+    try {
+      const pos = await getLocation();
+      setUserLocation(pos);
+    } catch (e) {
+      setLocationError(e.message || 'Could not get location.');
+    } finally {
+      setLocating(false);
+    }
+  }
 
   const editing = isAdminView && mode === 'edit';
   const displayMarkers = isAdminView ? (editing ? draft : saved) : markers;
@@ -204,8 +109,7 @@ export default function Dashboard() {
     if (!q) { setResults([]); setShowResults(false); return; }
     timerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`${apiBase}/api/users/search?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
+        const data = await api.searchUsers(q);
         setResults(data);
         setShowResults(true);
       } catch { setResults([]); }
@@ -229,10 +133,9 @@ export default function Dashboard() {
     if (e.key === 'Escape') { setShowResults(false); }
   }
 
-  useEffect(() => { loadMarkers().then(data => { setMarkers(data); setSaved(data); }); }, []);
+  useEffect(() => { loadMarkers(username).then(data => { setMarkers(data); setSaved(data); }); }, [username]);
   useEffect(() => {
-    fetch(`${apiBase}/api/users/by-username/${encodeURIComponent(username)}`)
-      .then(r => r.json())
+    api.getUser(username)
       .then(d => { if (d.firstName) setFirstName(d.firstName); })
       .catch(() => {});
   }, [username]);
@@ -258,7 +161,35 @@ export default function Dashboard() {
             </>
           )}
         </div>
-        <div ref={searchRef} style={{ position: 'absolute', left: '47.5%', transform: 'translateX(-50%)' }}>
+        <div className="admin-header-right">
+          {isAdminView ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+              <span className="admin-badge">Admin</span>
+              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>viewing @{username}</span>
+            </div>
+          ) : (
+            <span style={{ fontSize: '13px', color: 'var(--muted)' }}>@{username}</span>
+          )}
+          <button className="btn btn-ghost" onClick={() => navigate(isAdminView ? `/admin/${username}/profile` : `/${username}/profile`)}>
+            <User size={15} /> <span className="btn-label">{isAdminView ? `@${username}'s profile` : 'Profile'}</span>
+          </button>
+          {isAdminView
+            ? <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
+                <LogOut size={15} /> <span className="btn-label">Log out of Admin</span>
+              </button>
+            : <button className="btn btn-ghost" onClick={() => {
+                clearSession();
+                navigate('/home');
+              }}>
+                Log out
+              </button>
+          }
+        </div>
+      </div>
+
+      <div className="dashboard-content">
+        <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
+        <div ref={searchRef} style={{ position: 'relative' }}>
           <input
             value={search}
             onChange={handleSearchChange}
@@ -266,15 +197,15 @@ export default function Dashboard() {
             onFocus={() => results.length > 0 && setShowResults(true)}
             placeholder="Search users…"
             style={{
+              width: '100%',
               background: 'var(--surface2)',
               border: '1px solid var(--border)',
-              borderRadius: '100px',
-              padding: '7px 14px',
-              fontSize: '13px',
+              borderRadius: '12px',
+              padding: '10px 16px',
+              fontSize: '14px',
               color: 'var(--text)',
               fontFamily: 'inherit',
               outline: 'none',
-              width: '180px',
             }}
           />
           {showResults && results.length > 0 && (
@@ -316,35 +247,9 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-
-        <div className="admin-header-right">
-          {isAdminView ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-              <span className="admin-badge">Admin</span>
-              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>viewing @{username}</span>
-            </div>
-          ) : (
-            <span style={{ fontSize: '13px', color: 'var(--muted)' }}>@{username}</span>
-          )}
-          <button className="btn btn-ghost" onClick={() => navigate(isAdminView ? `/admin/${username}/profile` : `/${username}/profile`)}>
-            <User size={15} /> <span className="btn-label">{isAdminView ? `@${username}'s profile` : 'Profile'}</span>
-          </button>
-          {isAdminView
-            ? <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
-                <LogOut size={15} /> <span className="btn-label">Log out of Admin</span>
-              </button>
-            : <button className="btn btn-ghost" onClick={() => {
-                localStorage.removeItem('imprint_username');
-                navigate('/home');
-              }}>
-                Log out
-              </button>
-          }
-        </div>
-      </div>
-
-      <div className="dashboard-content">
-        <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
+        {locationError && (
+          <p style={{ fontSize: '12px', color: '#ff6b6b', marginTop: '-8px' }}>{locationError}</p>
+        )}
         {firstName && (
           <p style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>
             Welcome, {firstName}!{isAdminView && <span style={{ fontSize: '18px', fontWeight: '600', color: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
@@ -374,6 +279,17 @@ export default function Dashboard() {
                   <Trash2 size={13} /> Clear all
                 </button>
               )}
+              {isNative && (
+                <button
+                  className="btn btn-ghost dashboard-save-btn"
+                  onClick={handleLocate}
+                  disabled={locating}
+                  title="Show my location"
+                  style={userLocation ? { color: '#4a9eff' } : {}}
+                >
+                  <LocateFixed size={13} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -392,6 +308,17 @@ export default function Dashboard() {
               />
               <MapClickHandler editing={editing} onAdd={pos => setDraft(d => [...d, pos])} />
               <RegionDetector onRegion={setRegion} />
+              {userLocation && <FlyToLocation position={userLocation} />}
+              {userLocation && (
+                <>
+                  <Circle
+                    center={userLocation}
+                    radius={200}
+                    pathOptions={{ color: '#4a9eff', fillColor: '#4a9eff', fillOpacity: 0.12, weight: 1, opacity: 0.4 }}
+                  />
+                  <Marker position={userLocation} icon={locationIcon} />
+                </>
+              )}
               {displayMarkers.map((pos, i) => (
                 <React.Fragment key={i}>
                   <Circle
@@ -436,23 +363,7 @@ export default function Dashboard() {
         />
       )}
 
-      {confirmLogout && (
-        <div className="modal-overlay" onClick={() => setConfirmLogout(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-icon">
-              <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
-            </div>
-            <h2 className="modal-title">Log out of Admin?</h2>
-            <p className="modal-sub" style={{ marginTop: '16px', color: '#ff6b6b' }}>
-              You will be returned to the home page and your admin session will end.
-            </p>
-            <button className="btn btn-primary modal-submit" onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/home'); }}>
-              Log out
-            </button>
-            <button className="modal-cancel" onClick={() => setConfirmLogout(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
+      {confirmLogout && <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }

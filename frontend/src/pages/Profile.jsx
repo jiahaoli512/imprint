@@ -1,8 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Fingerprint, Check, X, Loader } from 'lucide-react';
-
-const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+import { api, setUsername as saveUsername } from '../api/client';
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
 const maxDob = new Date();
@@ -40,8 +39,7 @@ export default function Profile() {
     setUsernameStatus('checking');
     timerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`${apiBase}/api/users/check-username?username=${encodeURIComponent(clean)}`);
-        const data = await res.json();
+        const data = await api.checkUsername(clean);
         setUsernameStatus(data.available ? 'available' : 'taken');
       } catch {
         setUsernameStatus('idle');
@@ -49,6 +47,7 @@ export default function Profile() {
     }, 500);
   }
 
+  // mirrors ageFromDob() in userService.js — keep in sync if the threshold changes
   function ageOk(dobStr) {
     if (!dobStr) return false;
     const today = new Date();
@@ -71,18 +70,9 @@ export default function Profile() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${apiBase}/api/users/profile`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, firstName, lastName, username, dateOfBirth: dob }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Something went wrong.');
-      } else {
-        localStorage.setItem('imprint_username', data.username);
-        navigate(`/${data.username}/dashboard`);
-      }
+      const data = await api.setupProfile({ email, firstName, lastName, username, dateOfBirth: dob });
+      saveUsername(data.username);
+      navigate(`/${data.username}/dashboard`);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
