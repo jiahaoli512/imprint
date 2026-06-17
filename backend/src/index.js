@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./db');
 
+const adminRoutes = require('./routes/admin');
 const waitlistRoutes = require('./routes/waitlist');
 const userRoutes = require('./routes/users');
 const markerRoutes = require('./routes/markers');
@@ -15,6 +16,7 @@ app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+app.use('/api/admin', adminRoutes);
 app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/markers', markerRoutes);

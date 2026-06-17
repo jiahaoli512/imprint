@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
+const requireAdminAuth = require('../middleware/adminAuth');
 const { registerUser, loginUser, checkUsername, setupProfile, searchUsers, getUserByUsername, updateUserByUsername, listUsers } = require('../services/userService');
 
 router.post('/', handle(async (req, res) => {
@@ -23,12 +24,11 @@ router.get('/check-username', handle(async (req, res) => {
   res.json(await checkUsername(username));
 }));
 
-router.patch('/profile', handle(async (req, res) => {
-  const { email, firstName, lastName, username, dateOfBirth } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email is required.' });
+router.patch('/profile', requireAuth, handle(async (req, res) => {
+  const { firstName, lastName, username, dateOfBirth } = req.body;
   if (!username) return res.status(400).json({ error: 'Username is required.' });
   if (!dateOfBirth) return res.status(400).json({ error: 'Date of birth is required.' });
-  res.json(await setupProfile(email, { firstName, lastName, username, dateOfBirth }));
+  res.json(await setupProfile(req.user.email, { firstName, lastName, username, dateOfBirth }));
 }));
 
 router.get('/search', handle(async (req, res) => {
@@ -47,7 +47,7 @@ router.patch('/by-username/:username', requireAuth, handle(async (req, res) => {
   res.json(await updateUserByUsername(req.params.username, { firstName, lastName }));
 }));
 
-router.get('/', handle(async (req, res) => {
+router.get('/', requireAdminAuth, handle(async (req, res) => {
   res.json(await listUsers());
 }));
 

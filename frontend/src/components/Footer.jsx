@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
-import { getUsername, clearSession } from '../api/client';
+import { getUsername, clearSession, setAdminToken } from '../api/client';
+import { api } from '../api/client';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -23,15 +24,18 @@ export default function Footer() {
     }
   }, [modalOpen]);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (password === 'imprint') {
+    try {
+      const data = await api.adminLogin(password);
+      setAdminToken(data.token);
+      sessionStorage.setItem('admin_auth', '1');
       if (getUsername()) {
         setConfirmLogout(true);
       } else {
         enterAdmin();
       }
-    } else {
+    } catch {
       setError('Incorrect password.');
       setPassword('');
       inputRef.current?.focus();
@@ -39,7 +43,6 @@ export default function Footer() {
   }
 
   function enterAdmin() {
-    sessionStorage.setItem('admin_auth', '1');
     clearSession();
     setModalOpen(false);
     navigate('/admin/waitlist');

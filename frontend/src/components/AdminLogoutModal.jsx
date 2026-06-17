@@ -1,11 +1,12 @@
 import { Fingerprint } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { clearAdminSession } from '../api/client';
 
 export default function AdminLogoutModal({ onCancel }) {
   const navigate = useNavigate();
 
   function handleLogout() {
-    sessionStorage.removeItem('admin_auth');
+    clearAdminSession();
     navigate('/home');
   }
 
