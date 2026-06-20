@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { Fingerprint, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import LogoMark from './LogoMark';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -12,9 +13,7 @@ export default function Nav() {
   return (
     <nav className={`nav${open ? ' nav-open' : ''}`}>
       <div className="logo">
-        <div className="logo-icon">
-          <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
-        </div>
+        <LogoMark />
         Imprint
       </div>
       <ul className="nav-links">

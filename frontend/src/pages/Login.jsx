@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import AuthShell from '../components/AuthShell';
 import { api, setUsername, setToken } from '../api/client';
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail } from '../utils/validateName';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!EMAIL_RE.test(email.trim())) {
+    if (!isValidEmail(email)) {
       setError('Enter a valid email address.');
       return;
     }
@@ -37,19 +38,7 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-page">
-      <button className="auth-back" onClick={() => navigate('/home')}>
-        <ArrowLeft size={16} /> Back
-      </button>
-
-      <div className="auth-card">
-        <div className="logo" style={{ justifyContent: 'center', marginBottom: '24px' }}>
-          <div className="logo-icon" style={{ width: '40px', height: '40px' }}>
-            <Fingerprint size={22} strokeWidth={2} color="#0b0e13" />
-          </div>
-          Imprint
-        </div>
-
+    <AuthShell onBack={() => navigate('/home')}>
           <>
             <h1 className="auth-title">Welcome back</h1>
             <p className="auth-sub">Log in to your Imprint account.</p>
@@ -89,7 +78,6 @@ export default function Login() {
               <button className="auth-link-btn" onClick={() => navigate('/signup')}>Sign up</button>
             </p>
           </>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

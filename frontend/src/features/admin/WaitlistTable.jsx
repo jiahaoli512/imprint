@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { Users, Download, Trash2, GripVertical, CheckCircle, Clock } from 'lucide-react';
 import { useDragReorder } from './useDragReorder';
 import { formatDate } from '../../utils/formatDate';
+import { matchesQuery } from '../../utils/matchesQuery';
 
 export default function WaitlistTable({ entries, loading, error, approvingId, onApprove, onDelete, onReorder, onExport }) {
   const [search, setSearch] = useState('');
   const { getRowProps } = useDragReorder(onReorder);
 
   const approvedCount = entries.filter((e) => e.approved).length;
-  const filtered = entries.filter((e) => {
-    const q = search.toLowerCase();
-    return !q || e.email.toLowerCase().includes(q) || (e.name || '').toLowerCase().includes(q);
-  });
+  const filtered = entries.filter((e) => matchesQuery(search, e.email, e.name));
 
   return (
     <>

@@ -5,16 +5,12 @@ const { joinWaitlist, listWaitlist, countWaitlist, checkWaitlist, reorderWaitlis
 
 // Public routes
 router.post('/',      handle(async (req, res) => {
-  const { email, name } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email is required' });
-  const result = await joinWaitlist(email, name);
+  const result = await joinWaitlist(req.body.email, req.body.name);
   res.status(201).json({ message: "You're on the list!", ...result });
 }));
 router.get('/count',  handle(async (req, res) => { res.json({ count: await countWaitlist() }); }));
 router.get('/check',  handle(async (req, res) => {
-  const { email } = req.query;
-  if (!email) return res.status(400).json({ error: 'Email is required' });
-  res.json(await checkWaitlist(email));
+  res.json(await checkWaitlist(req.query.email));
 }));
 
 // Admin-only routes

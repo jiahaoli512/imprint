@@ -1,5 +1,6 @@
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { api } from '../../api/client';
+import { createStore } from './createStore';
 
 // Thin wrapper around @capacitor-community/background-geolocation. Only active
 // on native (iOS) — on web the plugin doesn't exist and tracking is a no-op.
@@ -17,21 +18,20 @@ export function wasTrackingEnabled() {
 }
 
 // Observable status so the UI can show live verification (counts, last point).
-let status = { captured: 0, uploaded: 0, lastPoint: null, error: null };
-const listeners = new Set();
+const statusStore = createStore({ captured: 0, uploaded: 0, lastPoint: null, error: null });
 
-function emit() {
-  for (const listener of listeners) listener(status);
+// Merge a partial update into the status and notify subscribers.
+function setStatus(patch) {
+  statusStore.set((s) => ({ ...s, ...patch }));
 }
 
 export function subscribe(listener) {
-  listeners.add(listener);
-  listener(status);
-  return () => listeners.delete(listener);
+  listener(statusStore.get());
+  return statusStore.subscribe(listener);
 }
 
 export function getStatus() {
-  return status;
+  return statusStore.get();
 }
 
 async function flush() {
@@ -39,8 +39,7 @@ async function flush() {
   const batch = buffer.splice(0, buffer.length);
   try {
     await api.logLocations(batch);
-    status = { ...status, uploaded: status.uploaded + batch.length };
-    emit();
+    setStatus({ uploaded: statusStore.get().uploaded + batch.length });
   } catch {
     // Re-queue on failure so points aren't lost between sessions.
     buffer.unshift(...batch);
@@ -59,8 +58,7 @@ export function isTracking() {
 // (requestPermissions: true) and shows the required iOS background notification.
 export async function startTracking() {
   if (!isTrackingSupported()) {
-    status = { ...status, error: 'not supported on this platform' };
-    emit();
+    setStatus({ error: 'not supported on this platform' });
     return;
   }
   if (watcherId) return;
@@ -76,8 +74,7 @@ export async function startTracking() {
     (location, error) => {
       if (error) {
         // error.code === 'NOT_AUTHORIZED' → user denied/needs Settings
-        status = { ...status, error: error.code || error.message || 'location error' };
-        emit();
+        setStatus({ error: error.code || error.message || 'location error' });
         return;
       }
       const point = {
@@ -87,15 +84,13 @@ export async function startTracking() {
         visitedAt: new Date().toISOString(),
       };
       buffer.push(point);
-      status = { ...status, captured: status.captured + 1, lastPoint: point, error: null };
-      emit();
+      setStatus({ captured: statusStore.get().captured + 1, lastPoint: point, error: null });
       if (buffer.length >= FLUSH_THRESHOLD) flush();
     }
     );
     localStorage.setItem(ENABLED_KEY, '1');
   } catch (e) {
-    status = { ...status, error: e?.message || 'failed to start tracking' };
-    emit();
+    setStatus({ error: e?.message || 'failed to start tracking' });
   }
 }
 

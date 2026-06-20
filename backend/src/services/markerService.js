@@ -1,6 +1,7 @@
 const MapMarkers = require('../models/MapMarkers');
 const User = require('../models/User');
 const httpError = require('../utils/httpError');
+const { normalizeUsername } = require('../utils/validate');
 
 const MARKER_RADIUS_M = 15.24;        // matches the circle drawn on the map
 const DEDUP_M = 2 * MARKER_RADIUS_M;  // skip a new marker if circles would overlap
@@ -22,13 +23,14 @@ async function getAdminMarkers() {
 }
 
 async function getUserMarkers(username) {
-  const user = await User.findOne({ username: username.toLowerCase() });
+  const user = await User.findOne({ username: normalizeUsername(username) });
   if (!user) throw httpError(404, 'User not found');
   const doc = await MapMarkers.findById(user._id.toString());
   return doc ? doc.points : [];
 }
 
 async function saveUserMarkers(userId, points) {
+  if (!Array.isArray(points)) throw httpError(400, 'points must be an array');
   const doc = await MapMarkers.findByIdAndUpdate(
     userId,
     { points },
@@ -39,7 +41,8 @@ async function saveUserMarkers(userId, points) {
 
 // Admin path: save markers to a specific user's map, looked up by username.
 async function saveUserMarkersByUsername(username, points) {
-  const user = await User.findOne({ username: username.toLowerCase() });
+  if (!Array.isArray(points)) throw httpError(400, 'points must be an array');
+  const user = await User.findOne({ username: normalizeUsername(username) });
   if (!user) throw httpError(404, 'User not found');
   return saveUserMarkers(user._id.toString(), points);
 }
