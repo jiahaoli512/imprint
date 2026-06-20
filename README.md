@@ -4,7 +4,7 @@ How much of the world have you seen?
 
 Introducing **Imprint**
 
-Imprint maps every place you've ever been - turning your travels into a living portrait of your world. See your coverage, explore what's left, and share the journey. What began as a waitlist landing page is now a full application: waitlist‑gated accounts, user profiles, and an interactive world map where each user drops markers for the places they've visited — available on the web and as a native iOS app.
+Imprint maps every place you've ever been - turning your travels into a living portrait of your world. See your coverage, explore what's left, and share the journey. 
 
 ## Stack
 
