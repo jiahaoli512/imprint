@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
-const { getAdminMarkers, getUserMarkers, saveUserMarkers } = require('../services/markerService');
+const requireAdminAuth = require('../middleware/adminAuth');
+const { getAdminMarkers, getUserMarkers, saveUserMarkers, saveUserMarkersByUsername } = require('../services/markerService');
 
 // Admin singleton (used by AdminDashboard)
 router.get('/', handle(async (req, res) => {
@@ -18,6 +19,13 @@ router.put('/', requireAuth, handle(async (req, res) => {
   const { points } = req.body;
   if (!Array.isArray(points)) return res.status(400).json({ error: 'points must be an array' });
   res.json(await saveUserMarkers(req.user.id, points));
+}));
+
+// Admin: save markers to a specific user's map
+router.put('/user/:username', requireAdminAuth, handle(async (req, res) => {
+  const { points } = req.body;
+  if (!Array.isArray(points)) return res.status(400).json({ error: 'points must be an array' });
+  res.json(await saveUserMarkersByUsername(req.params.username, points));
 }));
 
 module.exports = router;

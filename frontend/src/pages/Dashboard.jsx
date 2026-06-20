@@ -29,7 +29,11 @@ export default function Dashboard() {
     savePrompt,
   } = useMarkers({
     load: () => api.getMarkers(username),
-    save: api.saveMarkers,
+    // In admin view, save to the viewed user's map via the admin endpoint;
+    // a regular user saves their own.
+    save: isAdminView
+      ? (points) => api.adminSaveMarkers(username, points)
+      : api.saveMarkers,
     editable: isAdminView,
     deps: [username],
   });
