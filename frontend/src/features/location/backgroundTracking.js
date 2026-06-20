@@ -7,9 +7,14 @@ const isNative = Capacitor.isNativePlatform();
 const BackgroundGeolocation = isNative ? registerPlugin('BackgroundGeolocation') : null;
 
 const FLUSH_THRESHOLD = 10; // upload after this many buffered points
+const ENABLED_KEY = 'imprint_tracking_enabled'; // remembers the user's choice across restarts
 
 let watcherId = null;
 let buffer = [];
+
+export function wasTrackingEnabled() {
+  return localStorage.getItem(ENABLED_KEY) === '1';
+}
 
 // Observable status so the UI can show live verification (counts, last point).
 let status = { captured: 0, uploaded: 0, lastPoint: null, error: null };
@@ -87,9 +92,18 @@ export async function startTracking() {
       if (buffer.length >= FLUSH_THRESHOLD) flush();
     }
     );
+    localStorage.setItem(ENABLED_KEY, '1');
   } catch (e) {
     status = { ...status, error: e?.message || 'failed to start tracking' };
     emit();
+  }
+}
+
+// Re-arms the watcher if the user had tracking enabled (e.g. after an app
+// restart). No-op if already running or never enabled.
+export async function resumeTrackingIfEnabled() {
+  if (isTrackingSupported() && !watcherId && wasTrackingEnabled()) {
+    await startTracking();
   }
 }
 
@@ -113,7 +127,10 @@ export async function getAuthorizationStatus() {
   }
 }
 
+// Only a deliberate user action stops tracking — this clears the saved choice
+// so it won't auto-resume.
 export async function stopTracking() {
+  localStorage.removeItem(ENABLED_KEY);
   if (watcherId) {
     await BackgroundGeolocation.removeWatcher({ id: watcherId });
     watcherId = null;
