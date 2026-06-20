@@ -4,7 +4,7 @@ import L from 'leaflet';
 
 // Map geometry + palette, shared by MapView and MapCard.
 export const MARKER_RADIUS_M = 15.24;   // mirrors MARKER_RADIUS_M in backend markerService
-export const LOCATION_RADIUS_M = 200;   // accuracy circle around the user's location
+export const LOCATION_RADIUS_M = 80;   // accuracy circle around the user's location
 export const MARKER_COLOR = '#e2a156';      // saved markers (and accent)
 export const MARKER_EDIT_COLOR = '#e2685a'; // markers/errors while editing
 export const LOCATE_BLUE = '#5aa9e6';       // the "locate me" dot/highlight

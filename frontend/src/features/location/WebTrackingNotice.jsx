@@ -9,10 +9,10 @@ export default function WebTrackingNotice() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <MapPin size={18} color="var(--error)" />
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--error)' }}>Passive tracking: OFF</div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Passive tracking is only available on the Imprint mobile app
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--error)' }}>Location Tracking: OFF</div>
+            <div style={{ fontSize: '11px', color: 'var(--muted)' }}>
+              Background/Passive Tracking services are only available on the Imprint mobile app.
             </div>
           </div>
         </div>
