@@ -45,12 +45,21 @@ export function useWaitlist() {
     catch { api.getWaitlist().then(setEntries).catch(() => {}); }
   }
 
+  // Escapes a value for CSV: doubles quotes, and prefixes a `'` to values that
+  // begin with a formula trigger so spreadsheets can't execute injected content
+  // (e.g. a waitlist name of `=HYPERLINK(...)`).
+  function csvCell(v) {
+    let s = String(v ?? '');
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+
   function exportCSV() {
     const rows = [['#', 'Email', 'Name', 'Joined', 'Approved']];
     entries.forEach((e, i) => {
       rows.push([i + 1, e.email, e.name || '', new Date(e.createdAt).toLocaleString(), e.approved ? 'Yes' : 'No']);
     });
-    const csv = rows.map((r) => r.map((v) => `"${v}"`).join(',')).join('\n');
+    const csv = rows.map((r) => r.map(csvCell).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

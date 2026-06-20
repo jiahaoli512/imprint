@@ -1,5 +1,4 @@
 export const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
-const BASE = apiBase;
 
 export const getUsername = () => localStorage.getItem('imprint_username');
 export const setUsername = (u) => localStorage.setItem('imprint_username', u);
@@ -23,7 +22,7 @@ export const clearAdminSession = () => {
 function makeRequest(getTokenFn) {
   async function request(path, options = {}) {
     const token = getTokenFn();
-    const url = `${BASE}${path}`;
+    const url = `${apiBase}${path}`;
     const headers = {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
