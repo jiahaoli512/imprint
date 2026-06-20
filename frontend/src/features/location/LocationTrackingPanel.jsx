@@ -24,7 +24,7 @@ export default function LocationTrackingPanel() {
   } else {
     statusText = 'Passive tracking: ON';
     statusColor = 'var(--success)';
-    subtitle = 'Recording places in the background';
+    subtitle = 'Recording in the background — stays on until you turn it off manually';
   }
 
   return (
