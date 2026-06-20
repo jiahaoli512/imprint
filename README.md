@@ -1,4 +1,4 @@
-# Imprint
+# Imprint (v2.1) *Updated Jun 20, 2026*
 
 How much of the world have you seen?
 
