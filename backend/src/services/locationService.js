@@ -1,5 +1,6 @@
 const Location = require('../models/Location');
 const httpError = require('../utils/httpError');
+const { addMarkersFromPoints } = require('./markerService');
 
 const MAX_BATCH = 200;
 
@@ -23,7 +24,11 @@ async function logLocations(userId, points) {
 
   if (docs.length === 0) throw httpError(400, 'No valid points in batch.');
   await Location.insertMany(docs);
-  return { inserted: docs.length };
+
+  // Build the user's map passively: drop a marker for each new place (deduped).
+  const markersAdded = await addMarkersFromPoints(userId, docs);
+
+  return { inserted: docs.length, markersAdded };
 }
 
 async function getUserLocations(userId, limit = 500) {
