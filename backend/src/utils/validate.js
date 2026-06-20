@@ -52,6 +52,34 @@ function cleanName(value) {
   return (value || '').trim();
 }
 
+// Username format — 3–20 chars of [a-z0-9_]. Kept in sync with the frontend's
+// USERNAME_RE in frontend/src/utils/validateName.js (the server can't import
+// frontend utils). Enforced server-side here so the API can't be used to set a
+// malformed username that the client UI would reject.
+const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
+
+// Throws a 400 if the username isn't well-formed. Used by both profile write
+// paths (setup + edit).
+function validateUsername(username) {
+  checkLength('username', username);
+  if (!USERNAME_RE.test(normalizeUsername(username)))
+    throw httpError(400, 'Username must be 3–20 characters: letters, numbers, underscores.');
+}
+
+// Edit cooldown windows, in days. Username changes at most once a month, names
+// at most once a week. Enforced per-user via the User.*ChangedAt timestamps.
+const COOLDOWN_DAYS = { username: 30, name: 7 };
+
+// Whole days remaining before `lastChangedAt` clears a `days`-long cooldown
+// (0 when eligible, or when there's no prior change). Used to gate self-service
+// edits and to build the "try again in N day(s)" message.
+function daysUntil(lastChangedAt, days) {
+  if (!lastChangedAt) return 0;
+  const elapsedMs = Date.now() - new Date(lastChangedAt).getTime();
+  const remainingMs = days * 24 * 60 * 60 * 1000 - elapsedMs;
+  return remainingMs <= 0 ? 0 : Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+}
+
 // Throws a 400 error if `value` is a string longer than the limit for `field`.
 function checkLength(field, value) {
   if (value == null) return;
@@ -110,6 +138,6 @@ function checkPassword(password) {
 
 module.exports = {
   LIMITS, checkLength, checkNoSpaces, checkNameChars, checkEmail, checkPassword,
-  checkRequired, normalizeEmail, normalizeUsername, validateName, cleanName,
-  NAME_RE, NAME_SPACES_RE,
+  checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
+  COOLDOWN_DAYS, daysUntil, NAME_RE, NAME_SPACES_RE, USERNAME_RE,
 };
