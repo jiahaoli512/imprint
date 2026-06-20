@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Fingerprint, Check, X, Loader } from 'lucide-react';
+import { Check, X, Loader } from 'lucide-react';
+import AuthShell from '../components/AuthShell';
 import { api, setUsername as saveUsername } from '../api/client';
-const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
-const NAME_RE = /^[\p{L}'’-]+$/u;          // first name: letters, hyphens, apostrophes
-const NAME_SPACES_RE = /^[\p{L}'’ -]+$/u;  // last name: also allows spaces
+import { validateName, USERNAME_RE } from '../utils/validateName';
+import { useDebouncedCallback } from '../utils/useDebouncedCallback';
 
 const maxDob = new Date();
 maxDob.setFullYear(maxDob.getFullYear() - 18);
@@ -22,7 +22,15 @@ export default function Profile() {
   const [dob, setDob]                       = useState('');
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
-  const timerRef = useRef(null);
+
+  const debouncedCheck = useDebouncedCallback(async (clean) => {
+    try {
+      const data = await api.checkUsername(clean);
+      setUsernameStatus(data.available ? 'available' : 'taken');
+    } catch {
+      setUsernameStatus('idle');
+    }
+  }, 500);
 
   if (!email) {
     navigate('/login', { replace: true });
@@ -33,20 +41,12 @@ export default function Profile() {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, '');
     setUsername(clean);
     setError('');
-    clearTimeout(timerRef.current);
 
-    if (!clean) { setUsernameStatus('idle'); return; }
-    if (!USERNAME_RE.test(clean)) { setUsernameStatus('invalid'); return; }
+    if (!clean) { debouncedCheck.cancel(); setUsernameStatus('idle'); return; }
+    if (!USERNAME_RE.test(clean)) { debouncedCheck.cancel(); setUsernameStatus('invalid'); return; }
 
     setUsernameStatus('checking');
-    timerRef.current = setTimeout(async () => {
-      try {
-        const data = await api.checkUsername(clean);
-        setUsernameStatus(data.available ? 'available' : 'taken');
-      } catch {
-        setUsernameStatus('idle');
-      }
-    }, 500);
+    debouncedCheck(clean);
   }
 
   // mirrors ageFromDob() in userService.js — keep in sync if the threshold changes
@@ -63,11 +63,8 @@ export default function Profile() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!firstName.trim()) { setError('Please enter your first name.'); return; }
-    if (firstName.trim().length > 50) { setError('First name must be 50 characters or fewer.'); return; }
-    if (/\s/.test(firstName.trim())) { setError('First name cannot contain spaces.'); return; }
-    if (!NAME_RE.test(firstName.trim())) { setError('First name can only contain letters, hyphens, and apostrophes.'); return; }
-    if (lastName.trim().length > 50) { setError('Last name must be 50 characters or fewer.'); return; }
-    if (lastName.trim() && !NAME_SPACES_RE.test(lastName.trim())) { setError('Last name can only contain letters, spaces, hyphens, and apostrophes.'); return; }
+    const nameError = validateName(firstName, lastName);
+    if (nameError) { setError(nameError); return; }
     if (!USERNAME_RE.test(username)) { setError('Username must be 3–20 characters: letters, numbers, underscores.'); return; }
     if (usernameStatus === 'taken') { setError('That username is already taken.'); return; }
     if (usernameStatus === 'checking') { setError('Still checking username — please wait a moment.'); return; }
@@ -95,15 +92,7 @@ export default function Profile() {
     dob && ageOk(dob);
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="logo" style={{ justifyContent: 'center', marginBottom: '24px' }}>
-          <div className="logo-icon" style={{ width: '40px', height: '40px' }}>
-            <Fingerprint size={22} strokeWidth={2} color="#0b0e13" />
-          </div>
-          Imprint
-        </div>
-
+    <AuthShell>
         <h1 className="auth-title">Set up your profile</h1>
         <p className="auth-sub">Just a few details to get started.</p>
 
@@ -171,7 +160,6 @@ export default function Profile() {
             {loading ? 'Saving…' : 'Continue'}
           </button>
         </form>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

@@ -1,23 +1,23 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Fingerprint, User, List, LayoutDashboard, LogOut, Eye, Pencil, Trash2, LocateFixed } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { User, List, LayoutDashboard, LogOut } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
-import AdminLogoutModal from '../components/AdminLogoutModal';
 import LogoutModal from '../components/LogoutModal';
+import LogoMark from '../components/LogoMark';
 import UserSearch from '../features/users/UserSearch';
-import MapView from '../features/map/MapView';
+import MapCard from '../features/map/MapCard';
 import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
 import { useMarkers } from '../features/map/useMarkers';
 import { useGeolocation } from '../features/location/useGeolocation';
-import { api } from '../api/client';
+import { api, markersApiFor } from '../api/client';
+import { useAdminView } from '../utils/useAdminView';
 
 const isNative = Capacitor.isNativePlatform();
 
 export default function Dashboard() {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isAdminView = pathname.startsWith('/admin/');
+  const isAdminView = useAdminView();
 
   const [region, setRegion] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -28,12 +28,9 @@ export default function Dashboard() {
     enterEdit, enterView, addMarker, removeMarker, clearDraft,
     savePrompt,
   } = useMarkers({
-    load: () => api.getMarkers(username),
     // In admin view, save to the viewed user's map via the admin endpoint;
-    // a regular user saves their own.
-    save: isAdminView
-      ? (points) => api.adminSaveMarkers(username, points)
-      : api.saveMarkers,
+    // a regular user saves their own. Loading is identical for both.
+    ...markersApiFor(isAdminView, username),
     editable: isAdminView,
     deps: [username],
   });
@@ -51,9 +48,7 @@ export default function Dashboard() {
       <div className="admin-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div className="logo">
-            <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-              <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
-            </div>
+            <LogoMark size={32} />
             Imprint
           </div>
           {isAdminView && (
@@ -91,82 +86,42 @@ export default function Dashboard() {
       <div className="admin-header-spacer" />
 
       <div className="dashboard-content">
-        <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
+        <div className="dashboard-col">
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
 
           {locationError && (
             <p style={{ fontSize: '12px', color: '#e2685a', marginTop: '-8px' }}>{locationError}</p>
           )}
           {firstName && (
-            <p style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '600', letterSpacing: '-0.3px' }}>
+            <p className="dashboard-welcome">
               Welcome back, {firstName}!{isAdminView && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '18px', fontWeight: '600', color: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
             </p>
           )}
 
           {!isAdminView && <LocationTrackingPanel />}
 
-          <div className="dashboard-map-card">
-            <div className="dashboard-toolbar">
-              <div className="dashboard-toolbar-dots">
-                <div className="dot dot-r" />
-                <div className="dot dot-y" />
-                <div className="dot dot-g" />
-              </div>
-              {isAdminView && (
-                <div className="mode-toggle">
-                  <button className={`mode-btn${!editing ? ' active' : ''}`} onClick={enterView}>
-                    <Eye size={13} /> View
-                  </button>
-                  <button className={`mode-btn${editing ? ' active' : ''}`} onClick={enterEdit}>
-                    <Pencil size={13} /> Edit
-                  </button>
-                </div>
-              )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {region && <span className="dashboard-region">{region}</span>}
-                {editing && (
-                  <button className="btn btn-ghost dashboard-save-btn" onClick={clearDraft}>
-                    <Trash2 size={13} /> Clear all
-                  </button>
-                )}
-                {isNative && (
-                  <button
-                    className="btn btn-ghost dashboard-save-btn"
-                    onClick={locate}
-                    disabled={locating}
-                    title="Show my location"
-                    style={userLocation ? { color: '#5aa9e6' } : {}}
-                  >
-                    <LocateFixed size={13} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className={`dashboard-map-wrap${editing ? ' editing' : ''}`}>
-              <MapView
-                displayMarkers={displayMarkers}
-                editing={editing}
-                userLocation={userLocation}
-                onAddMarker={addMarker}
-                onRemoveMarker={removeMarker}
-                onRegion={setRegion}
-              />
-            </div>
-            {editing && (
-              <p className="dashboard-hint">Tap to add a pin · Tap a pin to remove it</p>
-            )}
-          </div>
+          <MapCard
+            displayMarkers={displayMarkers}
+            editing={editing}
+            editable={isAdminView}
+            onEnterView={enterView}
+            onEnterEdit={enterEdit}
+            onClear={clearDraft}
+            onAddMarker={addMarker}
+            onRemoveMarker={removeMarker}
+            region={region}
+            onRegion={setRegion}
+            userLocation={userLocation}
+            locating={locating}
+            onLocate={locate}
+            showLocate={isNative}
+          />
         </div>
       </div>
 
       {savePrompt}
 
-      {confirmLogout && (
-        isAdminView
-          ? <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />
-          : <LogoutModal onCancel={() => setConfirmLogout(false)} />
-      )}
+      {confirmLogout && <LogoutModal admin={isAdminView} onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }

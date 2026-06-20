@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { api, getUsername } from '../api/client';
+import { api, getUsername, isAdminAuthed } from '../api/client';
 import Spinner from '../components/Spinner';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
@@ -17,14 +17,14 @@ export function RequireAuth({ children }) {
 }
 
 export function RequireAdminAuth({ children }) {
-  if (isNative || !sessionStorage.getItem('admin_auth')) {
+  if (isNative || !isAdminAuthed()) {
     return <Navigate to="/home" replace />;
   }
   return children;
 }
 
 export function RequireAuthOrAdmin({ children }) {
-  if (!getUsername() && !sessionStorage.getItem('admin_auth')) {
+  if (!getUsername() && !isAdminAuthed()) {
     return <Navigate to="/home" replace />;
   }
   return children;
@@ -57,10 +57,7 @@ export function OwnDashboardOnly({ children }) {
     if (me === username) return;
     api.getUser(username)
       .then(() => navigate(`/${username}/profile`, { replace: true }))
-      .catch(err => {
-        if (err.status === 404) navigate('/user-not-found', { replace: true });
-        else navigate('/user-not-found', { replace: true });
-      });
+      .catch(() => navigate('/user-not-found', { replace: true }));
   }, [username]);
 
   if (me !== username) return <Spinner />;
@@ -82,10 +79,7 @@ export function CatchAll() {
 
     api.getUser(segment)
       .then(() => navigate(`/${segment}/profile`, { replace: true }))
-      .catch(err => {
-        if (err.status === 404) navigate('/user-not-found', { replace: true });
-        else navigate('/user-not-found', { replace: true });
-      });
+      .catch(() => navigate('/user-not-found', { replace: true }));
   }, [pathname]);
 
   return <Spinner />;

@@ -1,23 +1,43 @@
 const FROM_EMAIL = process.env.EMAIL_USER || 'donotreply.imprint@gmail.com';
+const CONTACT_INBOX = 'donotreply.imprint@gmail.com'; // where contact-form messages land
 
 if (!process.env.BREVO_API_KEY) {
-  console.warn('[email] WARNING: BREVO_API_KEY is not set — approval emails will fail');
+  console.warn('[email] WARNING: BREVO_API_KEY is not set — emails will fail');
 }
 
-async function sendApprovalEmail(to, name) {
-  const displayName = name || to.split('@')[0];
-
+// Single seam for outbound mail. Every email goes through here, so the provider
+// (Brevo) and its auth/transport/error handling live in exactly one place —
+// swapping providers is a one-function change. Callers supply only the
+// message-specific fields (`to`, `subject`, `htmlContent`, optional `replyTo`).
+async function sendEmail(payload) {
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
       'api-key': process.env.BREVO_API_KEY,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      sender: { name: 'Imprint', email: FROM_EMAIL },
-      to: [{ email: to, name: displayName }],
-      subject: "You're approved — Welcome to Imprint 🗺️",
-      htmlContent: `
+    body: JSON.stringify({ sender: { name: 'Imprint', email: FROM_EMAIL }, ...payload }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Brevo API error ${res.status}`);
+  }
+}
+
+// Escapes the HTML metacharacters that matter for text interpolated into an
+// email body, so user-supplied values can't inject markup.
+function escapeHtml(s) {
+  return String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+}
+
+async function sendApprovalEmail(to, name) {
+  const displayName = name || to.split('@')[0];
+
+  await sendEmail({
+    to: [{ email: to, name: displayName }],
+    subject: "You're approved — Welcome to Imprint 🗺️",
+    htmlContent: `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -93,51 +113,31 @@ async function sendApprovalEmail(to, name) {
   </table>
 </body>
 </html>`,
-    }),
   });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `Brevo API error ${res.status}`);
-  }
 }
 
 // Delivers a contact-form submission to the Imprint inbox. The visitor's email
 // is set as replyTo so we can respond directly from the received message.
 async function sendContactEmail({ firstName, lastName, email, feedback }) {
   const fullName = `${firstName} ${lastName}`.trim();
-  const escape = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
 
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'api-key': process.env.BREVO_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      sender: { name: 'Imprint Contact', email: FROM_EMAIL },
-      to: [{ email: 'donotreply.imprint@gmail.com', name: 'Imprint' }],
-      replyTo: { email, name: fullName || email },
-      subject: `New contact form submission from ${fullName || email}`,
-      htmlContent: `
+  await sendEmail({
+    to: [{ email: CONTACT_INBOX, name: 'Imprint' }],
+    replyTo: { email, name: fullName || email },
+    subject: `New contact form submission from ${fullName || email}`,
+    htmlContent: `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#0f1623;">
   <h2 style="margin:0 0 16px;">New contact form submission</h2>
-  <p style="margin:0 0 8px;"><strong>Name:</strong> ${escape(fullName) || '—'}</p>
-  <p style="margin:0 0 8px;"><strong>Email:</strong> ${escape(email)}</p>
+  <p style="margin:0 0 8px;"><strong>Name:</strong> ${escapeHtml(fullName) || '—'}</p>
+  <p style="margin:0 0 8px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
   <p style="margin:16px 0 4px;"><strong>Feedback:</strong></p>
-  <p style="margin:0;white-space:pre-wrap;">${escape(feedback)}</p>
+  <p style="margin:0;white-space:pre-wrap;">${escapeHtml(feedback)}</p>
 </body>
 </html>`,
-    }),
   });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `Brevo API error ${res.status}`);
-  }
 }
 
 module.exports = { sendApprovalEmail, sendContactEmail };

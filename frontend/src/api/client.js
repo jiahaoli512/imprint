@@ -1,5 +1,4 @@
 export const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
-const BASE = apiBase;
 
 export const getUsername = () => localStorage.getItem('imprint_username');
 export const setUsername = (u) => localStorage.setItem('imprint_username', u);
@@ -11,7 +10,13 @@ export const clearSession = () => {
 };
 
 export const getAdminToken = () => sessionStorage.getItem('admin_token');
-export const setAdminToken = (t) => sessionStorage.setItem('admin_token', t);
+// Setting the token also marks the admin session active — the two always go
+// together, so callers never touch the raw 'admin_auth' flag themselves.
+export const setAdminToken = (t) => {
+  sessionStorage.setItem('admin_token', t);
+  sessionStorage.setItem('admin_auth', '1');
+};
+export const isAdminAuthed = () => sessionStorage.getItem('admin_auth') === '1';
 export const clearAdminSession = () => {
   sessionStorage.removeItem('admin_auth');
   sessionStorage.removeItem('admin_token');
@@ -19,10 +24,11 @@ export const clearAdminSession = () => {
 
 // Builds a request function bound to a token source (user vs. admin). Both
 // variants share identical URL/header/error handling — only the token differs.
+// Verb helpers (post/patch/put/del) wrap the JSON-body boilerplate.
 function makeRequest(getTokenFn) {
-  return async function request(path, options = {}) {
+  async function request(path, options = {}) {
     const token = getTokenFn();
-    const url = `${BASE}${path}`;
+    const url = `${apiBase}${path}`;
     const headers = {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -35,7 +41,12 @@ function makeRequest(getTokenFn) {
       throw err;
     }
     return data;
-  };
+  }
+  request.post  = (path, body) => request(path, { method: 'POST',  body: JSON.stringify(body) });
+  request.patch = (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) });
+  request.put   = (path, body) => request(path, { method: 'PUT',   body: JSON.stringify(body) });
+  request.del   = (path)       => request(path, { method: 'DELETE' });
+  return request;
 }
 
 const request = makeRequest(getToken);
@@ -43,40 +54,57 @@ const adminRequest = makeRequest(getAdminToken);
 
 export const api = {
   // Users / Auth
-  register:       (body)               => request('/api/users', { method: 'POST', body: JSON.stringify(body) }),
-  login:          (body)               => request('/api/users/login', { method: 'POST', body: JSON.stringify(body) }),
+  register:       (body)               => request.post('/api/users', body),
+  login:          (body)               => request.post('/api/users/login', body),
   checkWaitlist:  (email)              => request(`/api/waitlist/check?email=${encodeURIComponent(email)}`),
   checkUsername:  (username)           => request(`/api/users/check-username?username=${encodeURIComponent(username)}`),
-  setupProfile:   (body)               => request('/api/users/profile', { method: 'PATCH', body: JSON.stringify(body) }),
+  setupProfile:   (body)               => request.patch('/api/users/profile', body),
   getUser:        (username)           => request(`/api/users/by-username/${encodeURIComponent(username)}`),
-  updateUser:     (username, body)     => request(`/api/users/by-username/${encodeURIComponent(username)}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  updateUser:     (username, body)     => request.patch(`/api/users/by-username/${encodeURIComponent(username)}`, body),
   searchUsers:    (q)                  => request(`/api/users/search?q=${encodeURIComponent(q)}`),
 
   // Markers
   getMarkers:      (username) => request(`/api/markers/user/${encodeURIComponent(username)}`),
-  saveMarkers:     (points)   => request('/api/markers', { method: 'PUT', body: JSON.stringify({ points }) }),
+  saveMarkers:     (points)   => request.put('/api/markers', { points }),
   getAdminMarkers: ()                => adminRequest('/api/markers'),
-  adminSaveMarkers: (username, points) => adminRequest(`/api/markers/user/${encodeURIComponent(username)}`, { method: 'PUT', body: JSON.stringify({ points }) }),
+  adminSaveMarkers: (username, points) => adminRequest.put(`/api/markers/user/${encodeURIComponent(username)}`, { points }),
 
   // Locations (background tracking)
-  logLocations: (points) => request('/api/locations', { method: 'POST', body: JSON.stringify({ points }) }),
+  logLocations: (points) => request.post('/api/locations', { points }),
   getLocations: ()       => request('/api/locations'),
   getCoverage:  ()       => request('/api/locations/coverage'),
 
   // Waitlist (public)
-  joinWaitlist:  (body)  => request('/api/waitlist', { method: 'POST', body: JSON.stringify(body) }),
+  joinWaitlist:  (body)  => request.post('/api/waitlist', body),
   waitlistCount: ()      => request('/api/waitlist/count'),
 
   // Contact (public)
-  sendContact:   (body)  => request('/api/contact', { method: 'POST', body: JSON.stringify(body) }),
+  sendContact:   (body)  => request.post('/api/contact', body),
 
   // Admin
-  adminLogin:           (password)       => request('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) }),
+  adminLogin:           (password)       => request.post('/api/admin/login', { password }),
   adminGetUser:         (username)       => adminRequest(`/api/users/by-username/${encodeURIComponent(username)}`),
-  adminUpdateUser:      (username, body) => adminRequest(`/api/users/by-username/${encodeURIComponent(username)}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  adminUpdateUser:      (username, body) => adminRequest.patch(`/api/users/by-username/${encodeURIComponent(username)}`, body),
   listUsers:            ()               => adminRequest('/api/users'),
   getWaitlist:          ()         => adminRequest('/api/waitlist'),
-  deleteWaitlistEntry:  (id)       => adminRequest(`/api/waitlist/${id}`, { method: 'DELETE' }),
-  reorderWaitlist:      (ids)      => adminRequest('/api/waitlist/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
-  approveWaitlistEntry: (id)       => adminRequest(`/api/waitlist/${id}/approve`, { method: 'PATCH' }),
+  deleteWaitlistEntry:  (id)       => adminRequest.del(`/api/waitlist/${id}`),
+  reorderWaitlist:      (ids)      => adminRequest.patch('/api/waitlist/reorder', { ids }),
+  approveWaitlistEntry: (id)       => adminRequest.patch(`/api/waitlist/${id}/approve`),
 };
+
+// Resolve the right profile API calls for the current view (admin vs. self),
+// so pages don't repeat `isAdminView ? api.adminX : api.X` ternaries.
+export function profileApiFor(isAdminView) {
+  return isAdminView
+    ? { getUser: api.adminGetUser, updateUser: api.adminUpdateUser }
+    : { getUser: api.getUser, updateUser: api.updateUser };
+}
+
+// Resolve marker load/save bound to a username for the current view. Loading is
+// the same for both; only the save endpoint differs.
+export function markersApiFor(isAdminView, username) {
+  return {
+    load: () => api.getMarkers(username),
+    save: isAdminView ? (points) => api.adminSaveMarkers(username, points) : api.saveMarkers,
+  };
+}

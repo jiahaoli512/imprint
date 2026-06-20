@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, Map, UserCircle } from 'lucide-react';
 import { formatDate } from '../../utils/formatDate';
+import { fullName } from '../../utils/fullName';
+import { matchesQuery } from '../../utils/matchesQuery';
 
 export default function UsersTable({ users }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
-  const filtered = users.filter((u) => {
-    const q = search.toLowerCase();
-    const fullName = [u.firstName, u.lastName].filter(Boolean).join(' ').toLowerCase();
-    return !q || u.email.toLowerCase().includes(q) || fullName.includes(q);
-  });
+  const filtered = users.filter((u) => matchesQuery(search, u.email, fullName(u)));
 
   return (
     <div className="admin-section">
@@ -55,7 +53,7 @@ export default function UsersTable({ users }) {
                     <td className="muted col-num col-hide-mobile">{i + 1}</td>
                     <td>{u.email}</td>
                     <td className="muted col-hide-mobile">
-                      {[u.firstName, u.lastName].filter(Boolean).join(' ') || '—'}
+                      {fullName(u, '—')}
                     </td>
                     <td className="muted col-hide-mobile">{u.dateOfBirth ? formatDate(u.dateOfBirth) : '—'}</td>
                     <td className="muted col-hide-mobile">{formatDate(u.createdAt)}</td>

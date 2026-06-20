@@ -1,7 +1,17 @@
 import { MapPin } from 'lucide-react';
 import { useBackgroundTracking } from './useBackgroundTracking';
 
-const AMBER = '#e2a156';
+// Derives the colour-coded readout from the tracking/permission state. Pure, so
+// the three states are easy to follow (and test) apart from the JSX.
+function deriveTrackingStatus({ tracking, needsAlways }) {
+  if (!tracking) {
+    return { text: 'Passive tracking: OFF', color: 'var(--error)', subtitle: 'Your map won’t update on its own' };
+  }
+  if (needsAlways) {
+    return { text: 'Set Location to Always Allow', color: 'var(--accent)', subtitle: 'On “While Using”, your map won’t update when the app is closed' };
+  }
+  return { text: 'Passive tracking: ON', color: 'var(--success)', subtitle: 'Recording in the background — stays on until you turn it off manually' };
+}
 
 // Start/stop control for passive background tracking, with a colour-coded status
 // readout. Renders nothing on web (where tracking is unsupported).
@@ -11,21 +21,7 @@ export default function LocationTrackingPanel() {
 
   // Only "Always" allows tracking when the app is closed.
   const needsAlways = tracking && (authStatus === 'whenInUse' || authStatus === 'denied' || authStatus === 'restricted');
-
-  let statusText, statusColor, subtitle;
-  if (!tracking) {
-    statusText = 'Passive tracking: OFF';
-    statusColor = 'var(--error)';
-    subtitle = 'Your map won’t update on its own';
-  } else if (needsAlways) {
-    statusText = 'Set Location to Always Allow';
-    statusColor = AMBER;
-    subtitle = 'On “While Using”, your map won’t update when the app is closed';
-  } else {
-    statusText = 'Passive tracking: ON';
-    statusColor = 'var(--success)';
-    subtitle = 'Recording in the background — stays on until you turn it off manually';
-  }
+  const { text: statusText, color: statusColor, subtitle } = deriveTrackingStatus({ tracking, needsAlways });
 
   return (
     <div className="dashboard-map-card" style={{ padding: '16px' }}>

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api, getUsername } from '../api/client';
+import { api, getUsername, isAdminAuthed } from '../api/client';
 import Spinner from '../components/Spinner';
 
 export default function UserRouter() {
@@ -8,7 +8,7 @@ export default function UserRouter() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const isAdmin = !!sessionStorage.getItem('admin_auth');
+    const isAdmin = isAdminAuthed();
     const me = getUsername();
 
     if (isAdmin) {
@@ -25,10 +25,7 @@ export default function UserRouter() {
 
     api.getUser(username)
       .then(() => navigate(`/${username}/profile`, { replace: true }))
-      .catch(err => {
-        if (err.status === 404) navigate('/user-not-found', { replace: true });
-        else navigate('/user-not-found', { replace: true });
-      });
+      .catch(() => navigate('/user-not-found', { replace: true }));
   }, [username]);
 
   return <Spinner />;

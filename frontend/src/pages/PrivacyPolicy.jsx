@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import LogoMark from '../components/LogoMark';
 
 const EMAIL = 'donotreply.imprint@gmail.com';
 const DSAR = 'https://app.termly.io/dsar/5585c578-e9c1-4524-ad2d-dfb7e637a491';
@@ -26,9 +27,7 @@ export default function PrivacyPolicy() {
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-          <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-            <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
-          </div>
+          <LogoMark size={32} />
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '34px', margin: 0, letterSpacing: '-1px' }}>
             Privacy Policy
           </h1>

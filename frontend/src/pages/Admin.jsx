@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, LayoutDashboard, LogOut } from 'lucide-react';
-import AdminLogoutModal from '../components/AdminLogoutModal';
+import { LayoutDashboard, LogOut } from 'lucide-react';
+import LogoutModal from '../components/LogoutModal';
+import LogoMark from '../components/LogoMark';
 import WaitlistTable from '../features/admin/WaitlistTable';
 import UsersTable from '../features/admin/UsersTable';
 import { useWaitlist } from '../features/admin/useWaitlist';
@@ -17,9 +18,7 @@ export default function Admin() {
     <div className="admin-page">
       <div className="admin-header">
         <div className="logo">
-          <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-            <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
-          </div>
+          <LogoMark size={32} />
           Imprint
         </div>
         <div className="admin-header-right">
@@ -48,7 +47,7 @@ export default function Admin() {
         <UsersTable users={users} />
       </div>
 
-      {confirmLogout && <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />}
+      {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }

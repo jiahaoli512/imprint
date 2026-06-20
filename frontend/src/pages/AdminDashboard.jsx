@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, List, Eye, Pencil, Trash2, LogOut } from 'lucide-react';
-import AdminLogoutModal from '../components/AdminLogoutModal';
-import MapView from '../features/map/MapView';
+import { List, LogOut } from 'lucide-react';
+import LogoutModal from '../components/LogoutModal';
+import LogoMark from '../components/LogoMark';
+import MapCard from '../features/map/MapCard';
 import { useMarkers } from '../features/map/useMarkers';
 import { api } from '../api/client';
 
@@ -25,9 +26,7 @@ export default function AdminDashboard() {
     <div className="dashboard-page">
       <div className="admin-header">
         <div className="logo">
-          <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-            <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
-          </div>
+          <LogoMark size={32} />
           Imprint
         </div>
         <div className="admin-header-right">
@@ -44,53 +43,24 @@ export default function AdminDashboard() {
       <div className="admin-header-spacer" />
 
       <div className="dashboard-content">
-        <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
-          <p style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '600', letterSpacing: '-0.3px' }}>
-            Welcome, Admin!
-          </p>
-          <div className="dashboard-map-card">
-            <div className="dashboard-toolbar">
-              <div className="dashboard-toolbar-dots">
-                <div className="dot dot-r" />
-                <div className="dot dot-y" />
-                <div className="dot dot-g" />
-              </div>
-              <div className="mode-toggle">
-                <button className={`mode-btn${!editing ? ' active' : ''}`} onClick={enterView}>
-                  <Eye size={13} /> View
-                </button>
-                <button className={`mode-btn${editing ? ' active' : ''}`} onClick={enterEdit}>
-                  <Pencil size={13} /> Edit
-                </button>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {region && <span className="dashboard-region">{region}</span>}
-                {editing && (
-                  <button className="btn btn-ghost dashboard-save-btn" onClick={clearDraft}>
-                    <Trash2 size={13} /> Clear all
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className={`dashboard-map-wrap${editing ? ' editing' : ''}`}>
-              <MapView
-                displayMarkers={displayMarkers}
-                editing={editing}
-                onAddMarker={addMarker}
-                onRemoveMarker={removeMarker}
-                onRegion={setRegion}
-              />
-            </div>
-
-            {editing && (
-              <p className="dashboard-hint">Tap to add a pin · Tap a pin to remove it</p>
-            )}
-          </div>
+        <div className="dashboard-col">
+          <p className="dashboard-welcome">Welcome, Admin!</p>
+          <MapCard
+            displayMarkers={displayMarkers}
+            editing={editing}
+            editable
+            onEnterView={enterView}
+            onEnterEdit={enterEdit}
+            onClear={clearDraft}
+            onAddMarker={addMarker}
+            onRemoveMarker={removeMarker}
+            region={region}
+            onRegion={setRegion}
+          />
         </div>
       </div>
 
-      {confirmLogout && <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />}
+      {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
       {savePrompt}
     </div>
   );

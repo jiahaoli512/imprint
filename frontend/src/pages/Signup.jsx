@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Check, X } from 'lucide-react';
+import AuthShell from '../components/AuthShell';
 import ConfirmModal from '../components/ConfirmModal';
 import { api } from '../api/client';
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail } from '../utils/validateName';
 const SPECIAL_RE = /[~`!@#$%^&*()\-_+=\[\]{}|\\;:"<>,./?]/;
 
 const PW_RULES = [
@@ -60,7 +61,7 @@ export default function Signup() {
   async function handleEmailSubmit(e) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
-    if (!EMAIL_RE.test(trimmed)) {
+    if (!isValidEmail(trimmed)) {
       setEmailError('Enter a valid email address.');
       return;
     }
@@ -82,19 +83,7 @@ export default function Signup() {
   }
 
   return (
-    <div className="auth-page">
-      <button className="auth-back" onClick={() => navigate('/home')}>
-        <ArrowLeft size={16} /> Back
-      </button>
-
-      <div className="auth-card">
-        <div className="logo" style={{ justifyContent: 'center', marginBottom: '24px' }}>
-          <div className="logo-icon" style={{ width: '40px', height: '40px' }}>
-            <Fingerprint size={22} strokeWidth={2} color="#0b0e13" />
-          </div>
-          Imprint
-        </div>
-
+    <AuthShell onBack={() => navigate('/home')}>
         {/* ── Email step ── */}
         {(step === 'email' || step === 'not_found') && (
           <>
@@ -114,7 +103,7 @@ export default function Signup() {
                   <p style={{ marginBottom: '8px' }}>Your account could not be verified. Your email is either:</p>
                   <ol className="auth-notice-list">
                     <li>Not on the waitlist —{' '}
-                      <a href="https://imprint-wheat.vercel.app/" target="_blank" rel="noreferrer" className="auth-link">
+                      <a href="https://imprint-wheat.vercel.app/home" target="_blank" rel="noreferrer" className="auth-link">
                         sign up here
                       </a>
                     </li>
@@ -224,7 +213,6 @@ export default function Signup() {
             </button>
           </div>
         )}
-      </div>
 
       {confirmCreate && (
         <ConfirmModal
@@ -235,6 +223,6 @@ export default function Signup() {
           onCancel={() => setConfirmCreate(false)}
         />
       )}
-    </div>
+    </AuthShell>
   );
 }

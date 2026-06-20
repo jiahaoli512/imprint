@@ -1,27 +1,13 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
 const { contactLimiter } = require('../middleware/rateLimit');
-const { sendContactEmail } = require('../utils/email');
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const { submitContact } = require('../services/contactService');
 
 // Public contact form → emails the Imprint inbox. Rate-limited (5/hour/IP,
 // counting successes) to deter abuse of an unauthenticated, email-sending
-// endpoint.
+// endpoint. Validation/business logic lives in contactService.
 router.post('/', contactLimiter, handle(async (req, res) => {
-  const firstName = (req.body.firstName || '').trim();
-  const lastName = (req.body.lastName || '').trim();
-  const email = (req.body.email || '').trim();
-  const feedback = (req.body.feedback || '').trim();
-
-  if (!firstName || !lastName) return res.status(400).json({ error: 'First and last name are required' });
-  if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'A valid email is required' });
-  if (!feedback) return res.status(400).json({ error: 'Feedback is required' });
-  if (firstName.length > 100 || lastName.length > 100 || email.length > 254 || feedback.length > 5000) {
-    return res.status(400).json({ error: 'One or more fields are too long' });
-  }
-
-  await sendContactEmail({ firstName, lastName, email, feedback });
+  await submitContact(req.body);
   res.status(202).json({ message: 'Thanks — your message has been sent!' });
 }));
 
