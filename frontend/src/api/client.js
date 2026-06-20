@@ -58,6 +58,11 @@ export const api = {
   getAdminMarkers: ()                => adminRequest('/api/markers'),
   adminSaveMarkers: (username, points) => adminRequest(`/api/markers/user/${encodeURIComponent(username)}`, { method: 'PUT', body: JSON.stringify({ points }) }),
 
+  // Locations (background tracking)
+  logLocations: (points) => request('/api/locations', { method: 'POST', body: JSON.stringify({ points }) }),
+  getLocations: ()       => request('/api/locations'),
+  getCoverage:  ()       => request('/api/locations/coverage'),
+
   // Waitlist (public)
   joinWaitlist:  (body)  => request('/api/waitlist', { method: 'POST', body: JSON.stringify(body) }),
   waitlistCount: ()      => request('/api/waitlist/count'),

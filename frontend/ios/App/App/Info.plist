@@ -50,6 +50,10 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Imprint uses your location to show where you are on your map.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Imprint uses your location to show where you are on your map.</string>
+	<string>Imprint records the places you visit in the background to automatically build your travel map, even when the app is closed.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>
