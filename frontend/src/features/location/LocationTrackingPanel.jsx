@@ -4,8 +4,11 @@ import { useBackgroundTracking } from './useBackgroundTracking';
 // Start/stop control for passive background tracking, with a live status readout
 // for verification. Renders nothing on web (where tracking is unsupported).
 export default function LocationTrackingPanel() {
-  const { supported, tracking, busy, status, start, stop } = useBackgroundTracking();
+  const { supported, tracking, busy, status, authStatus, start, stop, openSettings } = useBackgroundTracking();
   if (!supported) return null;
+
+  // Only "Always" allows tracking when the app is closed.
+  const needsAlways = tracking && (authStatus === 'whenInUse' || authStatus === 'denied' || authStatus === 'restricted');
 
   return (
     <div className="dashboard-map-card" style={{ padding: '16px' }}>
@@ -36,6 +39,18 @@ export default function LocationTrackingPanel() {
             <span>last {status.lastPoint.lat.toFixed(4)}, {status.lastPoint.lng.toFixed(4)}</span>
           )}
           {status.error && <span style={{ color: 'var(--error)' }}>error: {status.error}</span>}
+        </div>
+      )}
+
+      {needsAlways && (
+        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)', fontSize: '12px', color: 'var(--muted)' }}>
+          Background tracking only works with <strong style={{ color: 'var(--text)' }}>Always Allow</strong>. On “While Using”, your map won’t update when the app is closed.{' '}
+          <button
+            onClick={openSettings}
+            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--accent)', cursor: 'pointer', font: 'inherit', textDecoration: 'underline' }}
+          >
+            Set to Always Allow
+          </button>
         </div>
       )}
     </div>
