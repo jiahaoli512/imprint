@@ -7,6 +7,7 @@ import LogoMark from '../components/LogoMark';
 import UserSearch from '../features/users/UserSearch';
 import MapCard from '../features/map/MapCard';
 import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
+import WebTrackingNotice from '../features/location/WebTrackingNotice';
 import { useMarkers } from '../features/map/useMarkers';
 import { useGeolocation } from '../features/location/useGeolocation';
 import { api, markersApiFor } from '../api/client';
@@ -120,6 +121,8 @@ export default function Dashboard() {
             expanded={expanded}
             onToggleExpand={() => setExpanded((e) => !e)}
           />
+
+          {!isAdminView && !isNative && !expanded && <WebTrackingNotice />}
         </div>
       </div>
 
