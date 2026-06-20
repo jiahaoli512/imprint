@@ -67,6 +67,9 @@ export const api = {
   joinWaitlist:  (body)  => request('/api/waitlist', { method: 'POST', body: JSON.stringify(body) }),
   waitlistCount: ()      => request('/api/waitlist/count'),
 
+  // Contact (public)
+  sendContact:   (body)  => request('/api/contact', { method: 'POST', body: JSON.stringify(body) }),
+
   // Admin
   adminLogin:           (password)       => request('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) }),
   adminGetUser:         (username)       => adminRequest(`/api/users/by-username/${encodeURIComponent(username)}`),

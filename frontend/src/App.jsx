@@ -8,6 +8,7 @@ import UserRouter from './pages/UserRouter';
 import UserProfile from './pages/UserProfile';
 import NotFound from './pages/NotFound';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Contact from './pages/Contact';
 import Footer from './components/Footer';
 import {
   RequireAuth,
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/login" element={<SmartLogin />} />
         <Route path="/login/profile" element={<SmartLoginProfile />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/user-not-found" element={<RequireAuthOrAdmin><NotFound /></RequireAuthOrAdmin>} />
         <Route path="/admin/dashboard" element={
           <RequireAdminAuth><AdminDashboard /></RequireAdminAuth>

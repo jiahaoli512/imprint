@@ -102,4 +102,42 @@ async function sendApprovalEmail(to, name) {
   }
 }
 
-module.exports = { sendApprovalEmail };
+// Delivers a contact-form submission to the Imprint inbox. The visitor's email
+// is set as replyTo so we can respond directly from the received message.
+async function sendContactEmail({ firstName, lastName, email, feedback }) {
+  const fullName = `${firstName} ${lastName}`.trim();
+  const escape = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: 'Imprint Contact', email: FROM_EMAIL },
+      to: [{ email: 'donotreply.imprint@gmail.com', name: 'Imprint' }],
+      replyTo: { email, name: fullName || email },
+      subject: `New contact form submission from ${fullName || email}`,
+      htmlContent: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#0f1623;">
+  <h2 style="margin:0 0 16px;">New contact form submission</h2>
+  <p style="margin:0 0 8px;"><strong>Name:</strong> ${escape(fullName) || '—'}</p>
+  <p style="margin:0 0 8px;"><strong>Email:</strong> ${escape(email)}</p>
+  <p style="margin:16px 0 4px;"><strong>Feedback:</strong></p>
+  <p style="margin:0;white-space:pre-wrap;">${escape(feedback)}</p>
+</body>
+</html>`,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Brevo API error ${res.status}`);
+  }
+}
+
+module.exports = { sendApprovalEmail, sendContactEmail };

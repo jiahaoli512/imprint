@@ -11,6 +11,7 @@ const waitlistRoutes = require('./routes/waitlist');
 const userRoutes = require('./routes/users');
 const markerRoutes = require('./routes/markers');
 const locationRoutes = require('./routes/locations');
+const contactRoutes = require('./routes/contact');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -62,6 +63,7 @@ app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/markers', markerRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.use((err, req, res, next) => {
   if (err.message === 'Not allowed by CORS') {
