@@ -6,6 +6,7 @@ import AdminLogoutModal from '../components/AdminLogoutModal';
 import LogoutModal from '../components/LogoutModal';
 import UserSearch from '../features/users/UserSearch';
 import MapView from '../features/map/MapView';
+import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
 import { useMarkers } from '../features/map/useMarkers';
 import { useGeolocation } from '../features/location/useGeolocation';
 import { api } from '../api/client';
@@ -87,6 +88,8 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <div className="admin-header-spacer" />
+
       <div className="dashboard-content">
         <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
@@ -99,6 +102,8 @@ export default function Dashboard() {
               Welcome back, {firstName}!{isAdminView && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '18px', fontWeight: '600', color: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
             </p>
           )}
+
+          {!isAdminView && <LocationTrackingPanel />}
 
           <div className="dashboard-map-card">
             <div className="dashboard-toolbar">
