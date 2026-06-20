@@ -67,6 +67,7 @@ export const api = {
   getMarkers:      (username) => request(`/api/markers/user/${encodeURIComponent(username)}`),
   saveMarkers:     (points)   => request.put('/api/markers', { points }),
   getAdminMarkers: ()                => adminRequest('/api/markers'),
+  adminGetUserMarkers: (username)    => adminRequest(`/api/markers/user/${encodeURIComponent(username)}`),
   adminSaveMarkers: (username, points) => adminRequest.put(`/api/markers/user/${encodeURIComponent(username)}`, { points }),
 
   // Locations (background tracking)
@@ -104,7 +105,10 @@ export function profileApiFor(isAdminView) {
 // the same for both; only the save endpoint differs.
 export function markersApiFor(isAdminView, username) {
   return {
-    load: () => api.getMarkers(username),
+    // In admin view there's no user session, so load with the admin token too;
+    // otherwise the gated GET 401s and the map would load empty (then a save
+    // would wipe the user's real markers).
+    load: isAdminView ? () => api.adminGetUserMarkers(username) : () => api.getMarkers(username),
     save: isAdminView ? (points) => api.adminSaveMarkers(username, points) : api.saveMarkers,
   };
 }
