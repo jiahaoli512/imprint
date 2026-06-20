@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, LayoutDashboard, LogOut } from 'lucide-react';
-import AdminLogoutModal from '../components/AdminLogoutModal';
+import LogoutModal from '../components/LogoutModal';
 import WaitlistTable from '../features/admin/WaitlistTable';
 import UsersTable from '../features/admin/UsersTable';
 import { useWaitlist } from '../features/admin/useWaitlist';
@@ -48,7 +48,7 @@ export default function Admin() {
         <UsersTable users={users} />
       </div>
 
-      {confirmLogout && <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />}
+      {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }

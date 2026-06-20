@@ -30,6 +30,7 @@ async function getUserMarkers(username) {
 }
 
 async function saveUserMarkers(userId, points) {
+  if (!Array.isArray(points)) throw httpError(400, 'points must be an array');
   const doc = await MapMarkers.findByIdAndUpdate(
     userId,
     { points },
@@ -40,6 +41,7 @@ async function saveUserMarkers(userId, points) {
 
 // Admin path: save markers to a specific user's map, looked up by username.
 async function saveUserMarkersByUsername(username, points) {
+  if (!Array.isArray(points)) throw httpError(400, 'points must be an array');
   const user = await User.findOne({ username: normalizeUsername(username) });
   if (!user) throw httpError(404, 'User not found');
   return saveUserMarkers(user._id.toString(), points);

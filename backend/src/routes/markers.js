@@ -16,16 +16,12 @@ router.get('/user/:username', handle(async (req, res) => {
 
 // Save own markers (requires auth)
 router.put('/', requireAuth, handle(async (req, res) => {
-  const { points } = req.body;
-  if (!Array.isArray(points)) return res.status(400).json({ error: 'points must be an array' });
-  res.json(await saveUserMarkers(req.user.id, points));
+  res.json(await saveUserMarkers(req.user.id, req.body.points));
 }));
 
 // Admin: save markers to a specific user's map
 router.put('/user/:username', requireAdminAuth, handle(async (req, res) => {
-  const { points } = req.body;
-  if (!Array.isArray(points)) return res.status(400).json({ error: 'points must be an array' });
-  res.json(await saveUserMarkersByUsername(req.params.username, points));
+  res.json(await saveUserMarkersByUsername(req.params.username, req.body.points));
 }));
 
 module.exports = router;

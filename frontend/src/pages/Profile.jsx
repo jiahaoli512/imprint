@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Fingerprint, Check, X, Loader } from 'lucide-react';
+import { Check, X, Loader } from 'lucide-react';
+import AuthShell from '../components/AuthShell';
 import { api, setUsername as saveUsername } from '../api/client';
 import { validateName, USERNAME_RE } from '../utils/validateName';
 
@@ -90,15 +91,7 @@ export default function Profile() {
     dob && ageOk(dob);
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="logo" style={{ justifyContent: 'center', marginBottom: '24px' }}>
-          <div className="logo-icon" style={{ width: '40px', height: '40px' }}>
-            <Fingerprint size={22} strokeWidth={2} color="#0b0e13" />
-          </div>
-          Imprint
-        </div>
-
+    <AuthShell>
         <h1 className="auth-title">Set up your profile</h1>
         <p className="auth-sub">Just a few details to get started.</p>
 
@@ -166,7 +159,6 @@ export default function Profile() {
             {loading ? 'Saving…' : 'Continue'}
           </button>
         </form>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

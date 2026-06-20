@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from 'lucide-react';
-import AdminLogoutModal from '../components/AdminLogoutModal';
+import LogoutModal from '../components/LogoutModal';
 import Spinner from '../components/Spinner';
 import { getUsername, profileApiFor } from '../api/client';
 import { formatDate } from '../utils/formatDate';
@@ -191,7 +191,7 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
-      {confirmLogout && <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />}
+      {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }

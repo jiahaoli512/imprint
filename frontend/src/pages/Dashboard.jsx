@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Fingerprint, User, List, LayoutDashboard, LogOut, Eye, Pencil, Trash2, LocateFixed } from 'lucide-react';
+import { Fingerprint, User, List, LayoutDashboard, LogOut } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
-import AdminLogoutModal from '../components/AdminLogoutModal';
 import LogoutModal from '../components/LogoutModal';
 import UserSearch from '../features/users/UserSearch';
-import MapView from '../features/map/MapView';
+import MapCard from '../features/map/MapCard';
 import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
 import { useMarkers } from '../features/map/useMarkers';
 import { useGeolocation } from '../features/location/useGeolocation';
@@ -102,68 +101,28 @@ export default function Dashboard() {
 
           {!isAdminView && <LocationTrackingPanel />}
 
-          <div className="dashboard-map-card">
-            <div className="dashboard-toolbar">
-              <div className="dashboard-toolbar-dots">
-                <div className="dot dot-r" />
-                <div className="dot dot-y" />
-                <div className="dot dot-g" />
-              </div>
-              {isAdminView && (
-                <div className="mode-toggle">
-                  <button className={`mode-btn${!editing ? ' active' : ''}`} onClick={enterView}>
-                    <Eye size={13} /> View
-                  </button>
-                  <button className={`mode-btn${editing ? ' active' : ''}`} onClick={enterEdit}>
-                    <Pencil size={13} /> Edit
-                  </button>
-                </div>
-              )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {region && <span className="dashboard-region">{region}</span>}
-                {editing && (
-                  <button className="btn btn-ghost dashboard-save-btn" onClick={clearDraft}>
-                    <Trash2 size={13} /> Clear all
-                  </button>
-                )}
-                {isNative && (
-                  <button
-                    className="btn btn-ghost dashboard-save-btn"
-                    onClick={locate}
-                    disabled={locating}
-                    title="Show my location"
-                    style={userLocation ? { color: '#5aa9e6' } : {}}
-                  >
-                    <LocateFixed size={13} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className={`dashboard-map-wrap${editing ? ' editing' : ''}`}>
-              <MapView
-                displayMarkers={displayMarkers}
-                editing={editing}
-                userLocation={userLocation}
-                onAddMarker={addMarker}
-                onRemoveMarker={removeMarker}
-                onRegion={setRegion}
-              />
-            </div>
-            {editing && (
-              <p className="dashboard-hint">Tap to add a pin · Tap a pin to remove it</p>
-            )}
-          </div>
+          <MapCard
+            displayMarkers={displayMarkers}
+            editing={editing}
+            editable={isAdminView}
+            onEnterView={enterView}
+            onEnterEdit={enterEdit}
+            onClear={clearDraft}
+            onAddMarker={addMarker}
+            onRemoveMarker={removeMarker}
+            region={region}
+            onRegion={setRegion}
+            userLocation={userLocation}
+            locating={locating}
+            onLocate={locate}
+            showLocate={isNative}
+          />
         </div>
       </div>
 
       {savePrompt}
 
-      {confirmLogout && (
-        isAdminView
-          ? <AdminLogoutModal onCancel={() => setConfirmLogout(false)} />
-          : <LogoutModal onCancel={() => setConfirmLogout(false)} />
-      )}
+      {confirmLogout && <LogoutModal admin={isAdminView} onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }

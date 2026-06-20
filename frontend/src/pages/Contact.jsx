@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Fingerprint } from 'lucide-react';
+import AuthShell from '../components/AuthShell';
 import { api } from '../api/client';
+import { isValidEmail } from '../utils/validateName';
 
 // Public contact form — collects name, email, and feedback, then sends it to
 // the Imprint inbox via the backend (/api/contact → Brevo).
@@ -21,7 +22,7 @@ export default function Contact() {
     e.preventDefault();
     setError('');
     if (!firstName.trim() || !lastName.trim()) { setError('Please enter your first and last name.'); return; }
-    if (!email.trim()) { setError('Please enter your email address.'); return; }
+    if (!isValidEmail(email)) { setError('Please enter a valid email address.'); return; }
     if (!feedback.trim()) { setError('Please enter your feedback.'); return; }
 
     setLoading(true);
@@ -36,18 +37,7 @@ export default function Contact() {
   }
 
   return (
-    <div className="auth-page">
-      <button className="auth-back" onClick={() => navigate(-1)}>
-        <ArrowLeft size={16} /> Back
-      </button>
-
-      <div className="auth-card">
-        <div className="logo" style={{ justifyContent: 'center', marginBottom: '24px' }}>
-          <div className="logo-icon" style={{ width: '40px', height: '40px' }}>
-            <Fingerprint size={22} strokeWidth={2} color="#0b0e13" />
-          </div>
-        </div>
-
+    <AuthShell onBack={() => navigate(-1)} logoText={false}>
         {sent ? (
           <>
             <h1 className="auth-title">Message sent</h1>
@@ -99,7 +89,6 @@ export default function Contact() {
             </form>
           </>
         )}
-      </div>
-    </div>
+    </AuthShell>
   );
 }

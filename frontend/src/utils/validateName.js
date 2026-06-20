@@ -3,6 +3,12 @@
 export const NAME_RE = /^[\p{L}'’-]+$/u;          // first name: letters, hyphens, apostrophes
 export const NAME_SPACES_RE = /^[\p{L}'’ -]+$/u;  // last name: also allows spaces
 export const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// True if the (trimmed) value looks like a valid email address.
+export function isValidEmail(email) {
+  return EMAIL_RE.test((email || '').trim());
+}
 
 // Validates first/last name format. The caller is responsible for the "first
 // name required" check (its wording differs per form); this covers the shared
