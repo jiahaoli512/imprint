@@ -4,14 +4,26 @@ import { Capacitor } from '@capacitor/core';
 import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
 import Spinner from '../components/Spinner';
-import { getUsername, profileApiFor } from '../api/client';
+import { getUsername, setUsername as saveUsername, profileApiFor } from '../api/client';
 import { formatDate } from '../utils/formatDate';
 import { fullName } from '../utils/fullName';
 import { useAdminView } from '../utils/useAdminView';
-import { validateName } from '../utils/validateName';
+import { validateName, USERNAME_RE } from '../utils/validateName';
 import { useFitText } from '../utils/useFitText';
 
 const isNative = Capacitor.isNativePlatform();
+
+// Self-service edit cooldowns, in days. Mirrors COOLDOWN_DAYS in
+// backend/src/utils/validate.js — the backend is the source of truth; these
+// only drive the UI hints. Admins have no cooldown.
+const COOLDOWN_DAYS = { username: 30, name: 7 };
+
+// Whole days left before a `days`-long cooldown clears (0 when eligible).
+function daysUntil(ts, days) {
+  if (!ts) return 0;
+  const remMs = days * 86400000 - (Date.now() - new Date(ts).getTime());
+  return remMs <= 0 ? 0 : Math.ceil(remMs / 86400000);
+}
 
 export default function UserProfile() {
   const { username } = useParams();
@@ -26,6 +38,7 @@ export default function UserProfile() {
   const [editing, setEditing] = useState(false);
   const [editFirst, setEditFirst] = useState('');
   const [editLast, setEditLast] = useState('');
+  const [editUsername, setEditUsername] = useState('');
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
 
@@ -45,6 +58,7 @@ export default function UserProfile() {
   function startEdit() {
     setEditFirst(user.firstName || '');
     setEditLast(user.lastName || '');
+    setEditUsername(user.username || '');
     setEditError('');
     setEditing(true);
   }
@@ -55,21 +69,45 @@ export default function UserProfile() {
   }
 
   async function saveEdit() {
-    if (!editFirst.trim()) {
-      setEditError('First name is required.');
-      return;
-    }
-    const nameError = validateName(editFirst, editLast);
-    if (nameError) {
-      setEditError(nameError);
-      return;
-    }
-    setSaving(true);
     setEditError('');
+    const nextUsername = editUsername.trim().toLowerCase();
+    const nameChanged = editFirst.trim() !== (user.firstName || '') || editLast.trim() !== (user.lastName || '');
+    const usernameChanged = nextUsername !== user.username;
+
+    if (!nameChanged && !usernameChanged) {
+      setEditError('Make a change before saving.');
+      return;
+    }
+    // Validate only the groups the user actually changed.
+    if (nameChanged) {
+      if (!editFirst.trim()) { setEditError('First name is required.'); return; }
+      const nameError = validateName(editFirst, editLast);
+      if (nameError) { setEditError(nameError); return; }
+    }
+    if (usernameChanged && !USERNAME_RE.test(nextUsername)) {
+      setEditError('Username must be 3–20 characters: letters, numbers, underscores.');
+      return;
+    }
+
+    const body = {};
+    if (nameChanged) { body.firstName = editFirst; body.lastName = editLast; }
+    if (usernameChanged) { body.username = nextUsername; }
+
+    setSaving(true);
     try {
-      const data = await updateUser(username, { firstName: editFirst, lastName: editLast });
+      const data = await updateUser(username, body);
       setUser(data);
       setEditing(false);
+      // A username change moves the profile's URL (and the stored username for a
+      // self-edit). Markers are keyed by user _id, so they're unaffected.
+      if (usernameChanged && data.username && data.username !== username) {
+        if (isAdminView) {
+          navigate(`/admin/${data.username}/profile`, { replace: true });
+        } else {
+          saveUsername(data.username);
+          navigate(`/${data.username}/profile`, { replace: true });
+        }
+      }
     } catch (err) {
       setEditError(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -83,6 +121,12 @@ export default function UserProfile() {
 
   const joined = formatDate(user.createdAt, { long: true });
   const displayName = fullName(user);
+
+  // Self-service cooldowns (admins have none). 0 = editable now.
+  const nameWait = isAdminView ? 0 : daysUntil(user.nameChangedAt, COOLDOWN_DAYS.name);
+  const usernameWait = isAdminView ? 0 : daysUntil(user.usernameChangedAt, COOLDOWN_DAYS.username);
+  const cooldownHint = (wait, cadence) =>
+    wait > 0 ? `Available again in ${wait} day${wait === 1 ? '' : 's'}.` : `Can be changed once ${cadence}.`;
 
   return (
     <div className="auth-page" style={isAdminView ? { paddingTop: 'calc(80px + env(safe-area-inset-top))' } : {}}>
@@ -119,7 +163,7 @@ export default function UserProfile() {
       </div>
 
       <div className="auth-card" style={{ gap: '0' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '8px 0 32px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '8px 0 32px', width: '100%' }}>
           <div style={{
             width: '72px', height: '72px', borderRadius: '50%',
             background: 'var(--surface2)', border: '1px solid var(--border)',
@@ -136,6 +180,8 @@ export default function UserProfile() {
                 value={editFirst}
                 maxLength={50}
                 onChange={e => { setEditFirst(e.target.value); setEditError(''); }}
+                disabled={nameWait > 0}
+                style={nameWait > 0 ? { opacity: 0.55, cursor: 'not-allowed' } : {}}
                 autoFocus
               />
               <input
@@ -144,7 +190,33 @@ export default function UserProfile() {
                 value={editLast}
                 maxLength={50}
                 onChange={e => { setEditLast(e.target.value); setEditError(''); }}
+                disabled={nameWait > 0}
+                style={nameWait > 0 ? { opacity: 0.55, cursor: 'not-allowed' } : {}}
               />
+              <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '-4px' }}>
+                {cooldownHint(nameWait, 'a week')}
+              </p>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
+                  Username
+                </label>
+                <input
+                  className="auth-input"
+                  placeholder="Username"
+                  value={editUsername}
+                  maxLength={20}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoComplete="off"
+                  spellCheck={false}
+                  onChange={e => { setEditUsername(e.target.value); setEditError(''); }}
+                  disabled={usernameWait > 0}
+                  style={usernameWait > 0 ? { opacity: 0.55, cursor: 'not-allowed' } : {}}
+                />
+                <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
+                  {cooldownHint(usernameWait, 'a month')}
+                </p>
+              </div>
               {user.dateOfBirth && (
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>

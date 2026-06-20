@@ -35,10 +35,10 @@ router.get('/by-username/:username', optionalAuth, handle(async (req, res) => {
 }));
 
 router.patch('/by-username/:username', requireUserOrAdmin, handle(async (req, res) => {
-  const { firstName, lastName } = req.body;
+  const { firstName, lastName, username } = req.body;
   res.json(await updateUserByUsername(
     req.params.username,
-    { firstName, lastName },
+    { firstName, lastName, username },
     { viewerId: req.user?.id, isAdmin: !!req.admin },
   ));
 }));
