@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [region, setRegion] = useState('');
   const [firstName, setFirstName] = useState('');
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const {
     displayMarkers, editing,
@@ -86,7 +87,7 @@ export default function Dashboard() {
       <div className="admin-header-spacer" />
 
       <div className="dashboard-content">
-        <div className="dashboard-col">
+        <div className={`dashboard-col${expanded ? ' expanded' : ''}`}>
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
 
           {locationError && (
@@ -115,6 +116,9 @@ export default function Dashboard() {
             locating={locating}
             onLocate={locate}
             showLocate={!isAdminView}
+            expandable={!isNative}
+            expanded={expanded}
+            onToggleExpand={() => setExpanded((e) => !e)}
           />
         </div>
       </div>

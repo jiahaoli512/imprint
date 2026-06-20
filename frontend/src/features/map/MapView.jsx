@@ -23,9 +23,28 @@ function FlyToLocation({ position }) {
   return null;
 }
 
+// Keep the map sized to its container while it animates (e.g. the enlarge
+// toggle): re-measure each frame for the transition's duration so Leaflet fills
+// the growing/shrinking area smoothly instead of leaving a grey gap.
+function InvalidateOnResize({ dep }) {
+  const map = useMap();
+  useEffect(() => {
+    let raf, start;
+    const DURATION = 400; // ≥ the CSS transition (0.35s)
+    const tick = (t) => {
+      if (start === undefined) start = t;
+      map.invalidateSize({ animate: false });
+      if (t - start < DURATION) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [dep, map]);
+  return null;
+}
+
 // Renders the Leaflet map and all its layers. Stateless: marker data and edit
 // state come in as props; user interactions are reported via callbacks.
-export default function MapView({ displayMarkers, editing, userLocation, onAddMarker, onRemoveMarker, onRegion }) {
+export default function MapView({ displayMarkers, editing, userLocation, onAddMarker, onRemoveMarker, onRegion, expanded }) {
   return (
     <MapContainer
       center={[20, 0]}
@@ -41,6 +60,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
       />
       <MapClickHandler editing={editing} onAdd={onAddMarker} />
       <RegionDetector onRegion={onRegion} />
+      <InvalidateOnResize dep={expanded} />
       {userLocation && <FlyToLocation position={userLocation} />}
       {userLocation && (
         <>

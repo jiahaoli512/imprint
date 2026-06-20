@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { List, LogOut } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import LogoutModal from '../components/LogoutModal';
 import LogoMark from '../components/LogoMark';
 import MapCard from '../features/map/MapCard';
 import { useMarkers } from '../features/map/useMarkers';
 import { api } from '../api/client';
 
+const isNative = Capacitor.isNativePlatform();
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [region, setRegion] = useState('');
+  const [expanded, setExpanded] = useState(false);
 
   const {
     displayMarkers, editing,
@@ -43,7 +47,7 @@ export default function AdminDashboard() {
       <div className="admin-header-spacer" />
 
       <div className="dashboard-content">
-        <div className="dashboard-col">
+        <div className={`dashboard-col${expanded ? ' expanded' : ''}`}>
           <p className="dashboard-welcome">Welcome, Admin!</p>
           <MapCard
             displayMarkers={displayMarkers}
@@ -56,6 +60,9 @@ export default function AdminDashboard() {
             onRemoveMarker={removeMarker}
             region={region}
             onRegion={setRegion}
+            expandable={!isNative}
+            expanded={expanded}
+            onToggleExpand={() => setExpanded((e) => !e)}
           />
         </div>
       </div>
