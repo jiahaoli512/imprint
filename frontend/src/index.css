@@ -1140,6 +1140,15 @@ footer {
    so the size pulse travels left to right like a wave. The clip lives on the
    same element as the transform, so it must be per‑letter (inline‑block letters
    break a clip set on the parent). */
+/* The greeting phrase and the name are each non-breaking units: they share a
+   line when they fit, otherwise the name wraps to its own line (the space
+   between them is the only break point). If a unit is still too wide, Greeting
+   shrinks the font to fit. */
+.greet-seg {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .wave-char {
   display: inline-block;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
