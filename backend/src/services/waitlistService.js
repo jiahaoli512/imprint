@@ -1,7 +1,7 @@
 const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const { sendApprovalEmail } = require('../utils/email');
-const { checkLength } = require('../utils/validate');
+const { checkLength, checkRequired, normalizeEmail } = require('../utils/validate');
 const httpError = require('../utils/httpError');
 
 async function normalizePositions() {
@@ -10,13 +10,15 @@ async function normalizePositions() {
 }
 
 async function joinWaitlist(email, name) {
+  checkRequired('Email', email);
   checkLength('email', email);
   checkLength('name', name);
+  email = normalizeEmail(email);
 
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  const existingUser = await User.findOne({ email });
   if (existingUser) throw httpError(409, 'An account with this email is already registered.');
 
-  const existing = await Waitlist.findOne({ email: email.toLowerCase() });
+  const existing = await Waitlist.findOne({ email });
   if (existing) throw httpError(409, 'This email is already on the waitlist.');
 
   const count = await Waitlist.countDocuments();
@@ -33,10 +35,12 @@ async function countWaitlist() {
 }
 
 async function checkWaitlist(email) {
-  const entry = await Waitlist.findOne({ email: email.toLowerCase() });
+  checkRequired('Email', email);
+  email = normalizeEmail(email);
+  const entry = await Waitlist.findOne({ email });
   if (!entry) return { status: 'not_found' };
   if (!entry.approved) return { status: 'pending' };
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  const existingUser = await User.findOne({ email });
   if (existingUser) return { status: 'already_registered' };
   return { status: 'approved' };
 }
