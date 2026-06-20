@@ -114,7 +114,7 @@ export default function Dashboard() {
             userLocation={userLocation}
             locating={locating}
             onLocate={locate}
-            showLocate={isNative}
+            showLocate={!isAdminView}
           />
         </div>
       </div>
