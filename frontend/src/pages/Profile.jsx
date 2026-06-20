@@ -5,6 +5,7 @@ import AuthShell from '../components/AuthShell';
 import { api, setUsername as saveUsername } from '../api/client';
 import { validateName, USERNAME_RE } from '../utils/validateName';
 import { useDebouncedCallback } from '../utils/useDebouncedCallback';
+import { refreshGreeting } from '../utils/greeting';
 
 const maxDob = new Date();
 maxDob.setFullYear(maxDob.getFullYear() - 18);
@@ -78,6 +79,7 @@ export default function Profile() {
     try {
       const data = await api.setupProfile({ email, firstName, lastName, username, dateOfBirth: dob });
       saveUsername(data.username);
+      refreshGreeting();
       navigate(`/${data.username}/dashboard`);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');

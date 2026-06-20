@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getUsername, clearSession, setAdminToken } from '../api/client';
+import { refreshGreeting } from '../utils/greeting';
 import Modal from './Modal';
 
 // Owns the admin-login workflow: password entry, server-side auth, and the
@@ -31,6 +32,7 @@ export default function AdminLoginModal({ onClose }) {
 
   function enterAdmin() {
     clearSession();
+    refreshGreeting();
     onClose();
     navigate('/admin/waitlist');
   }

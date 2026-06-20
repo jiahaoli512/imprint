@@ -1130,9 +1130,20 @@ footer {
 
 .dashboard-welcome {
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 33px;
   font-weight: 600;
   letter-spacing: -0.3px;
+  /* amber→teal gradient across the whole greeting (matches the home‑page
+     "Leave your Imprint" heading) */
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* The greeting phrase only is italic; the name stays upright. */
+.dashboard-greet {
+  font-style: italic;
 }
 
 .dashboard-map-card {
