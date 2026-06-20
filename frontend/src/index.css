@@ -1211,6 +1211,18 @@ footer {
   cursor: crosshair !important;
 }
 
+/* Smoothly enlarge the map to fill the content area between the (fixed) header
+   and the footer — both untouched. Web-only (the toggle is hidden on native).
+   Explicit width/height (not flex) so the grow/shrink can animate. */
+.dashboard-col,
+.dashboard-map-card { transition: width 0.35s ease; }
+.dashboard-map-wrap { transition: height 0.35s ease; }
+
+.dashboard-col.expanded { width: 100%; }
+.dashboard-col.expanded .dashboard-welcome { display: none; }
+.dashboard-map-card.expanded { width: 100%; }
+.dashboard-map-wrap.expanded { height: calc(100vh - 200px); }
+
 /* Amber grid overlay */
 .dashboard-map-wrap::before {
   content: '';

@@ -1,19 +1,21 @@
-import { Eye, Pencil, Trash2, LocateFixed } from 'lucide-react';
+import { Eye, Pencil, Trash2, LocateFixed, Maximize2, Minimize2 } from 'lucide-react';
 import MapView from './MapView';
 import { LOCATE_BLUE } from './mapUtils';
 
 // The shared map panel used by both the user dashboard and the admin dashboards:
 // a window-chrome toolbar (mode toggle when editable, region label, clear/locate
 // actions), the map itself, and an edit hint. All state is passed in — typically
-// spread from useMarkers plus a couple of view flags.
+// spread from useMarkers plus a couple of view flags. When `expandable` (web
+// only), an enlarge toggle stretches the card to fill the content area.
 export default function MapCard({
   displayMarkers, editing, editable = false,
   onEnterView, onEnterEdit, onClear, onAddMarker, onRemoveMarker,
   region, onRegion,
   userLocation, locating, onLocate, showLocate = false,
+  expandable = false, expanded = false, onToggleExpand,
 }) {
   return (
-    <div className="dashboard-map-card">
+    <div className={`dashboard-map-card${expanded ? ' expanded' : ''}`}>
       <div className="dashboard-toolbar">
         <div className="dashboard-toolbar-dots">
           <div className="dot dot-r" />
@@ -48,10 +50,19 @@ export default function MapCard({
               <LocateFixed size={13} />
             </button>
           )}
+          {expandable && (
+            <button
+              className="btn btn-ghost dashboard-save-btn"
+              onClick={onToggleExpand}
+              title={expanded ? 'Shrink map' : 'Enlarge map'}
+            >
+              {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            </button>
+          )}
         </div>
       </div>
 
-      <div className={`dashboard-map-wrap${editing ? ' editing' : ''}`}>
+      <div className={`dashboard-map-wrap${editing ? ' editing' : ''}${expanded ? ' expanded' : ''}`}>
         <MapView
           displayMarkers={displayMarkers}
           editing={editing}
@@ -59,6 +70,7 @@ export default function MapCard({
           onAddMarker={onAddMarker}
           onRemoveMarker={onRemoveMarker}
           onRegion={onRegion}
+          expanded={expanded}
         />
       </div>
 
