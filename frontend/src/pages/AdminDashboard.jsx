@@ -26,7 +26,7 @@ export default function AdminDashboard() {
       <div className="admin-header">
         <div className="logo">
           <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-            <Fingerprint size={18} strokeWidth={2} color="#080c14" />
+            <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
           </div>
           Imprint
         </div>
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
 
       <div className="dashboard-content">
         <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
-          <p style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '600', letterSpacing: '-0.3px' }}>
             Welcome, Admin!
           </p>
           <div className="dashboard-map-card">

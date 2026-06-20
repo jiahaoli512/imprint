@@ -18,7 +18,7 @@ export default function Admin() {
       <div className="admin-header">
         <div className="logo">
           <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-            <Fingerprint size={18} strokeWidth={2} color="#080c14" />
+            <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
           </div>
           Imprint
         </div>

@@ -14,10 +14,10 @@ export default function AdminLogoutModal({ onCancel }) {
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-icon">
-          <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
+          <Fingerprint size={28} strokeWidth={1.5} color="#e2a156" />
         </div>
         <h2 className="modal-title">Log out of Admin?</h2>
-        <p className="modal-sub" style={{ marginTop: '16px', color: '#ff6b6b' }}>
+        <p className="modal-sub" style={{ marginTop: '16px', color: '#e2685a' }}>
           You will be returned to the home page and your admin session will end.
         </p>
         <button className="btn btn-primary modal-submit" onClick={handleLogout}>
