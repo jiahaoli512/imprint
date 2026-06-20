@@ -53,8 +53,14 @@ export function isTracking() {
 // Starts background location updates. The plugin prompts for "Always" permission
 // (requestPermissions: true) and shows the required iOS background notification.
 export async function startTracking() {
-  if (!isTrackingSupported() || watcherId) return;
-  watcherId = await BackgroundGeolocation.addWatcher(
+  if (!isTrackingSupported()) {
+    status = { ...status, error: 'not supported on this platform' };
+    emit();
+    return;
+  }
+  if (watcherId) return;
+  try {
+    watcherId = await BackgroundGeolocation.addWatcher(
     {
       backgroundMessage: 'Imprint is mapping the places you visit.',
       backgroundTitle: 'Imprint is tracking your travels',
@@ -65,7 +71,7 @@ export async function startTracking() {
     (location, error) => {
       if (error) {
         // error.code === 'NOT_AUTHORIZED' → user denied/needs Settings
-        status = { ...status, error: error.code || 'error' };
+        status = { ...status, error: error.code || error.message || 'location error' };
         emit();
         return;
       }
@@ -80,7 +86,11 @@ export async function startTracking() {
       emit();
       if (buffer.length >= FLUSH_THRESHOLD) flush();
     }
-  );
+    );
+  } catch (e) {
+    status = { ...status, error: e?.message || 'failed to start tracking' };
+    emit();
+  }
 }
 
 export async function stopTracking() {
