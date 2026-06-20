@@ -11,11 +11,31 @@ const FLUSH_THRESHOLD = 10; // upload after this many buffered points
 let watcherId = null;
 let buffer = [];
 
+// Observable status so the UI can show live verification (counts, last point).
+let status = { captured: 0, uploaded: 0, lastPoint: null, error: null };
+const listeners = new Set();
+
+function emit() {
+  for (const listener of listeners) listener(status);
+}
+
+export function subscribe(listener) {
+  listeners.add(listener);
+  listener(status);
+  return () => listeners.delete(listener);
+}
+
+export function getStatus() {
+  return status;
+}
+
 async function flush() {
   if (buffer.length === 0) return;
   const batch = buffer.splice(0, buffer.length);
   try {
     await api.logLocations(batch);
+    status = { ...status, uploaded: status.uploaded + batch.length };
+    emit();
   } catch {
     // Re-queue on failure so points aren't lost between sessions.
     buffer.unshift(...batch);
@@ -45,14 +65,19 @@ export async function startTracking() {
     (location, error) => {
       if (error) {
         // error.code === 'NOT_AUTHORIZED' → user denied/needs Settings
+        status = { ...status, error: error.code || 'error' };
+        emit();
         return;
       }
-      buffer.push({
+      const point = {
         lat: location.latitude,
         lng: location.longitude,
         accuracy: location.accuracy,
         visitedAt: new Date().toISOString(),
-      });
+      };
+      buffer.push(point);
+      status = { ...status, captured: status.captured + 1, lastPoint: point, error: null };
+      emit();
       if (buffer.length >= FLUSH_THRESHOLD) flush();
     }
   );
