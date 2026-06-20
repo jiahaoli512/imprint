@@ -58,7 +58,7 @@ export default function Footer() {
       <footer>
         <div className="logo" style={{ fontSize: '16px' }}>
           <div className="logo-icon" style={{ width: '26px', height: '26px' }}>
-            <Fingerprint size={15} strokeWidth={2} color="#080c14" />
+            <Fingerprint size={15} strokeWidth={2} color="#0b0e13" />
           </div>
           Imprint
         </div>
@@ -75,7 +75,7 @@ export default function Footer() {
         <div className="modal-overlay" onClick={handleClose}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-icon">
-              <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
+              <Fingerprint size={28} strokeWidth={1.5} color="#e2a156" />
             </div>
             <h2 className="modal-title">Admin Access</h2>
             <p className="modal-sub">Enter the admin password to continue.</p>
@@ -100,10 +100,10 @@ export default function Footer() {
         <div className="modal-overlay" onClick={handleClose}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-icon">
-              <Fingerprint size={28} strokeWidth={1.5} color="#4fffb0" />
+              <Fingerprint size={28} strokeWidth={1.5} color="#e2a156" />
             </div>
             <h2 className="modal-title">Log out & continue?</h2>
-            <p className="modal-sub" style={{ marginTop: '16px', color: '#ff6b6b' }}>You're currently logged in. Entering the admin panel will log you out of your account.</p>
+            <p className="modal-sub" style={{ marginTop: '16px', color: '#e2685a' }}>You're currently logged in. Entering the admin panel will log you out of your account.</p>
             <button className="btn btn-primary modal-submit" onClick={enterAdmin}>
               Log out & continue
             </button>

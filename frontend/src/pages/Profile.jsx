@@ -99,7 +99,7 @@ export default function Profile() {
       <div className="auth-card">
         <div className="logo" style={{ justifyContent: 'center', marginBottom: '24px' }}>
           <div className="logo-icon" style={{ width: '40px', height: '40px' }}>
-            <Fingerprint size={22} strokeWidth={2} color="#080c14" />
+            <Fingerprint size={22} strokeWidth={2} color="#0b0e13" />
           </div>
           Imprint
         </div>
@@ -139,9 +139,9 @@ export default function Profile() {
             />
             <span className="auth-eye" style={{ pointerEvents: 'none' }}>
               {usernameStatus === 'checking'  && <Loader size={15} className="spin" />}
-              {usernameStatus === 'available' && <Check size={15} color="var(--accent)" />}
-              {usernameStatus === 'taken'     && <X size={15} color="#ff6b6b" />}
-              {usernameStatus === 'invalid'   && <X size={15} color="#ff6b6b" />}
+              {usernameStatus === 'available' && <Check size={15} color="var(--success)" />}
+              {usernameStatus === 'taken'     && <X size={15} color="#e2685a" />}
+              {usernameStatus === 'invalid'   && <X size={15} color="#e2685a" />}
             </span>
           </div>
           {usernameStatus === 'taken'   && <p className="auth-error" style={{ marginTop: '-4px' }}>Username already taken.</p>}

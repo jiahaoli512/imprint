@@ -71,14 +71,14 @@ export async function reverseGeocode(lat, lng) {
 
 export const pinIcon = L.divIcon({
   className: '',
-  html: `<div style="width:10px;height:10px;background:#4fffb0;border:2px solid #080c14;border-radius:50%;box-shadow:0 0 8px rgba(79,255,176,0.7)"></div>`,
+  html: `<div style="width:10px;height:10px;background:#e2a156;border:2px solid #0b0e13;border-radius:50%;box-shadow:0 0 8px rgba(226,161,86,0.7)"></div>`,
   iconSize: [10, 10],
   iconAnchor: [5, 5],
 });
 
 export const pinIconEdit = L.divIcon({
   className: '',
-  html: `<div style="width:10px;height:10px;background:#ff6b6b;border:2px solid #080c14;border-radius:50%;box-shadow:0 0 8px rgba(255,107,107,0.7);cursor:pointer"></div>`,
+  html: `<div style="width:10px;height:10px;background:#e2685a;border:2px solid #0b0e13;border-radius:50%;box-shadow:0 0 8px rgba(226,104,90,0.7);cursor:pointer"></div>`,
   iconSize: [10, 10],
   iconAnchor: [5, 5],
 });

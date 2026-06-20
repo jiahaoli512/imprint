@@ -5,7 +5,7 @@ import { pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetecto
 
 const locationIcon = L.divIcon({
   className: '',
-  html: `<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(74,158,255,0.25),0 0 12px rgba(74,158,255,0.6)"></div>`,
+  html: `<div style="width:14px;height:14px;background:#5aa9e6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(90,169,230,0.25),0 0 12px rgba(90,169,230,0.6)"></div>`,
   iconSize: [14, 14],
   iconAnchor: [7, 7],
 });
@@ -42,7 +42,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
           <Circle
             center={userLocation}
             radius={200}
-            pathOptions={{ color: '#4a9eff', fillColor: '#4a9eff', fillOpacity: 0.12, weight: 1, opacity: 0.4 }}
+            pathOptions={{ color: '#5aa9e6', fillColor: '#5aa9e6', fillOpacity: 0.12, weight: 1, opacity: 0.4 }}
           />
           <Marker position={userLocation} icon={locationIcon} />
         </>
@@ -53,8 +53,8 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
             center={pos}
             radius={15.24}
             pathOptions={{
-              color: editing ? '#ff6b6b' : '#4fffb0',
-              fillColor: editing ? '#ff6b6b' : '#4fffb0',
+              color: editing ? '#e2685a' : '#e2a156',
+              fillColor: editing ? '#e2685a' : '#e2a156',
               fillOpacity: 0.15,
               weight: 1.5,
               opacity: 0.6,

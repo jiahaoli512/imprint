@@ -13,7 +13,7 @@ export default function Nav() {
     <nav className={`nav${open ? ' nav-open' : ''}`}>
       <div className="logo">
         <div className="logo-icon">
-          <Fingerprint size={18} strokeWidth={2} color="#080c14" />
+          <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
         </div>
         Imprint
       </div>

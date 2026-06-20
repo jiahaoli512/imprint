@@ -11,7 +11,7 @@ export default function NotFound() {
       background: 'var(--bg)', gap: '16px', padding: '24px',
     }}>
       <div className="logo-icon" style={{ width: '48px', height: '48px', marginBottom: '8px' }}>
-        <Fingerprint size={26} strokeWidth={2} color="#080c14" />
+        <Fingerprint size={26} strokeWidth={2} color="#0b0e13" />
       </div>
       <p style={{ fontSize: '72px', fontWeight: '900', letterSpacing: '-4px', margin: 0, lineHeight: 1,
         background: 'linear-gradient(135deg, var(--accent), var(--accent2))',

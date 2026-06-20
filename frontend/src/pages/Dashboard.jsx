@@ -47,7 +47,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div className="logo">
             <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-              <Fingerprint size={18} strokeWidth={2} color="#080c14" />
+              <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
             </div>
             Imprint
           </div>
@@ -88,11 +88,11 @@ export default function Dashboard() {
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
 
           {locationError && (
-            <p style={{ fontSize: '12px', color: '#ff6b6b', marginTop: '-8px' }}>{locationError}</p>
+            <p style={{ fontSize: '12px', color: '#e2685a', marginTop: '-8px' }}>{locationError}</p>
           )}
           {firstName && (
-            <p style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>
-              Welcome back, {firstName}!{isAdminView && <span style={{ fontSize: '18px', fontWeight: '600', color: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '600', letterSpacing: '-0.3px' }}>
+              Welcome back, {firstName}!{isAdminView && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '18px', fontWeight: '600', color: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
             </p>
           )}
 
@@ -126,7 +126,7 @@ export default function Dashboard() {
                     onClick={locate}
                     disabled={locating}
                     title="Show my location"
-                    style={userLocation ? { color: '#4a9eff' } : {}}
+                    style={userLocation ? { color: '#5aa9e6' } : {}}
                   >
                     <LocateFixed size={13} />
                   </button>
