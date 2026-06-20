@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, X, Loader } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import { api, setUsername as saveUsername } from '../api/client';
 import { validateName, USERNAME_RE } from '../utils/validateName';
+import { useDebouncedCallback } from '../utils/useDebouncedCallback';
 
 const maxDob = new Date();
 maxDob.setFullYear(maxDob.getFullYear() - 18);
@@ -21,7 +22,15 @@ export default function Profile() {
   const [dob, setDob]                       = useState('');
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
-  const timerRef = useRef(null);
+
+  const debouncedCheck = useDebouncedCallback(async (clean) => {
+    try {
+      const data = await api.checkUsername(clean);
+      setUsernameStatus(data.available ? 'available' : 'taken');
+    } catch {
+      setUsernameStatus('idle');
+    }
+  }, 500);
 
   if (!email) {
     navigate('/login', { replace: true });
@@ -32,20 +41,12 @@ export default function Profile() {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, '');
     setUsername(clean);
     setError('');
-    clearTimeout(timerRef.current);
 
-    if (!clean) { setUsernameStatus('idle'); return; }
-    if (!USERNAME_RE.test(clean)) { setUsernameStatus('invalid'); return; }
+    if (!clean) { debouncedCheck.cancel(); setUsernameStatus('idle'); return; }
+    if (!USERNAME_RE.test(clean)) { debouncedCheck.cancel(); setUsernameStatus('invalid'); return; }
 
     setUsernameStatus('checking');
-    timerRef.current = setTimeout(async () => {
-      try {
-        const data = await api.checkUsername(clean);
-        setUsernameStatus(data.available ? 'available' : 'taken');
-      } catch {
-        setUsernameStatus('idle');
-      }
-    }, 500);
+    debouncedCheck(clean);
   }
 
   // mirrors ageFromDob() in userService.js — keep in sync if the threshold changes

@@ -5,6 +5,7 @@ import LogoutModal from '../components/LogoutModal';
 import Spinner from '../components/Spinner';
 import { getUsername, profileApiFor } from '../api/client';
 import { formatDate } from '../utils/formatDate';
+import { fullName } from '../utils/fullName';
 import { useAdminView } from '../utils/useAdminView';
 import { validateName } from '../utils/validateName';
 
@@ -73,7 +74,7 @@ export default function UserProfile() {
   if (!user) return null;
 
   const joined = formatDate(user.createdAt, { long: true });
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
+  const displayName = fullName(user);
 
   return (
     <div className="auth-page" style={isAdminView ? { paddingTop: 'calc(80px + env(safe-area-inset-top))' } : {}}>
@@ -165,9 +166,9 @@ export default function UserProfile() {
             </div>
           ) : (
             <>
-              {fullName && (
+              {displayName && (
                 <h1 style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>
-                  {fullName}
+                  {displayName}
                 </h1>
               )}
               <p style={{ margin: 0, fontSize: '15px', color: 'var(--accent)', fontWeight: '600' }}>

@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { api } from '../../api/client';
+import { fullName } from '../../utils/fullName';
+import { useDebouncedCallback } from '../../utils/useDebouncedCallback';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -14,7 +16,14 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const containerRef = useRef(null);
-  const timerRef = useRef(null);
+
+  const debouncedSearch = useDebouncedCallback(async (q) => {
+    try {
+      const data = await api.searchUsers(q);
+      setResults(data);
+      setShowResults(true);
+    } catch { setResults([]); }
+  }, 250);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -29,16 +38,9 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
   function handleChange(e) {
     const val = e.target.value;
     setSearch(val);
-    clearTimeout(timerRef.current);
     const q = val.trim();
-    if (!q) { setResults([]); setShowResults(false); return; }
-    timerRef.current = setTimeout(async () => {
-      try {
-        const data = await api.searchUsers(q);
-        setResults(data);
-        setShowResults(true);
-      } catch { setResults([]); }
-    }, 250);
+    if (!q) { debouncedSearch.cancel(); setResults([]); setShowResults(false); return; }
+    debouncedSearch(q);
   }
 
   function selectUser(u) {
@@ -115,7 +117,7 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
               <span style={{ fontSize: '13px', fontWeight: '600' }}>@{u.username}</span>
               {(u.firstName || u.lastName) && (
                 <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                  {[u.firstName, u.lastName].filter(Boolean).join(' ')}
+                  {fullName(u)}
                 </span>
               )}
             </div>
