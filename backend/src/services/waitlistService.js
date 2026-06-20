@@ -34,15 +34,17 @@ async function countWaitlist() {
   return Waitlist.countDocuments();
 }
 
+// Public, pre-auth probe used by the signup flow. To avoid leaking account
+// existence (email enumeration), it collapses every state to just "can this
+// email register now?" — the only distinction the UI needs. 'unavailable'
+// covers not-on-waitlist, pending, and already-registered alike.
 async function checkWaitlist(email) {
   checkRequired('Email', email);
   email = normalizeEmail(email);
   const entry = await Waitlist.findOne({ email });
-  if (!entry) return { status: 'not_found' };
-  if (!entry.approved) return { status: 'pending' };
-  const existingUser = await User.findOne({ email });
-  if (existingUser) return { status: 'already_registered' };
-  return { status: 'approved' };
+  const existingUser = entry?.approved ? await User.findOne({ email }) : null;
+  const canRegister = !!entry && entry.approved && !existingUser;
+  return { status: canRegister ? 'approved' : 'unavailable' };
 }
 
 async function reorderWaitlist(ids) {
