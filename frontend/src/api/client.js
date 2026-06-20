@@ -10,7 +10,13 @@ export const clearSession = () => {
 };
 
 export const getAdminToken = () => sessionStorage.getItem('admin_token');
-export const setAdminToken = (t) => sessionStorage.setItem('admin_token', t);
+// Setting the token also marks the admin session active — the two always go
+// together, so callers never touch the raw 'admin_auth' flag themselves.
+export const setAdminToken = (t) => {
+  sessionStorage.setItem('admin_token', t);
+  sessionStorage.setItem('admin_auth', '1');
+};
+export const isAdminAuthed = () => sessionStorage.getItem('admin_auth') === '1';
 export const clearAdminSession = () => {
   sessionStorage.removeItem('admin_auth');
   sessionStorage.removeItem('admin_token');

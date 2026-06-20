@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint } from 'lucide-react';
+import { isAdminAuthed } from '../api/client';
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function NotFound() {
         That username doesn't exist on Imprint.
       </p>
       <button className="btn btn-ghost" style={{ marginTop: '8px' }} onClick={() => {
-        const isAdmin = !!sessionStorage.getItem('admin_auth');
+        const isAdmin = isAdminAuthed();
         navigate(isAdmin ? '/admin/dashboard' : '/home');
       }}>
         Go home

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { api, getUsername } from '../api/client';
+import { api, getUsername, isAdminAuthed } from '../api/client';
 import Spinner from '../components/Spinner';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
@@ -17,14 +17,14 @@ export function RequireAuth({ children }) {
 }
 
 export function RequireAdminAuth({ children }) {
-  if (isNative || !sessionStorage.getItem('admin_auth')) {
+  if (isNative || !isAdminAuthed()) {
     return <Navigate to="/home" replace />;
   }
   return children;
 }
 
 export function RequireAuthOrAdmin({ children }) {
-  if (!getUsername() && !sessionStorage.getItem('admin_auth')) {
+  if (!getUsername() && !isAdminAuthed()) {
     return <Navigate to="/home" replace />;
   }
   return children;
