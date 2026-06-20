@@ -28,11 +28,11 @@ export default function LocationTrackingPanel() {
         </button>
       </div>
 
-      {tracking && (
+      {(tracking || status.error) && (
         <div style={{ marginTop: '12px', display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--muted)' }}>
-          <span>captured {status.captured}</span>
-          <span>uploaded {status.uploaded}</span>
-          {status.lastPoint && (
+          {tracking && <span>captured {status.captured}</span>}
+          {tracking && <span>uploaded {status.uploaded}</span>}
+          {tracking && status.lastPoint && (
             <span>last {status.lastPoint.lat.toFixed(4)}, {status.lastPoint.lng.toFixed(4)}</span>
           )}
           {status.error && <span style={{ color: 'var(--error)' }}>error: {status.error}</span>}
