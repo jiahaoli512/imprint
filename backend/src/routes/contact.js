@@ -1,13 +1,14 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
-const { authLimiter } = require('../middleware/rateLimit');
+const { contactLimiter } = require('../middleware/rateLimit');
 const { sendContactEmail } = require('../utils/email');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Public contact form → emails the Imprint inbox. Rate-limited with the strict
-// limiter to deter abuse of an unauthenticated, email-sending endpoint.
-router.post('/', authLimiter, handle(async (req, res) => {
+// Public contact form → emails the Imprint inbox. Rate-limited (5/hour/IP,
+// counting successes) to deter abuse of an unauthenticated, email-sending
+// endpoint.
+router.post('/', contactLimiter, handle(async (req, res) => {
   const firstName = (req.body.firstName || '').trim();
   const lastName = (req.body.lastName || '').trim();
   const email = (req.body.email || '').trim();
