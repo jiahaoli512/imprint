@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fingerprint, ArrowLeft } from 'lucide-react';
 
@@ -9,6 +10,9 @@ const DSAR = 'https://app.termly.io/dsar/5585c578-e9c1-4524-ad2d-dfb7e637a491';
 // content using the app's theme tokens so it's readable and on-brand.
 export default function PrivacyPolicy() {
   const navigate = useNavigate();
+
+  // Land at the top of the policy regardless of prior scroll position.
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
