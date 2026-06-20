@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   isTrackingSupported, isTracking, startTracking, stopTracking, subscribe, getStatus,
-  openLocationSettings, getAuthorizationStatus,
+  openLocationSettings, getAuthorizationStatus, wasTrackingEnabled, resumeTrackingIfEnabled,
 } from './backgroundTracking';
 
 // UI-facing hook for the background tracking toggle. `supported` is false on web,
@@ -11,7 +11,9 @@ import {
 // the user changes it in Settings).
 export function useBackgroundTracking() {
   const supported = isTrackingSupported();
-  const [tracking, setTracking] = useState(isTracking());
+  // Initialise from the live watcher OR the saved choice so it shows ON without
+  // an OFF flicker after navigation / app restart.
+  const [tracking, setTracking] = useState(isTracking() || wasTrackingEnabled());
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState(getStatus());
   const [authStatus, setAuthStatus] = useState('unknown');
@@ -21,6 +23,12 @@ export function useBackgroundTracking() {
   }, []);
 
   useEffect(() => subscribe(setStatus), []);
+
+  // Auto-resume tracking if the user had enabled it (re-arms the watcher after a
+  // restart; no-op if already running). It never turns off on its own.
+  useEffect(() => {
+    resumeTrackingIfEnabled().then(() => setTracking(isTracking() || wasTrackingEnabled()));
+  }, []);
 
   useEffect(() => {
     refreshAuth();
