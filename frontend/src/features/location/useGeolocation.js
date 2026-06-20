@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
@@ -11,18 +11,32 @@ function getCurrentPosition() {
   });
 }
 
+// Module-level cache so a located position survives navigation (the dashboard
+// unmounting/remounting) — once located, it stays shown until the page reloads.
+let cachedLocation = null;
+const listeners = new Set();
+function setCachedLocation(loc) {
+  cachedLocation = loc;
+  for (const l of listeners) l(loc);
+}
+
 // Encapsulates the "locate me" concern: requesting the device location and
-// exposing the resulting position, loading flag, and any error.
+// exposing the resulting position (persisted), loading flag, and any error.
 export function useGeolocation() {
-  const [userLocation, setUserLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState(cachedLocation);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
+
+  useEffect(() => {
+    listeners.add(setUserLocation);
+    return () => listeners.delete(setUserLocation);
+  }, []);
 
   async function locate() {
     setLocating(true);
     setLocationError('');
     try {
-      setUserLocation(await getCurrentPosition());
+      setCachedLocation(await getCurrentPosition());
     } catch (e) {
       setLocationError(e.message || 'Could not get location.');
     } finally {
