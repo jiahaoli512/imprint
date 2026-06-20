@@ -13,10 +13,12 @@ const locationIcon = L.divIcon({
   iconAnchor: [7, 7],
 });
 
+const LOCATE_ZOOM = 16; // street-level zoom when centering on the user
+
 function FlyToLocation({ position }) {
   const map = useMap();
   useEffect(() => {
-    if (position) map.flyTo(position, Math.max(map.getZoom(), 10), { duration: 1.2 });
+    if (position) map.flyTo(position, Math.max(map.getZoom(), LOCATE_ZOOM), { duration: 1.2 });
   }, [position]);
   return null;
 }
