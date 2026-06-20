@@ -64,7 +64,7 @@ export default function Footer() {
         </div>
         <span className="footer-copy">© 2026 Imprint. All rights reserved.</span>
         <ul className="footer-links">
-          <li><a href="#">Privacy</a></li>
+          <li><button className="footer-admin-btn" onClick={() => navigate('/privacy')}>Privacy</button></li>
           <li><a href="#">Terms</a></li>
           <li><a href="#">Contact</a></li>
           {!isNative && <li><button className="footer-admin-btn" onClick={() => setModalOpen(true)}>Admin</button></li>}
