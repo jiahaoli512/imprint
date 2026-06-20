@@ -25,10 +25,7 @@ export default function UserRouter() {
 
     api.getUser(username)
       .then(() => navigate(`/${username}/profile`, { replace: true }))
-      .catch(err => {
-        if (err.status === 404) navigate('/user-not-found', { replace: true });
-        else navigate('/user-not-found', { replace: true });
-      });
+      .catch(() => navigate('/user-not-found', { replace: true }));
   }, [username]);
 
   return <Spinner />;

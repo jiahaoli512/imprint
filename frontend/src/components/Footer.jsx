@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import AdminLoginModal from './AdminLoginModal';
+import LogoMark from './LogoMark';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -14,9 +14,7 @@ export default function Footer() {
     <>
       <footer>
         <div className="logo" style={{ fontSize: '16px' }}>
-          <div className="logo-icon" style={{ width: '26px', height: '26px' }}>
-            <Fingerprint size={15} strokeWidth={2} color="#0b0e13" />
-          </div>
+          <LogoMark size={26} icon={15} />
           Imprint
         </div>
         <span className="footer-copy">© 2026 Imprint. All rights reserved.</span>

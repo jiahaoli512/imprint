@@ -57,10 +57,7 @@ export function OwnDashboardOnly({ children }) {
     if (me === username) return;
     api.getUser(username)
       .then(() => navigate(`/${username}/profile`, { replace: true }))
-      .catch(err => {
-        if (err.status === 404) navigate('/user-not-found', { replace: true });
-        else navigate('/user-not-found', { replace: true });
-      });
+      .catch(() => navigate('/user-not-found', { replace: true }));
   }, [username]);
 
   if (me !== username) return <Spinner />;
@@ -82,10 +79,7 @@ export function CatchAll() {
 
     api.getUser(segment)
       .then(() => navigate(`/${segment}/profile`, { replace: true }))
-      .catch(err => {
-        if (err.status === 404) navigate('/user-not-found', { replace: true });
-        else navigate('/user-not-found', { replace: true });
-      });
+      .catch(() => navigate('/user-not-found', { replace: true }));
   }, [pathname]);
 
   return <Spinner />;

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, List, LogOut } from 'lucide-react';
+import { List, LogOut } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
+import LogoMark from '../components/LogoMark';
 import MapCard from '../features/map/MapCard';
 import { useMarkers } from '../features/map/useMarkers';
 import { api } from '../api/client';
@@ -25,9 +26,7 @@ export default function AdminDashboard() {
     <div className="dashboard-page">
       <div className="admin-header">
         <div className="logo">
-          <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-            <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
-          </div>
+          <LogoMark size={32} />
           Imprint
         </div>
         <div className="admin-header-right">

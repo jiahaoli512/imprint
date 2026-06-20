@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Fingerprint, User, List, LayoutDashboard, LogOut } from 'lucide-react';
+import { User, List, LayoutDashboard, LogOut } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import LogoutModal from '../components/LogoutModal';
+import LogoMark from '../components/LogoMark';
 import UserSearch from '../features/users/UserSearch';
 import MapCard from '../features/map/MapCard';
 import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
@@ -47,9 +48,7 @@ export default function Dashboard() {
       <div className="admin-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div className="logo">
-            <div className="logo-icon" style={{ width: '32px', height: '32px' }}>
-              <Fingerprint size={18} strokeWidth={2} color="#0b0e13" />
-            </div>
+            <LogoMark size={32} />
             Imprint
           </div>
           {isAdminView && (
