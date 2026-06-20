@@ -7,7 +7,10 @@ import { createStore } from './createStore';
 const isNative = Capacitor.isNativePlatform();
 const BackgroundGeolocation = isNative ? registerPlugin('BackgroundGeolocation') : null;
 
-const FLUSH_THRESHOLD = 10; // upload after this many buffered points
+// Upload after this many buffered points. Kept at 1 so each ~50m point (gated
+// by distanceFilter below) is persisted promptly — markers appear as you move,
+// and nothing is lost if iOS suspends/kills the app before a larger batch.
+const FLUSH_THRESHOLD = 1;
 const ENABLED_KEY = 'imprint_tracking_enabled'; // remembers the user's choice across restarts
 
 let watcherId = null;
