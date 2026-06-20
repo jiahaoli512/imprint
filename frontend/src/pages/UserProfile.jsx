@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
 import Spinner from '../components/Spinner';
@@ -8,6 +9,9 @@ import { formatDate } from '../utils/formatDate';
 import { fullName } from '../utils/fullName';
 import { useAdminView } from '../utils/useAdminView';
 import { validateName } from '../utils/validateName';
+import { useFitText } from '../utils/useFitText';
+
+const isNative = Capacitor.isNativePlatform();
 
 export default function UserProfile() {
   const { username } = useParams();
@@ -24,6 +28,10 @@ export default function UserProfile() {
   const [editLast, setEditLast] = useState('');
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
+
+  // Shrink an over-long name to fit one line — mobile app only.
+  const nameRef = useRef(null);
+  useFitText(nameRef, [user, editing], { enabled: isNative, min: 14 });
 
   useEffect(() => {
     getUser(username)
@@ -167,7 +175,7 @@ export default function UserProfile() {
           ) : (
             <>
               {displayName && (
-                <h1 style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>
+                <h1 ref={nameRef} style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>
                   {displayName}
                 </h1>
               )}

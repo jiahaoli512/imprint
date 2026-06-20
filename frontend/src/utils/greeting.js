@@ -9,10 +9,10 @@ const GREETINGS = [
   'Hello again',
   'Nice to see you again',
   "Glad you're back",
-  'There you are',
   'Welcome home',
   'Long time no see',
   'Good to have you',
+  'Greetings'
 ];
 
 const KEY = 'imprint_greeting';
