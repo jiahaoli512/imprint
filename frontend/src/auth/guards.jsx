@@ -17,9 +17,12 @@ export function RequireAuth({ children }) {
 }
 
 export function RequireAdminAuth({ children }) {
-  if (isNative || !isAdminAuthed()) {
-    return <Navigate to="/home" replace />;
-  }
+  // A user and an admin session are mutually exclusive. If a regular user is
+  // logged in, never treat them as admin (even with a stale admin flag from an
+  // earlier admin session in this tab) — send them to their own dashboard.
+  const username = getUsername();
+  if (username) return <Navigate to={`/${username}/dashboard`} replace />;
+  if (isNative || !isAdminAuthed()) return <Navigate to="/home" replace />;
   return children;
 }
 

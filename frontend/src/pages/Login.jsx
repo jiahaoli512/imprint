@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
-import { api, setUsername, setToken } from '../api/client';
+import { api, setUsername, setToken, clearAdminSession } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
 
 export default function Login() {
@@ -23,6 +23,7 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await api.login({ email: email.trim().toLowerCase(), password });
+      clearAdminSession(); // a user session is mutually exclusive with admin
       if (data.token) setToken(data.token);
       if (data.username) {
         setUsername(data.username);
