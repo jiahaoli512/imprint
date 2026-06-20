@@ -44,10 +44,8 @@ export default function AdminDashboard() {
       <div className="admin-header-spacer" />
 
       <div className="dashboard-content">
-        <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
-          <p style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '600', letterSpacing: '-0.3px' }}>
-            Welcome, Admin!
-          </p>
+        <div className="dashboard-col">
+          <p className="dashboard-welcome">Welcome, Admin!</p>
           <MapCard
             displayMarkers={displayMarkers}
             editing={editing}

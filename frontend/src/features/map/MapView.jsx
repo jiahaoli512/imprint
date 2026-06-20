@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector } from './mapUtils';
+import {
+  pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector,
+  MARKER_RADIUS_M, LOCATION_RADIUS_M, MARKER_COLOR, MARKER_EDIT_COLOR, LOCATE_BLUE,
+} from './mapUtils';
 
 const locationIcon = L.divIcon({
   className: '',
-  html: `<div style="width:14px;height:14px;background:#5aa9e6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(90,169,230,0.25),0 0 12px rgba(90,169,230,0.6)"></div>`,
+  html: `<div style="width:14px;height:14px;background:${LOCATE_BLUE};border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(90,169,230,0.25),0 0 12px rgba(90,169,230,0.6)"></div>`,
   iconSize: [14, 14],
   iconAnchor: [7, 7],
 });
@@ -41,8 +44,8 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
         <>
           <Circle
             center={userLocation}
-            radius={200}
-            pathOptions={{ color: '#5aa9e6', fillColor: '#5aa9e6', fillOpacity: 0.12, weight: 1, opacity: 0.4 }}
+            radius={LOCATION_RADIUS_M}
+            pathOptions={{ color: LOCATE_BLUE, fillColor: LOCATE_BLUE, fillOpacity: 0.12, weight: 1, opacity: 0.4 }}
           />
           <Marker position={userLocation} icon={locationIcon} />
         </>
@@ -51,10 +54,10 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
         <React.Fragment key={i}>
           <Circle
             center={pos}
-            radius={15.24}
+            radius={MARKER_RADIUS_M}
             pathOptions={{
-              color: editing ? '#e2685a' : '#e2a156',
-              fillColor: editing ? '#e2685a' : '#e2a156',
+              color: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
+              fillColor: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
               fillOpacity: 0.15,
               weight: 1.5,
               opacity: 0.6,

@@ -1120,6 +1120,21 @@ footer {
   padding: 32px 24px;
 }
 
+/* Inner column shared by the user and admin dashboards. */
+.dashboard-col {
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  gap: 16px;
+}
+
+.dashboard-welcome {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
 .dashboard-map-card {
   width: min(680px, 100%);
   background: var(--surface);

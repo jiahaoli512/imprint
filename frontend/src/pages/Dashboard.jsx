@@ -87,14 +87,14 @@ export default function Dashboard() {
       <div className="admin-header-spacer" />
 
       <div className="dashboard-content">
-        <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
+        <div className="dashboard-col">
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
 
           {locationError && (
             <p style={{ fontSize: '12px', color: '#e2685a', marginTop: '-8px' }}>{locationError}</p>
           )}
           {firstName && (
-            <p style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '600', letterSpacing: '-0.3px' }}>
+            <p className="dashboard-welcome">
               Welcome back, {firstName}!{isAdminView && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '18px', fontWeight: '600', color: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
             </p>
           )}

@@ -1,5 +1,6 @@
 import { Eye, Pencil, Trash2, LocateFixed } from 'lucide-react';
 import MapView from './MapView';
+import { LOCATE_BLUE } from './mapUtils';
 
 // The shared map panel used by both the user dashboard and the admin dashboards:
 // a window-chrome toolbar (mode toggle when editable, region label, clear/locate
@@ -42,7 +43,7 @@ export default function MapCard({
               onClick={onLocate}
               disabled={locating}
               title="Show my location"
-              style={userLocation ? { color: '#5aa9e6' } : {}}
+              style={userLocation ? { color: LOCATE_BLUE } : {}}
             >
               <LocateFixed size={13} />
             </button>
