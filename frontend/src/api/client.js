@@ -55,7 +55,8 @@ export const api = {
   // Markers
   getMarkers:      (username) => request(`/api/markers/user/${encodeURIComponent(username)}`),
   saveMarkers:     (points)   => request('/api/markers', { method: 'PUT', body: JSON.stringify({ points }) }),
-  getAdminMarkers: ()         => adminRequest('/api/markers'),
+  getAdminMarkers: ()                => adminRequest('/api/markers'),
+  adminSaveMarkers: (username, points) => adminRequest(`/api/markers/user/${encodeURIComponent(username)}`, { method: 'PUT', body: JSON.stringify({ points }) }),
 
   // Waitlist (public)
   joinWaitlist:  (body)  => request('/api/waitlist', { method: 'POST', body: JSON.stringify(body) }),
