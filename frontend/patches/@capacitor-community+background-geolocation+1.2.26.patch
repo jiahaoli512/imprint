@@ -1,0 +1,33 @@
+diff --git a/node_modules/@capacitor-community/background-geolocation/ios/Plugin/Swift/Plugin.swift b/node_modules/@capacitor-community/background-geolocation/ios/Plugin/Swift/Plugin.swift
+index d4a5965..84d64b6 100644
+--- a/node_modules/@capacitor-community/background-geolocation/ios/Plugin/Swift/Plugin.swift
++++ b/node_modules/@capacitor-community/background-geolocation/ios/Plugin/Swift/Plugin.swift
+@@ -75,13 +75,27 @@ public class BackgroundGeolocation: CAPPlugin,
+     public let pluginMethods: [CAPPluginMethod] = [
+         CAPPluginMethod(name: "addWatcher", returnType: CAPPluginReturnCallback),
+         CAPPluginMethod(name: "removeWatcher", returnType: CAPPluginReturnPromise),
+-        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise)
++        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
++        CAPPluginMethod(name: "getAuthorizationStatus", returnType: CAPPluginReturnPromise)
+     ]
+ 
+     @objc public override func load() {
+         UIDevice.current.isBatteryMonitoringEnabled = true
+     }
+ 
++    @objc func getAuthorizationStatus(_ call: CAPPluginCall) {
++        let status = CLLocationManager.authorizationStatus()
++        var value = "notDetermined"
++        switch status {
++        case .authorizedAlways: value = "always"
++        case .authorizedWhenInUse: value = "whenInUse"
++        case .denied: value = "denied"
++        case .restricted: value = "restricted"
++        default: value = "notDetermined"
++        }
++        call.resolve(["status": value])
++    }
++
+     @objc func addWatcher(_ call: CAPPluginCall) {
+         call.keepAlive = true
+ 

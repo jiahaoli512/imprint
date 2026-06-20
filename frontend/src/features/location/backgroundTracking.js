@@ -93,6 +93,26 @@ export async function startTracking() {
   }
 }
 
+// Deep-links to the app's location settings. Used when iOS won't re-show the
+// "Always Allow" upgrade prompt (it only offers it once) and the user is stuck
+// on "While Using" — the only remaining way to switch is in Settings.
+export async function openLocationSettings() {
+  if (!isTrackingSupported()) return;
+  try { await BackgroundGeolocation.openSettings(); } catch { /* ignore */ }
+}
+
+// Returns the iOS location authorization level: 'always' | 'whenInUse' |
+// 'denied' | 'restricted' | 'notDetermined' (or 'unknown'/'unsupported').
+export async function getAuthorizationStatus() {
+  if (!isTrackingSupported()) return 'unsupported';
+  try {
+    const res = await BackgroundGeolocation.getAuthorizationStatus();
+    return res?.status || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
 export async function stopTracking() {
   if (watcherId) {
     await BackgroundGeolocation.removeWatcher({ id: watcherId });
