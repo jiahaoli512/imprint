@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Fingerprint, User, List, LayoutDashboard, LogOut, Eye, Pencil, Trash2, LocateFixed } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import AdminLogoutModal from '../components/AdminLogoutModal';
@@ -9,15 +9,15 @@ import MapView from '../features/map/MapView';
 import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
 import { useMarkers } from '../features/map/useMarkers';
 import { useGeolocation } from '../features/location/useGeolocation';
-import { api } from '../api/client';
+import { api, markersApiFor } from '../api/client';
+import { useAdminView } from '../utils/useAdminView';
 
 const isNative = Capacitor.isNativePlatform();
 
 export default function Dashboard() {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isAdminView = pathname.startsWith('/admin/');
+  const isAdminView = useAdminView();
 
   const [region, setRegion] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -28,12 +28,9 @@ export default function Dashboard() {
     enterEdit, enterView, addMarker, removeMarker, clearDraft,
     savePrompt,
   } = useMarkers({
-    load: () => api.getMarkers(username),
     // In admin view, save to the viewed user's map via the admin endpoint;
-    // a regular user saves their own.
-    save: isAdminView
-      ? (points) => api.adminSaveMarkers(username, points)
-      : api.saveMarkers,
+    // a regular user saves their own. Loading is identical for both.
+    ...markersApiFor(isAdminView, username),
     editable: isAdminView,
     deps: [username],
   });

@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from 'lucide-react';
 import AdminLogoutModal from '../components/AdminLogoutModal';
 import Spinner from '../components/Spinner';
-import { api, getUsername } from '../api/client';
+import { getUsername, profileApiFor } from '../api/client';
 import { formatDate } from '../utils/formatDate';
-
-const NAME_RE = /^[\p{L}'’-]+$/u;          // first name: letters, hyphens, apostrophes
-const NAME_SPACES_RE = /^[\p{L}'’ -]+$/u;  // last name: also allows spaces
+import { useAdminView } from '../utils/useAdminView';
+import { validateName } from '../utils/validateName';
 
 export default function UserProfile() {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isAdminView = pathname.startsWith('/admin/');
+  const isAdminView = useAdminView();
   const isMe = isAdminView || username === getUsername();
+  const { getUser, updateUser } = profileApiFor(isAdminView);
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,8 +25,7 @@ export default function UserProfile() {
   const [editError, setEditError] = useState('');
 
   useEffect(() => {
-    const fetchUser = isAdminView ? api.adminGetUser : api.getUser;
-    fetchUser(username)
+    getUser(username)
       .then(data => setUser(data))
       .catch(err => {
         if (err.status === 404) navigate('/user-not-found', { replace: true });
@@ -52,32 +50,15 @@ export default function UserProfile() {
       setEditError('First name is required.');
       return;
     }
-    if (editFirst.trim().length > 50) {
-      setEditError('First name must be 50 characters or fewer.');
-      return;
-    }
-    if (/\s/.test(editFirst.trim())) {
-      setEditError('First name cannot contain spaces.');
-      return;
-    }
-    if (!NAME_RE.test(editFirst.trim())) {
-      setEditError('First name can only contain letters, hyphens, and apostrophes.');
-      return;
-    }
-    if (editLast.trim().length > 50) {
-      setEditError('Last name must be 50 characters or fewer.');
-      return;
-    }
-    if (editLast.trim() && !NAME_SPACES_RE.test(editLast.trim())) {
-      setEditError('Last name can only contain letters, spaces, hyphens, and apostrophes.');
+    const nameError = validateName(editFirst, editLast);
+    if (nameError) {
+      setEditError(nameError);
       return;
     }
     setSaving(true);
     setEditError('');
     try {
-      const data = isAdminView
-        ? await api.adminUpdateUser(username, { firstName: editFirst, lastName: editLast })
-        : await api.updateUser(username, { firstName: editFirst, lastName: editLast });
+      const data = await updateUser(username, { firstName: editFirst, lastName: editLast });
       setUser(data);
       setEditing(false);
     } catch (err) {

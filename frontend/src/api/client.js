@@ -80,3 +80,20 @@ export const api = {
   reorderWaitlist:      (ids)      => adminRequest('/api/waitlist/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
   approveWaitlistEntry: (id)       => adminRequest(`/api/waitlist/${id}/approve`, { method: 'PATCH' }),
 };
+
+// Resolve the right profile API calls for the current view (admin vs. self),
+// so pages don't repeat `isAdminView ? api.adminX : api.X` ternaries.
+export function profileApiFor(isAdminView) {
+  return isAdminView
+    ? { getUser: api.adminGetUser, updateUser: api.adminUpdateUser }
+    : { getUser: api.getUser, updateUser: api.updateUser };
+}
+
+// Resolve marker load/save bound to a username for the current view. Loading is
+// the same for both; only the save endpoint differs.
+export function markersApiFor(isAdminView, username) {
+  return {
+    load: () => api.getMarkers(username),
+    save: isAdminView ? (points) => api.adminSaveMarkers(username, points) : api.saveMarkers,
+  };
+}

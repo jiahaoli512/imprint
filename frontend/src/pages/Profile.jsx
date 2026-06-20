@@ -2,9 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Fingerprint, Check, X, Loader } from 'lucide-react';
 import { api, setUsername as saveUsername } from '../api/client';
-const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
-const NAME_RE = /^[\p{L}'’-]+$/u;          // first name: letters, hyphens, apostrophes
-const NAME_SPACES_RE = /^[\p{L}'’ -]+$/u;  // last name: also allows spaces
+import { validateName, USERNAME_RE } from '../utils/validateName';
 
 const maxDob = new Date();
 maxDob.setFullYear(maxDob.getFullYear() - 18);
@@ -63,11 +61,8 @@ export default function Profile() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!firstName.trim()) { setError('Please enter your first name.'); return; }
-    if (firstName.trim().length > 50) { setError('First name must be 50 characters or fewer.'); return; }
-    if (/\s/.test(firstName.trim())) { setError('First name cannot contain spaces.'); return; }
-    if (!NAME_RE.test(firstName.trim())) { setError('First name can only contain letters, hyphens, and apostrophes.'); return; }
-    if (lastName.trim().length > 50) { setError('Last name must be 50 characters or fewer.'); return; }
-    if (lastName.trim() && !NAME_SPACES_RE.test(lastName.trim())) { setError('Last name can only contain letters, spaces, hyphens, and apostrophes.'); return; }
+    const nameError = validateName(firstName, lastName);
+    if (nameError) { setError(nameError); return; }
     if (!USERNAME_RE.test(username)) { setError('Username must be 3–20 characters: letters, numbers, underscores.'); return; }
     if (usernameStatus === 'taken') { setError('That username is already taken.'); return; }
     if (usernameStatus === 'checking') { setError('Still checking username — please wait a moment.'); return; }
