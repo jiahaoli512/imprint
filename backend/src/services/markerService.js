@@ -23,4 +23,11 @@ async function saveUserMarkers(userId, points) {
   return doc.points;
 }
 
-module.exports = { getAdminMarkers, getUserMarkers, saveUserMarkers };
+// Admin path: save markers to a specific user's map, looked up by username.
+async function saveUserMarkersByUsername(username, points) {
+  const user = await User.findOne({ username: username.toLowerCase() });
+  if (!user) throw httpError(404, 'User not found');
+  return saveUserMarkers(user._id.toString(), points);
+}
+
+module.exports = { getAdminMarkers, getUserMarkers, saveUserMarkers, saveUserMarkersByUsername };
