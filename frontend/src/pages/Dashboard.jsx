@@ -88,6 +88,8 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <div className="admin-header-spacer" />
+
       <div className="dashboard-content">
         <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
