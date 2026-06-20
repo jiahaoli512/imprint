@@ -41,6 +41,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      <div className="admin-header-spacer" />
+
       <div className="dashboard-content">
         <div style={{ display: 'flex', flexDirection: 'column', width: 'min(680px, 100%)', gap: '16px' }}>
           <p style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '600', letterSpacing: '-0.3px' }}>
