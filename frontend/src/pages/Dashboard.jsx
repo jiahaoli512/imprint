@@ -13,6 +13,7 @@ import { useGeolocation } from '../features/location/useGeolocation';
 import { api, markersApiFor } from '../api/client';
 import { useAdminView } from '../utils/useAdminView';
 import { getGreeting } from '../utils/greeting';
+import WaveText from '../components/WaveText';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -20,6 +21,7 @@ export default function Dashboard() {
   const { username } = useParams();
   const navigate = useNavigate();
   const isAdminView = useAdminView();
+  const greeting = getGreeting();
 
   const [region, setRegion] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -97,7 +99,8 @@ export default function Dashboard() {
           )}
           {firstName && (
             <p className="dashboard-welcome">
-              <span className="dashboard-greet">{getGreeting()}</span>, {firstName}!{isAdminView && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '18px', fontWeight: '600', color: 'var(--muted)', WebkitTextFillColor: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
+              <WaveText text={`${greeting}, ${firstName}!`} italicLen={greeting.length} />
+              {isAdminView && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '18px', fontWeight: '600', color: 'var(--muted)', WebkitTextFillColor: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
             </p>
           )}
 

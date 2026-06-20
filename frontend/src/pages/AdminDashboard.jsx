@@ -8,6 +8,7 @@ import MapCard from '../features/map/MapCard';
 import { useMarkers } from '../features/map/useMarkers';
 import { api } from '../api/client';
 import { getGreeting } from '../utils/greeting';
+import WaveText from '../components/WaveText';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
 
       <div className="dashboard-content">
         <div className={`dashboard-col${expanded ? ' expanded' : ''}`}>
-          <p className="dashboard-welcome"><span className="dashboard-greet">{getGreeting()}</span>, Admin!</p>
+          <p className="dashboard-welcome"><WaveText text={`${getGreeting()}, Admin!`} italicLen={getGreeting().length} /></p>
           <MapCard
             displayMarkers={displayMarkers}
             editing={editing}

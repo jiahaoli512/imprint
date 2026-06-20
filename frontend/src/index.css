@@ -1133,17 +1133,25 @@ footer {
   font-size: 33px;
   font-weight: 600;
   letter-spacing: -0.3px;
-  /* amber→teal gradient across the whole greeting (matches the home‑page
-     "Leave your Imprint" heading) */
+}
+
+/* Each letter carries a static amber→teal gradient (matching the home‑page
+   "Leave your Imprint" heading) and is scaled in turn — staggered by WaveText —
+   so the size pulse travels left to right like a wave. The clip lives on the
+   same element as the transform, so it must be per‑letter (inline‑block letters
+   break a clip set on the parent). */
+.wave-char {
+  display: inline-block;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: greet-wave 4s ease-in-out infinite;
 }
 
-/* The greeting phrase only is italic; the name stays upright. */
-.dashboard-greet {
-  font-style: italic;
+@keyframes greet-wave {
+  0%, 65%, 100% { transform: scale(1); }
+  32%           { transform: scale(1.22); }
 }
 
 .dashboard-map-card {
