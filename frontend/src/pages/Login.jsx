@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import { api, setUsername, setToken, clearAdminSession } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
+import { refreshGreeting } from '../utils/greeting';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function Login() {
     try {
       const data = await api.login({ email: email.trim().toLowerCase(), password });
       clearAdminSession(); // a user session is mutually exclusive with admin
+      refreshGreeting();   // new random dashboard greeting per login
       if (data.token) setToken(data.token);
       if (data.username) {
         setUsername(data.username);
