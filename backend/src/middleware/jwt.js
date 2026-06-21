@@ -10,7 +10,9 @@ function readBearer(req) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) return { status: 'missing' };
   try {
-    return { status: 'ok', payload: jwt.verify(header.slice(7), process.env.JWT_SECRET) };
+    // Pin the algorithm so a token can't be verified under an unexpected alg
+    // (defense against algorithm-confusion / 'none').
+    return { status: 'ok', payload: jwt.verify(header.slice(7), process.env.JWT_SECRET, { algorithms: ['HS256'] }) };
   } catch {
     return { status: 'invalid' };
   }

@@ -50,15 +50,20 @@ async function registerUser(email, password) {
   await Waitlist.deleteOne({ email });
 }
 
+// A bcrypt hash of a throwaway value, compared against when the email isn't
+// found so login takes ~the same time whether or not the account exists (closes
+// the timing oracle that would otherwise reveal which emails are registered).
+const DUMMY_HASH = bcrypt.hashSync('imprint-no-such-user', 12);
+
 async function loginUser(email, password) {
   if (typeof email !== 'string' || typeof password !== 'string')
     throw httpError(401, 'Invalid email or password.');
 
   const user = await User.findOne({ email: normalizeEmail(email) });
-  if (!user) throw httpError(401, 'Invalid email or password.');
-
-  const match = await bcrypt.compare(password, user.passwordHash);
-  if (!match) throw httpError(401, 'Invalid email or password.');
+  // Always run a compare (real hash, or the dummy) so timing doesn't leak
+  // account existence.
+  const match = await bcrypt.compare(password, user ? user.passwordHash : DUMMY_HASH);
+  if (!user || !match) throw httpError(401, 'Invalid email or password.');
 
   return { token: signToken(user), username: user.username || null };
 }
