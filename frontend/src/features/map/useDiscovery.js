@@ -22,7 +22,7 @@ export function useDiscovery(markers) {
     try {
       const region = await fetchRegionGeometry(settle.lat, settle.lng, level);
       const { percent, discoveredCells, regionAreaKm2 } =
-        computeDiscovery(markersRef.current, region, level, settle.lat, region.name);
+        computeDiscovery(markersRef.current, region, settle.lat, region.name);
       if (id !== reqId.current) return; // a newer settle superseded this one
       setState({ status: 'ready', percent, level, discoveredCells, regionName: region.name, regionAreaKm2 });
     } catch {
