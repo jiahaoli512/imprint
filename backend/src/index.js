@@ -13,6 +13,22 @@ const markerRoutes = require('./routes/markers');
 const locationRoutes = require('./routes/locations');
 const contactRoutes = require('./routes/contact');
 
+// Fail fast at startup if a critical secret is missing, rather than discovering
+// it at first use (a 500 mid-request). Email vars only warn — the app runs
+// without them, just can't send mail.
+function validateConfig() {
+  const required = ['MONGODB_URI', 'JWT_SECRET', 'ADMIN_PASSWORD'];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.error(`[config] Missing required env var(s): ${missing.join(', ')}`);
+    process.exit(1);
+  }
+  for (const k of ['BREVO_API_KEY', 'EMAIL_USER']) {
+    if (!process.env[k]) console.warn(`[config] ${k} not set — email features will not work.`);
+  }
+}
+validateConfig();
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 

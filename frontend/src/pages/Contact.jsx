@@ -55,6 +55,7 @@ export default function Contact() {
                 className="auth-input"
                 placeholder="First name"
                 value={firstName}
+                maxLength={50}
                 onChange={(e) => { setFirstName(e.target.value); setError(''); }}
                 disabled={loading}
               />
@@ -62,6 +63,7 @@ export default function Contact() {
                 className="auth-input"
                 placeholder="Last name"
                 value={lastName}
+                maxLength={50}
                 onChange={(e) => { setLastName(e.target.value); setError(''); }}
                 disabled={loading}
               />
@@ -70,6 +72,7 @@ export default function Contact() {
                 type="email"
                 placeholder="Email address"
                 value={email}
+                maxLength={254}
                 onChange={(e) => { setEmail(e.target.value); setError(''); }}
                 disabled={loading}
               />
@@ -77,6 +80,7 @@ export default function Contact() {
                 className="auth-input"
                 placeholder="Your feedback"
                 value={feedback}
+                maxLength={5000}
                 onChange={(e) => { setFeedback(e.target.value); setError(''); }}
                 disabled={loading}
                 rows={5}
