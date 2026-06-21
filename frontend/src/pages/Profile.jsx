@@ -131,8 +131,8 @@ export default function Profile() {
             <span className="auth-eye" style={{ pointerEvents: 'none' }}>
               {usernameStatus === 'checking'  && <Loader size={15} className="spin" />}
               {usernameStatus === 'available' && <Check size={15} color="var(--success)" />}
-              {usernameStatus === 'taken'     && <X size={15} color="#e2685a" />}
-              {usernameStatus === 'invalid'   && <X size={15} color="#e2685a" />}
+              {usernameStatus === 'taken'     && <X size={15} color="var(--error)" />}
+              {usernameStatus === 'invalid'   && <X size={15} color="var(--error)" />}
             </span>
           </div>
           {usernameStatus === 'taken'   && <p className="auth-error" style={{ marginTop: '-4px' }}>Username already taken.</p>}

@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { User, List, LayoutDashboard, LogOut } from 'lucide-react';
+import { User, List, LayoutDashboard } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
-import LogoutModal from '../components/LogoutModal';
-import LogoMark from '../components/LogoMark';
+import AppHeader from '../components/AppHeader';
+import LogoutButton from '../components/LogoutButton';
+import AdminViewingBadge from '../components/AdminViewingBadge';
 import UserSearch from '../features/users/UserSearch';
 import MapCard from '../features/map/MapCard';
+import SaveMapPrompt from '../features/map/SaveMapPrompt';
 import DiscoveryPanel from '../features/map/DiscoveryPanel';
 import { useDiscovery } from '../features/map/useDiscovery';
 import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
 import WebTrackingNotice from '../features/location/WebTrackingNotice';
 import { useMarkers } from '../features/map/useMarkers';
+import { useUser } from '../features/users/useUser';
 import { useGeolocation } from '../features/location/useGeolocation';
-import { api, markersApiFor } from '../api/client';
+import { markersApiFor } from '../api/client';
 import { useAdminView } from '../utils/useAdminView';
 import Greeting from '../components/Greeting';
 
@@ -24,9 +27,8 @@ export default function Dashboard() {
   const isAdminView = useAdminView();
 
   const [region, setRegion] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [confirmLogout, setConfirmLogout] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const { user } = useUser(username);
 
   const {
     displayMarkers, editing,
@@ -47,64 +49,43 @@ export default function Dashboard() {
   const showDiscovery = !isNative && !expanded;
   const discovery = useDiscovery(displayMarkers);
 
-  useEffect(() => {
-    api.getUser(username)
-      .then(d => { if (d.firstName) setFirstName(d.firstName); })
-      .catch(() => {});
-  }, [username]);
-
   return (
     <div className="dashboard-page">
-      <div className="admin-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="logo">
-            <LogoMark size={32} />
-            Imprint
-          </div>
-          {isAdminView && (
-            <>
-              <button className="btn btn-ghost" onClick={() => navigate('/admin/waitlist')}>
-                <List size={15} /> <span className="btn-label">Admin Waitlist</span>
-              </button>
-              <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
-                <LayoutDashboard size={15} /> <span className="btn-label">Admin Dashboard</span>
-              </button>
-            </>
-          )}
-        </div>
-
-        {!isNative && !isAdminView && <UserSearch isAdminView={isAdminView} variant="header" />}
-
-        <div className="admin-header-right">
-          {isAdminView ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-              <span className="admin-badge">Admin</span>
-              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>viewing @{username}</span>
-            </div>
-          ) : (
-            <span style={{ fontSize: '13px', color: 'var(--muted)' }}>@{username}</span>
-          )}
-          <button className="btn btn-ghost" onClick={() => navigate(isAdminView ? `/admin/${username}/profile` : `/${username}/profile`)}>
-            <User size={15} /> <span className="btn-label">{isAdminView ? `@${username}'s profile` : 'Profile'}</span>
-          </button>
-          <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
-            <LogOut size={15} /> <span className="btn-label">{isAdminView ? 'Log out of Admin' : 'Log out'}</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="admin-header-spacer" />
+      <AppHeader
+        leftExtra={isAdminView && (
+          <>
+            <button className="btn btn-ghost" onClick={() => navigate('/admin/waitlist')}>
+              <List size={15} /> <span className="btn-label">Admin Waitlist</span>
+            </button>
+            <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
+              <LayoutDashboard size={15} /> <span className="btn-label">Admin Dashboard</span>
+            </button>
+          </>
+        )}
+        center={!isNative && !isAdminView && <UserSearch isAdminView={isAdminView} variant="header" />}
+        right={
+          <>
+            {isAdminView
+              ? <AdminViewingBadge username={username} />
+              : <span style={{ fontSize: '13px', color: 'var(--muted)' }}>@{username}</span>}
+            <button className="btn btn-ghost" onClick={() => navigate(isAdminView ? `/admin/${username}/profile` : `/${username}/profile`)}>
+              <User size={15} /> <span className="btn-label">{isAdminView ? `@${username}'s profile` : 'Profile'}</span>
+            </button>
+            <LogoutButton admin={isAdminView} />
+          </>
+        }
+      />
 
       <div className="dashboard-content">
         <div className={`dashboard-col${expanded ? ' expanded' : ''}${showDiscovery ? ' has-discovery' : ''}`}>
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
 
           {locationError && (
-            <p style={{ fontSize: '12px', color: '#e2685a', marginTop: '-8px' }}>{locationError}</p>
+            <p style={{ fontSize: '12px', color: 'var(--error)', marginTop: '-8px' }}>{locationError}</p>
           )}
-          {firstName && (
+          {user?.firstName && (
             <Greeting
-              name={firstName}
+              name={user.firstName}
               suffix={isAdminView && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '18px', fontWeight: '600', color: 'var(--muted)', WebkitTextFillColor: 'var(--muted)', marginLeft: '8px' }}>(Admin View)</span>}
             />
           )}
@@ -149,9 +130,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {savePrompt}
-
-      {confirmLogout && <LogoutModal admin={isAdminView} onCancel={() => setConfirmLogout(false)} />}
+      <SaveMapPrompt {...savePrompt} />
     </div>
   );
 }

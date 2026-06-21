@@ -1,7 +1,7 @@
 const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const { sendApprovalEmail } = require('../utils/email');
-const { checkLength, checkRequired, normalizeEmail } = require('../utils/validate');
+const { checkLength, checkRequired, checkEmail, normalizeEmail } = require('../utils/validate');
 const httpError = require('../utils/httpError');
 
 async function normalizePositions() {
@@ -12,6 +12,7 @@ async function normalizePositions() {
 async function joinWaitlist(email, name) {
   checkRequired('Email', email);
   checkLength('email', email);
+  checkEmail(email);
   checkLength('name', name);
   email = normalizeEmail(email);
 
@@ -48,8 +49,20 @@ async function checkWaitlist(email) {
 }
 
 async function reorderWaitlist(ids) {
-  if (!Array.isArray(ids)) throw httpError(400, 'ids must be an array');
-  await Promise.all(ids.map((id, i) => Waitlist.updateOne({ _id: id }, { position: i })));
+  if (!Array.isArray(ids) || ids.length === 0) throw httpError(400, 'ids must be a non-empty array');
+
+  // The new order must be exactly the current waitlist set — unique and complete
+  // — so positions stay a clean 0..n-1 permutation (no dupes/gaps from a bad or
+  // partial request).
+  const asStrings = ids.map(String);
+  if (new Set(asStrings).size !== asStrings.length) throw httpError(400, 'ids must be unique');
+
+  const current = await Waitlist.find({}, '_id');
+  if (asStrings.length !== current.length) throw httpError(400, 'ids must match the current waitlist');
+  const currentSet = new Set(current.map((e) => e._id.toString()));
+  if (!asStrings.every((id) => currentSet.has(id))) throw httpError(400, 'Unknown waitlist id in reorder');
+
+  await Promise.all(asStrings.map((id, i) => Waitlist.updateOne({ _id: id }, { position: i })));
 }
 
 async function approveEntry(id) {

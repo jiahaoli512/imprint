@@ -11,6 +11,11 @@ export default function WaitlistTable({ entries, loading, error, approvingId, on
   const approvedCount = entries.filter((e) => e.approved).length;
   const filtered = entries.filter((e) => matchesQuery(search, e.email, e.name));
 
+  // Drag-reorder only when unfiltered: while searching, the visible row index no
+  // longer matches the full-list position, so dragging would reorder the wrong
+  // rows. (Reordering a filtered subset is ambiguous anyway.)
+  const dragEnabled = search.trim() === '';
+
   return (
     <>
       <div className="admin-top">
@@ -62,9 +67,11 @@ export default function WaitlistTable({ entries, loading, error, approvingId, on
               {filtered.length === 0 ? (
                 <tr><td colSpan={7} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
               ) : filtered.map((e, i) => (
-                <tr key={e._id} {...getRowProps(i)}>
+                <tr key={e._id} {...(dragEnabled ? getRowProps(i) : {})}>
                   <td className="col-grip">
-                    <GripVertical size={14} className="grip-icon" />
+                    <GripVertical size={14} className="grip-icon"
+                      style={dragEnabled ? undefined : { opacity: 0.25 }}
+                      aria-label={dragEnabled ? undefined : 'Clear search to reorder'} />
                   </td>
                   <td className="muted col-num col-hide-mobile">{i + 1}</td>
                   <td>{e.email}</td>

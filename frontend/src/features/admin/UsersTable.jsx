@@ -5,7 +5,7 @@ import { formatDate } from '../../utils/formatDate';
 import { fullName } from '../../utils/fullName';
 import { matchesQuery } from '../../utils/matchesQuery';
 
-export default function UsersTable({ users }) {
+export default function UsersTable({ users, loading = false, error = '' }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
@@ -16,11 +16,14 @@ export default function UsersTable({ users }) {
       <div className="admin-top" style={{ marginTop: '48px' }}>
         <div>
           <h2 className="admin-title" style={{ fontSize: '28px' }}>Registered Users</h2>
-          <p className="admin-sub">{users.length} account{users.length !== 1 ? 's' : ''} created</p>
+          <p className="admin-sub">{loading ? '—' : `${users.length} account${users.length !== 1 ? 's' : ''} created`}</p>
         </div>
       </div>
 
-      {users.length === 0 ? (
+      {loading && <p className="admin-state">Loading…</p>}
+      {error && <p className="admin-state error">{error}</p>}
+
+      {!loading && !error && (users.length === 0 ? (
         <div className="admin-empty">
           <UserCheck size={40} color="var(--muted)" />
           <p>No accounts yet.</p>
@@ -77,7 +80,7 @@ export default function UsersTable({ users }) {
             </table>
           </div>
         </>
-      )}
+      ))}
     </div>
   );
 }

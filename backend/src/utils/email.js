@@ -33,6 +33,11 @@ function escapeHtml(s) {
 
 async function sendApprovalEmail(to, name) {
   const displayName = name || to.split('@')[0];
+  // Escape user-supplied values before interpolating into the HTML body (the
+  // waitlist `name` is user-controlled). The Brevo recipient `name` field below
+  // is JSON, not HTML, so it uses the raw value.
+  const safeName = escapeHtml(displayName);
+  const safeTo = escapeHtml(to);
 
   await sendEmail({
     to: [{ email: to, name: displayName }],
@@ -60,7 +65,7 @@ async function sendApprovalEmail(to, name) {
         <tr><td style="background:#0f1623;border:1px solid rgba(255,255,255,0.07);border-radius:24px;padding:48px 40px;">
 
           <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4fffb0;">You're approved</p>
-          <h1 style="margin:0 0 16px;font-size:32px;font-weight:900;letter-spacing:-1px;color:#f0f4ff;line-height:1.1;">Welcome to Imprint,<br>${displayName}.</h1>
+          <h1 style="margin:0 0 16px;font-size:32px;font-weight:900;letter-spacing:-1px;color:#f0f4ff;line-height:1.1;">Welcome to Imprint,<br>${safeName}.</h1>
           <p style="margin:0 0 32px;font-size:16px;color:#6b7a99;line-height:1.7;">
             Your waitlist spot has been approved. You now have early access to Imprint — the app that maps every place you've ever been.
           </p>
@@ -76,7 +81,7 @@ async function sendApprovalEmail(to, name) {
           <!-- Email highlight box -->
           <div style="background:#161f30;border:1px solid rgba(79,255,176,0.2);border-radius:12px;padding:20px 24px;text-align:center;margin-bottom:24px;">
             <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4fffb0;">Your approved email</p>
-            <p style="margin:0;font-size:18px;font-weight:700;color:#f0f4ff;">${to}</p>
+            <p style="margin:0;font-size:18px;font-weight:700;color:#f0f4ff;">${safeTo}</p>
           </div>
 
           <p style="margin:0 0 16px;font-size:13px;color:#6b7a99;line-height:1.6;">

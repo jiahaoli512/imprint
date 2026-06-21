@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import ConfirmModal from '../../components/ConfirmModal';
 
 // Owns map-marker state for a dashboard: loading, the read-only display, and
 // (when `editable`) an editable draft plus the entire save/discard confirmation
@@ -15,6 +14,8 @@ export function useMarkers({ load, save, editable = false, deps = [] }) {
   const [draft, setDraft] = useState([]);
   const [mode, setMode] = useState('view');
   const [promptOpen, setPromptOpen] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -35,7 +36,18 @@ export function useMarkers({ load, save, editable = false, deps = [] }) {
   function clearDraft() { setDraft([]); }
 
   async function commit() {
-    try { await save(draft); } catch { /* silently fail — user keeps stale view */ }
+    setSaving(true);
+    setSaveError('');
+    try {
+      await save(draft);
+    } catch (e) {
+      // Surface the failure instead of pretending it saved: keep the draft and
+      // the prompt open so the user can retry or discard.
+      setSaveError(e?.message || 'Could not save your changes. Please try again.');
+      return;
+    } finally {
+      setSaving(false);
+    }
     setSaved(draft);
     setDraft([]);
     setMode('view');
@@ -46,19 +58,19 @@ export function useMarkers({ load, save, editable = false, deps = [] }) {
     setDraft([]);
     setMode('view');
     setPromptOpen(false);
+    setSaveError('');
   }
 
-  const savePrompt = promptOpen ? (
-    <ConfirmModal
-      title="Save changes?"
-      message="Do you want to save your changes to the map?"
-      confirmLabel="Save"
-      altLabel="Discard"
-      onConfirm={commit}
-      onAlt={discard}
-      onCancel={() => setPromptOpen(false)}
-    />
-  ) : null;
+  // Confirmation-flow state + handlers (rendered by the page via <SaveMapPrompt>).
+  // The hook owns the logic; the UI lives in a component — not returned as JSX.
+  const savePrompt = {
+    open: promptOpen,
+    saving,
+    error: saveError,
+    onConfirm: commit,
+    onDiscard: discard,
+    onCancel: () => { setPromptOpen(false); setSaveError(''); },
+  };
 
   return {
     displayMarkers, editing,

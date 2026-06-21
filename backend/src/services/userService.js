@@ -25,7 +25,7 @@ function ageFromDob(dob) {
 
 function signToken(user) {
   return jwt.sign(
-    { id: user._id.toString(), email: user.email },
+    { type: 'user', id: user._id.toString(), email: user.email },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -50,15 +50,20 @@ async function registerUser(email, password) {
   await Waitlist.deleteOne({ email });
 }
 
+// A bcrypt hash of a throwaway value, compared against when the email isn't
+// found so login takes ~the same time whether or not the account exists (closes
+// the timing oracle that would otherwise reveal which emails are registered).
+const DUMMY_HASH = bcrypt.hashSync('imprint-no-such-user', 12);
+
 async function loginUser(email, password) {
   if (typeof email !== 'string' || typeof password !== 'string')
     throw httpError(401, 'Invalid email or password.');
 
   const user = await User.findOne({ email: normalizeEmail(email) });
-  if (!user) throw httpError(401, 'Invalid email or password.');
-
-  const match = await bcrypt.compare(password, user.passwordHash);
-  if (!match) throw httpError(401, 'Invalid email or password.');
+  // Always run a compare (real hash, or the dummy) so timing doesn't leak
+  // account existence.
+  const match = await bcrypt.compare(password, user ? user.passwordHash : DUMMY_HASH);
+  if (!user || !match) throw httpError(401, 'Invalid email or password.');
 
   return { token: signToken(user), username: user.username || null };
 }
@@ -95,7 +100,9 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
 }
 
 async function searchUsers(q) {
-  const clean = q.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  // Strip non-alphanumerics (no regex injection) and cap length to bound the
+  // regex scan. Username max is 20, so 30 is generous.
+  const clean = String(q || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
   if (!clean) return [];
   return User.find({ username: { $regex: clean, $options: 'i' } }, SEARCH_FIELDS).limit(8);
 }
