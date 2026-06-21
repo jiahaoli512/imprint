@@ -6,6 +6,8 @@ import LogoutModal from '../components/LogoutModal';
 import LogoMark from '../components/LogoMark';
 import UserSearch from '../features/users/UserSearch';
 import MapCard from '../features/map/MapCard';
+import DiscoveryPanel from '../features/map/DiscoveryPanel';
+import { useDiscovery } from '../features/map/useDiscovery';
 import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
 import WebTrackingNotice from '../features/location/WebTrackingNotice';
 import { useMarkers } from '../features/map/useMarkers';
@@ -39,6 +41,11 @@ export default function Dashboard() {
   });
 
   const { userLocation, locating, locationError, locate } = useGeolocation();
+
+  // Web-only discovery gauge (to the right of the map). Hidden on native and
+  // while the map is enlarged.
+  const showDiscovery = !isNative && !expanded;
+  const discovery = useDiscovery(displayMarkers);
 
   useEffect(() => {
     api.getUser(username)
@@ -89,7 +96,7 @@ export default function Dashboard() {
       <div className="admin-header-spacer" />
 
       <div className="dashboard-content">
-        <div className={`dashboard-col${expanded ? ' expanded' : ''}`}>
+        <div className={`dashboard-col${expanded ? ' expanded' : ''}${showDiscovery ? ' has-discovery' : ''}`}>
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
 
           {locationError && (
@@ -104,25 +111,40 @@ export default function Dashboard() {
 
           {!isAdminView && <LocationTrackingPanel />}
 
-          <MapCard
-            displayMarkers={displayMarkers}
-            editing={editing}
-            editable={isAdminView}
-            onEnterView={enterView}
-            onEnterEdit={enterEdit}
-            onClear={clearDraft}
-            onAddMarker={addMarker}
-            onRemoveMarker={removeMarker}
-            region={region}
-            onRegion={setRegion}
-            userLocation={userLocation}
-            locating={locating}
-            onLocate={locate}
-            showLocate={!isAdminView}
-            expandable={!isNative}
-            expanded={expanded}
-            onToggleExpand={() => setExpanded((e) => !e)}
-          />
+          <div className="dashboard-map-row">
+            <div className="dashboard-map-col">
+              <MapCard
+                displayMarkers={displayMarkers}
+                editing={editing}
+                editable={isAdminView}
+                onEnterView={enterView}
+                onEnterEdit={enterEdit}
+                onClear={clearDraft}
+                onAddMarker={addMarker}
+                onRemoveMarker={removeMarker}
+                region={region}
+                onRegion={setRegion}
+                onDiscoveryBusy={showDiscovery ? discovery.onBusy : undefined}
+                onDiscoverySettle={showDiscovery ? discovery.onSettle : undefined}
+                userLocation={userLocation}
+                locating={locating}
+                onLocate={locate}
+                showLocate={!isAdminView}
+                expandable={!isNative}
+                expanded={expanded}
+                onToggleExpand={() => setExpanded((e) => !e)}
+              />
+            </div>
+            {showDiscovery && (
+              <DiscoveryPanel
+                region={region}
+                status={discovery.status}
+                percent={discovery.percent}
+                level={discovery.level}
+                discoveredCells={discovery.discoveredCells}
+              />
+            )}
+          </div>
 
           {!isAdminView && !isNative && !expanded && <WebTrackingNotice />}
         </div>

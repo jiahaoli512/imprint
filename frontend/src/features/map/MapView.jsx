@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector,
+  pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker,
   MARKER_RADIUS_M, LOCATION_RADIUS_M, MARKER_COLOR, MARKER_EDIT_COLOR, LOCATE_BLUE,
 } from './mapUtils';
 
@@ -44,7 +44,7 @@ function InvalidateOnResize({ dep }) {
 
 // Renders the Leaflet map and all its layers. Stateless: marker data and edit
 // state come in as props; user interactions are reported via callbacks.
-export default function MapView({ displayMarkers, editing, userLocation, onAddMarker, onRemoveMarker, onRegion, expanded }) {
+export default function MapView({ displayMarkers, editing, userLocation, onAddMarker, onRemoveMarker, onRegion, onDiscoveryBusy, onDiscoverySettle, expanded }) {
   return (
     <MapContainer
       center={[20, 0]}
@@ -60,6 +60,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
       />
       <MapClickHandler editing={editing} onAdd={onAddMarker} />
       <RegionDetector onRegion={onRegion} />
+      {onDiscoverySettle && <DiscoverySettleTracker onBusy={onDiscoveryBusy} onSettle={onDiscoverySettle} />}
       <InvalidateOnResize dep={expanded} />
       {userLocation && <FlyToLocation position={userLocation} />}
       {userLocation && (
