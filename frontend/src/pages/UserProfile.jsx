@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
+import Modal from '../components/Modal';
 import Spinner from '../components/Spinner';
 import { getUsername, setUsername as saveUsername, profileApiFor } from '../api/client';
 import { formatDate } from '../utils/formatDate';
@@ -25,6 +26,15 @@ function daysUntil(ts, days) {
   return remMs <= 0 ? 0 : Math.ceil(remMs / 86400000);
 }
 
+// Field labels in the edit form — serif display face, slightly larger.
+const fieldLabelStyle = {
+  fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--muted)',
+  display: 'block', marginBottom: '6px',
+};
+
+// Red asterisk marking a required field.
+const RequiredMark = () => <span style={{ color: 'var(--danger, #e2685a)' }}> *</span>;
+
 export default function UserProfile() {
   const { username } = useParams();
   const navigate = useNavigate();
@@ -41,6 +51,7 @@ export default function UserProfile() {
   const [editUsername, setEditUsername] = useState('');
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
+  const [pendingSave, setPendingSave] = useState(null); // validated change awaiting confirmation
 
   // Shrink an over-long name to fit one line — mobile app only.
   const nameRef = useRef(null);
@@ -66,9 +77,11 @@ export default function UserProfile() {
   function cancelEdit() {
     setEditing(false);
     setEditError('');
+    setPendingSave(null);
   }
 
-  async function saveEdit() {
+  // Validate the edit, then stage it for confirmation rather than saving outright.
+  function requestSave() {
     setEditError('');
     const nextUsername = editUsername.trim().toLowerCase();
     const nameChanged = editFirst.trim() !== (user.firstName || '') || editLast.trim() !== (user.lastName || '');
@@ -90,9 +103,25 @@ export default function UserProfile() {
     }
 
     const body = {};
-    if (nameChanged) { body.firstName = editFirst; body.lastName = editLast; }
-    if (usernameChanged) { body.username = nextUsername; }
+    const changes = [];
+    if (nameChanged) {
+      body.firstName = editFirst;
+      body.lastName = editLast;
+      changes.push({ label: 'Name', value: [editFirst.trim(), editLast.trim()].filter(Boolean).join(' ') });
+    }
+    if (usernameChanged) {
+      body.username = nextUsername;
+      changes.push({ label: 'Username', value: `@${nextUsername}` });
+    }
 
+    setPendingSave({ body, usernameChanged, changes });
+  }
+
+  // Commit the staged change after the user confirms.
+  async function confirmSave() {
+    if (!pendingSave) return;
+    const { body, usernameChanged } = pendingSave;
+    setPendingSave(null);
     setSaving(true);
     try {
       const data = await updateUser(username, body);
@@ -173,32 +202,38 @@ export default function UserProfile() {
           </div>
 
           {editing ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-              <input
-                className="auth-input"
-                placeholder="First name"
-                value={editFirst}
-                maxLength={50}
-                onChange={e => { setEditFirst(e.target.value); setEditError(''); }}
-                disabled={nameWait > 0}
-                style={nameWait > 0 ? { opacity: 0.55, cursor: 'not-allowed' } : {}}
-                autoFocus
-              />
-              <input
-                className="auth-input"
-                placeholder="Last name (optional)"
-                value={editLast}
-                maxLength={50}
-                onChange={e => { setEditLast(e.target.value); setEditError(''); }}
-                disabled={nameWait > 0}
-                style={nameWait > 0 ? { opacity: 0.55, cursor: 'not-allowed' } : {}}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+              <div>
+                <label style={fieldLabelStyle}>First Name<RequiredMark /></label>
+                <input
+                  className="auth-input"
+                  placeholder="First name"
+                  value={editFirst}
+                  maxLength={50}
+                  onChange={e => { setEditFirst(e.target.value); setEditError(''); }}
+                  disabled={nameWait > 0}
+                  style={nameWait > 0 ? { opacity: 0.55, cursor: 'not-allowed' } : {}}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label style={fieldLabelStyle}>Last Name</label>
+                <input
+                  className="auth-input"
+                  placeholder="Last name (optional)"
+                  value={editLast}
+                  maxLength={50}
+                  onChange={e => { setEditLast(e.target.value); setEditError(''); }}
+                  disabled={nameWait > 0}
+                  style={nameWait > 0 ? { opacity: 0.55, cursor: 'not-allowed' } : {}}
+                />
+              </div>
               <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '-4px' }}>
                 {cooldownHint(nameWait, 'a week')}
               </p>
               <div>
-                <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
-                  Username
+                <label style={fieldLabelStyle}>
+                  Username<RequiredMark />
                 </label>
                 <input
                   className="auth-input"
@@ -219,7 +254,7 @@ export default function UserProfile() {
               </div>
               {user.dateOfBirth && (
                 <div>
-                  <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
+                  <label style={fieldLabelStyle}>
                     Date of birth
                   </label>
                   <input
@@ -230,13 +265,16 @@ export default function UserProfile() {
                     style={{ opacity: 0.55, cursor: 'not-allowed' }}
                   />
                   <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
-                    Date of birth can't be changed.
+                    Date of birth can't be changed.{' '}
+                    <Link to="/contact" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                      Request a change
+                    </Link>.
                   </p>
                 </div>
               )}
               {editError && <p className="auth-error">{editError}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveEdit} disabled={saving}>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={requestSave} disabled={saving}>
                   <Check size={14} /> {saving ? 'Saving…' : 'Save'}
                 </button>
                 <button className="btn btn-ghost" onClick={cancelEdit} disabled={saving}>
@@ -273,6 +311,33 @@ export default function UserProfile() {
         </div>
       </div>
       {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
+      {pendingSave && (
+        <Modal onClose={() => setPendingSave(null)}>
+          <h2 className="modal-title">Save these changes?</h2>
+          <div className="modal-sub" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {pendingSave.changes.map(({ label, value }) => (
+              <div key={label} style={{ textDecoration: 'underline' }}>
+                <span style={{ color: 'var(--muted)' }}>{label}: </span>
+                <span style={{ fontWeight: 600 }}>{value || '—'}</span>
+              </div>
+            ))}
+          </div>
+          {!isAdminView && (
+            <div className="modal-sub" style={{ marginTop: '12px', color: '#e2685a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {pendingSave.changes.some(c => c.label === 'Username') && (
+                <p>You can only change your username once a month.</p>
+              )}
+              {pendingSave.changes.some(c => c.label === 'Name') && (
+                <p>You can only change your name once a week.</p>
+              )}
+            </div>
+          )}
+          <button className="btn btn-primary modal-submit" onClick={confirmSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Confirm'}
+          </button>
+          <button className="modal-cancel" onClick={() => setPendingSave(null)}>Cancel</button>
+        </Modal>
+      )}
     </div>
   );
 }
