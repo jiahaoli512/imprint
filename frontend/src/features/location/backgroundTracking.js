@@ -72,7 +72,7 @@ export async function startTracking() {
       backgroundTitle: 'Imprint is tracking your travels',
       requestPermissions: true,
       stale: false,
-      distanceFilter: 50, // metres of movement before a new point (low power)
+      distanceFilter: 100, // metres of movement before a new point (matches the 100m marker spacing)
     },
     (location, error) => {
       if (error) {
