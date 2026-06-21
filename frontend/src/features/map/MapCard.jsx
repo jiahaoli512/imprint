@@ -10,7 +10,7 @@ import { LOCATE_BLUE } from './mapUtils';
 export default function MapCard({
   displayMarkers, editing, editable = false,
   onEnterView, onEnterEdit, onClear, onAddMarker, onRemoveMarker,
-  region, onRegion,
+  region, onRegion, onDiscoveryBusy, onDiscoverySettle,
   userLocation, locating, onLocate, showLocate = false,
   expandable = false, expanded = false, onToggleExpand,
 }) {
@@ -70,6 +70,8 @@ export default function MapCard({
           onAddMarker={onAddMarker}
           onRemoveMarker={onRemoveMarker}
           onRegion={onRegion}
+          onDiscoveryBusy={onDiscoveryBusy}
+          onDiscoverySettle={onDiscoverySettle}
           expanded={expanded}
         />
       </div>

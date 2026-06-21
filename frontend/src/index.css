@@ -1152,6 +1152,83 @@ footer {
   width: min(680px, 100%);
   gap: 16px;
 }
+/* Widen to fit the discovery side panel (web). Wraps below ~880px. */
+.dashboard-col.has-discovery { width: min(980px, 100%); }
+
+/* Map + discovery gauge sit side by side; the panel drops below on narrow
+   screens (flex-wrap) so the map keeps its width. */
+.dashboard-map-row {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.dashboard-map-col {
+  flex: 1 1 320px;
+  min-width: 0; /* let the map shrink instead of overflowing */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Discovery gauge panel — matches the map card's surface/border chrome. */
+.discovery-panel {
+  flex: 0 0 248px;
+  width: 248px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+@media (max-width: 880px) {
+  .discovery-panel { flex-basis: 100%; width: 100%; }
+}
+.discovery-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  align-self: flex-start;
+}
+.discovery-donut { position: relative; width: 132px; height: 132px; }
+.discovery-arc {
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+}
+.discovery-spinner {
+  transform-origin: 50% 50%;
+  animation: discovery-spin 0.9s linear infinite;
+}
+@keyframes discovery-spin {
+  from { transform: rotate(-90deg); }
+  to   { transform: rotate(270deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .discovery-arc { transition: opacity 0.25s ease; }
+  .discovery-spinner { animation-duration: 1.8s; }
+}
+.discovery-center {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.discovery-pct {
+  font-family: var(--font-display);
+  font-size: 30px; font-weight: 600; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.discovery-pct.dim { opacity: 0.4; transition: opacity 0.25s ease; }
+.discovery-meta { text-align: center; }
+.discovery-region {
+  font-family: var(--font-display);
+  font-size: 17px; font-weight: 600; color: var(--text);
+  letter-spacing: -0.2px;
+}
+.discovery-level { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 2px; }
+.discovery-cells { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
 .dashboard-welcome {
   font-family: var(--font-display);
