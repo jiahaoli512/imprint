@@ -32,14 +32,21 @@ const defaultOrigins = [
 
 const originAllowlist = new Set([...defaultOrigins, ...allowedOrigins]);
 
+// Vercel deployments are matched by project slug so previews work without
+// allowing every *.vercel.app site. Override via VERCEL_PROJECT_SLUG.
+const VERCEL_PROJECT = (process.env.VERCEL_PROJECT_SLUG || 'imprint').toLowerCase();
+
 function isAllowedOrigin(origin) {
   if (originAllowlist.has(origin)) return true;
   let hostname;
   try { hostname = new URL(origin).hostname; } catch { return false; }
   // Any localhost / loopback port (Vite may pick 5173, 5174, 5180, … in dev)
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') return true;
-  // Vercel preview + production deployments
-  if (/\.vercel\.app$/.test(hostname)) return true;
+  // Vercel deployments for THIS project only (preview URLs are dynamic), e.g.
+  // imprint.vercel.app, imprint-git-<branch>.vercel.app, imprint-<hash>-<scope>.vercel.app.
+  // Previously any *.vercel.app was allowed — far too broad. Custom prod domains
+  // go in ALLOWED_ORIGINS.
+  if (hostname.endsWith('.vercel.app') && hostname.includes(VERCEL_PROJECT)) return true;
   return false;
 }
 
