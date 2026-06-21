@@ -1,14 +1,9 @@
-const jwt = require('jsonwebtoken');
+const { readBearer } = require('./jwt');
 
 module.exports = function requireAuth(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or invalid token' });
-  }
-  try {
-    req.user = jwt.verify(header.slice(7), process.env.JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ error: 'Token expired or invalid' });
-  }
+  const r = readBearer(req);
+  if (r.status === 'missing') return res.status(401).json({ error: 'Missing or invalid token' });
+  if (r.status === 'invalid') return res.status(401).json({ error: 'Token expired or invalid' });
+  req.user = r.payload;
+  next();
 };
