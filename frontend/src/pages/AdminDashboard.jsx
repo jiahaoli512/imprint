@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import LogoutModal from '../components/LogoutModal';
 import LogoMark from '../components/LogoMark';
 import MapCard from '../features/map/MapCard';
+import SaveMapPrompt from '../features/map/SaveMapPrompt';
 import { useMarkers } from '../features/map/useMarkers';
 import { api } from '../api/client';
 import Greeting from '../components/Greeting';
@@ -69,7 +70,7 @@ export default function AdminDashboard() {
       </div>
 
       {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
-      {savePrompt}
+      <SaveMapPrompt {...savePrompt} />
     </div>
   );
 }

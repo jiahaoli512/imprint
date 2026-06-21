@@ -6,6 +6,7 @@ import LogoutModal from '../components/LogoutModal';
 import LogoMark from '../components/LogoMark';
 import UserSearch from '../features/users/UserSearch';
 import MapCard from '../features/map/MapCard';
+import SaveMapPrompt from '../features/map/SaveMapPrompt';
 import DiscoveryPanel from '../features/map/DiscoveryPanel';
 import { useDiscovery } from '../features/map/useDiscovery';
 import LocationTrackingPanel from '../features/location/LocationTrackingPanel';
@@ -149,7 +150,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {savePrompt}
+      <SaveMapPrompt {...savePrompt} />
 
       {confirmLogout && <LogoutModal admin={isAdminView} onCancel={() => setConfirmLogout(false)} />}
     </div>
