@@ -54,5 +54,5 @@ Three npm packages: root (orchestration + git), `backend/` (Express 5 API), `fro
 
 ### Conventions
 - **Commit style**: short title + optional body, no `Co-Authored-By` footer.
-- **Moving `v2.1` tag**: on every push to `main`, the `v2.1` tag is force-advanced to the new HEAD (`git tag -f v2.1 && git push origin v2.1 --force`).
+- **Moving `v2.2` tag**: on every push to `main`, the `v2.2` tag is force-advanced to the new HEAD (`git tag -f v2.2 && git push origin v2.2 --force`). (`v2.1` and earlier are frozen historical markers — don't move them.)
 - Deployment: frontend → Vercel, backend → Render. `VITE_API_URL` (in `frontend/.env*`) points the web client at the backend; in dev it targets `http://localhost:4000`.
