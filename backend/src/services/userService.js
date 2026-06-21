@@ -25,7 +25,7 @@ function ageFromDob(dob) {
 
 function signToken(user) {
   return jwt.sign(
-    { id: user._id.toString(), email: user.email },
+    { type: 'user', id: user._id.toString(), email: user.email },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );

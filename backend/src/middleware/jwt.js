@@ -16,10 +16,16 @@ function readBearer(req) {
   }
 }
 
-// Attaches a verified payload to the request as admin or user by role.
+// A token is an admin token if it carries the admin type/role; everything else
+// is treated as a user token (older user tokens predate the explicit `type`).
+function isAdminToken(payload) {
+  return payload.type === 'admin' || payload.role === 'admin';
+}
+
+// Attaches a verified payload to the request as admin or user by type/role.
 function assignIdentity(req, payload) {
-  if (payload.role === 'admin') req.admin = payload;
+  if (isAdminToken(payload)) req.admin = payload;
   else req.user = payload;
 }
 
-module.exports = { readBearer, assignIdentity };
+module.exports = { readBearer, assignIdentity, isAdminToken };
