@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { api } from '../api/client';
+import { isValidEmail } from '../utils/validateName';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -13,9 +14,15 @@ export default function CTA({ onJoin }) {
 
   async function handleJoin(e) {
     e.preventDefault();
+    const trimmed = email.trim();
+    if (!isValidEmail(trimmed)) {
+      setMsg('Please enter a valid email address.');
+      setStatus('error');
+      return;
+    }
     setStatus('loading');
     try {
-      const data = await api.joinWaitlist({ email });
+      const data = await api.joinWaitlist({ email: trimmed });
       setMsg(`You're #${data.position} on the list!`);
       setStatus('success');
       onJoin((n) => n + 1);
@@ -60,12 +67,12 @@ export default function CTA({ onJoin }) {
           </form>
           {msg && <p className={`form-msg ${status}`}>{msg}</p>}
           <div className="cta-actions">
-            <a href="#" className="store-badge-img apple-badge">
-              <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" />
-            </a>
-            <a href="#" className="store-badge-img google-badge">
-              <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" />
-            </a>
+            <span className="store-badge-img apple-badge" title="Coming soon" style={{ cursor: 'default' }}>
+              <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store (coming soon)" />
+            </span>
+            <span className="store-badge-img google-badge" title="Coming soon" style={{ cursor: 'default' }}>
+              <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play (coming soon)" />
+            </span>
           </div>
         </>
       )}

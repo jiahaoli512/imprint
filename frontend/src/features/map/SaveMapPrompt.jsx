@@ -9,6 +9,7 @@ export default function SaveMapPrompt({ open, saving, error, onConfirm, onDiscar
       title="Save changes?"
       message="Do you want to save your changes to the map?"
       error={error}
+      busy={saving}
       confirmLabel={saving ? 'Saving…' : 'Save'}
       altLabel="Discard"
       onConfirm={onConfirm}

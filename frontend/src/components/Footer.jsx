@@ -20,7 +20,7 @@ export default function Footer() {
         <span className="footer-copy">© 2026 Imprint. All rights reserved.</span>
         <ul className="footer-links">
           <li><button className="footer-admin-btn" onClick={() => navigate('/privacy')}>Privacy</button></li>
-          <li><a href="#">Terms</a></li>
+          <li><button className="footer-admin-btn" disabled title="Coming soon" style={{ opacity: 0.5, cursor: 'default' }}>Terms</button></li>
           <li><button className="footer-admin-btn" onClick={() => navigate('/contact')}>Contact</button></li>
           {!isNative && <li><button className="footer-admin-btn" onClick={() => setAdminOpen(true)}>Admin</button></li>}
         </ul>
