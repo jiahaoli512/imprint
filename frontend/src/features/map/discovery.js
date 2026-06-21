@@ -3,7 +3,7 @@
 // testable. The metric is "discovered grid cells": the region is split into
 // cells sized by zoom level, a cell counts once any marker falls in it, and the
 // percentage is the discovered cell area over the region's true area.
-import { getLevel, CONTINENT } from './mapUtils';
+import { getLevel } from './mapUtils';
 
 const EARTH_RADIUS_M = 6371000;
 const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
@@ -18,16 +18,24 @@ const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
 // target would make a country-cell ~180 km wide) and the percentage degrades
 // monotonically as you zoom out. Tuned so an active city local reads ~15% and a
 // pure commuter ~3%.
+//
+// The macro levels (state→earth) climb steeply: one cell is worth (100/target)%
+// regardless of region size, so a shallow progression let a single GPS ping
+// claim a huge slice of a continent/planet (4000 earth cells = 357 km/cell, so
+// ~5 scattered points read 0.1%). At earth=50000 a cell is ~101 km and ~10
+// far-flung points read <0.1%, which is the intended "barely anything" planet
+// score. city/county stay low so they remain scale-invariant for nearly all
+// real regions (the MIN_CELL_M floor below only bites under ~4.3 km² / 11.5 km²).
 const TARGET_CELLS = {
-  city: 300, county: 600, state: 1200, country: 2000, continent: 2500, earth: 4000,
+  city: 300, county: 800, state: 2500, country: 8000, continent: 20000, earth: 50000,
 };
 // Floor the cell side near the marker spacing so very small regions don't give
 // every marker its own cell.
 const MIN_CELL_M = 120;
 
 // Our region level → Nominatim reverse `zoom` (controls which admin entity, and
-// thus which boundary polygon, is returned). earth/continent have no admin
-// polygon and use static areas instead.
+// thus which boundary polygon, is returned). earth/continent never reach the
+// fetch — they resolve to static areas before it.
 const LEVEL_NOMINATIM_ZOOM = { country: 3, state: 5, county: 8, city: 10 };
 
 // Static fallback areas (km²) for levels Nominatim can't return a polygon for.
@@ -37,6 +45,69 @@ const STATIC_AREA_KM2 = {
   'North America': 24709000, 'South America': 17840000,
   Oceania: 8526000, Antarctica: 14200000,
 };
+
+// Approximate continent bounding boxes [minLng, minLat, maxLng, maxLat]. There
+// are no continent boundary polygons from Nominatim, so at continent level we
+// filter markers to a rough box instead — far better than counting every marker
+// on the planet toward one continent (which the polygon-less path used to do).
+// Boxes are intentionally generous and overlap at the Eurasia seam; a box whose
+// minLng > maxLng wraps the antimeridian (matches lng >= minLng OR lng <= maxLng).
+const CONTINENT_BBOX = {
+  'North America': [-170, 7, -50, 84],
+  'South America': [-82, -56, -34, 13],
+  Europe: [-25, 34, 45, 72],
+  Africa: [-18, -35, 52, 38],
+  Asia: [25, 0, 180, 81],
+  Oceania: [110, -50, -150, 10], // wraps the antimeridian (Australia → Pacific)
+  Antarctica: [-180, -90, 180, -60],
+};
+
+// Point-in-box test that supports antimeridian wrap (minLng > maxLng).
+function inBBox(lat, lng, [minLng, minLat, maxLng, maxLat]) {
+  if (lat < minLat || lat > maxLat) return false;
+  return minLng <= maxLng ? (lng >= minLng && lng <= maxLng) : (lng >= minLng || lng <= maxLng);
+}
+
+// The continent whose (generous, coast-inclusive) box contains the point, or
+// null if the point is outside every continent — i.e. over open ocean. First
+// box wins; insertion order breaks the Eurasia overlap toward Europe.
+function continentContaining(lat, lng) {
+  for (const name of Object.keys(CONTINENT_BBOX)) {
+    if (inBBox(lat, lng, CONTINENT_BBOX[name])) return name;
+  }
+  return null;
+}
+
+// Ocean anchor points — oceans have no clean boxes (the Pacific wraps the
+// antimeridian and they interlock), so we name open water by the nearest anchor.
+// The poles are decided by latitude first.
+const OCEAN_ANCHORS = [
+  ['Pacific Ocean', 0, -140], ['Pacific Ocean', 25, -150], ['Pacific Ocean', -25, -120],
+  ['Pacific Ocean', 0, 180], ['Pacific Ocean', 30, 165], ['Pacific Ocean', -30, -150],
+  ['Atlantic Ocean', 0, -25], ['Atlantic Ocean', 40, -40], ['Atlantic Ocean', -30, -15],
+  ['Indian Ocean', -20, 80], ['Indian Ocean', 0, 70], ['Indian Ocean', -30, 95],
+];
+
+// Shortest angular distance between two longitudes, accounting for the ±180 wrap.
+function lngDelta(a, b) {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+// Name the ocean at a coordinate (only called for points over open water).
+function oceanAt(lat, lng) {
+  if (lat <= -60) return 'Southern Ocean';
+  if (lat >= 66) return 'Arctic Ocean';
+  let best = OCEAN_ANCHORS[0][0];
+  let bestDist = Infinity;
+  for (const [name, aLat, aLng] of OCEAN_ANCHORS) {
+    const dLat = lat - aLat;
+    const dLng = lngDelta(lng, aLng);
+    const d = dLat * dLat + dLng * dLng;
+    if (d < bestDist) { bestDist = d; best = name; }
+  }
+  return best;
+}
 
 // Bounded cache so panning within one region doesn't refetch its boundary. Keyed
 // by level + rounded lat/lng (approximate — can reuse a neighbour near a border,
@@ -154,6 +225,23 @@ export async function fetchRegionGeometry(lat, lng, level) {
     return { name: 'Earth', geometry: null, areaM2: STATIC_AREA_KM2.earth * 1e6 };
   }
 
+  // Open water: a centre outside every continent box is over open ocean. The
+  // continent boxes are coast-inclusive, so coastal/inland views still resolve
+  // to land — only genuinely oceanic centres land here. Naming it from the
+  // coordinate avoids reverse-geocoding (which returns no country at sea and
+  // errored the panel). `ocean: true` tells computeDiscovery there's nothing to
+  // discover, and `level: 'ocean'` drives the panel's "Ocean" label.
+  const continent = continentContaining(lat, lng);
+  if (!continent) {
+    return { name: oceanAt(lat, lng), level: 'ocean', ocean: true, geometry: null, areaM2: 0 };
+  }
+
+  // Continents have no admin polygon — resolve from the (containing) box. The
+  // box also bounds marker membership in computeDiscovery.
+  if (level === 'continent') {
+    return { name: continent, geometry: null, bbox: CONTINENT_BBOX[continent], areaM2: STATIC_AREA_KM2[continent] * 1e6 };
+  }
+
   const key = `${level}:${lat.toFixed(2)}:${lng.toFixed(2)}`;
   if (geometryCache.has(key)) return geometryCache.get(key);
 
@@ -175,25 +263,12 @@ export async function fetchRegionGeometry(lat, lng, level) {
     clearTimeout(timer);
   }
 
-  let result;
-  if (level === 'continent') {
-    // No admin polygon for continents — resolve the continent from the country
-    // code and use its static area so the percentage denominator is correct.
-    const cc = data?.address?.country_code?.toUpperCase();
-    const name = CONTINENT[cc] || data?.address?.country || '';
-    const areaKm2 = STATIC_AREA_KM2[name] || 0;
-    // Don't let an unmapped continent silently fall through to Earth's area
-    // (which would show a planet-scale denominator while the UI says continent).
-    if (!areaKm2) throw new Error('Unknown continent');
-    result = { name, geometry: null, areaM2: areaKm2 * 1e6 };
-  } else {
-    const geometry = data?.geojson && /Polygon$/.test(data.geojson.type) ? data.geojson : null;
-    result = {
-      name: data?.name || data?.display_name?.split(',')[0] || '',
-      geometry,
-      areaM2: geometry ? polygonAreaM2(geometry) : 0,
-    };
-  }
+  const geometry = data?.geojson && /Polygon$/.test(data.geojson.type) ? data.geojson : null;
+  const result = {
+    name: data?.name || data?.display_name?.split(',')[0] || '',
+    geometry,
+    areaM2: geometry ? polygonAreaM2(geometry) : 0,
+  };
   return cacheGeometry(key, result);
 }
 
@@ -203,6 +278,13 @@ export async function fetchRegionGeometry(lat, lng, level) {
 // `region` is the { geometry, areaM2 } from fetchRegionGeometry; `regionName`
 // lets continent/earth pick a static area. Returns percent + supporting counts.
 export function computeDiscovery(markers, region, level, refLat, regionName) {
+  // Open ocean: nothing to discover (this is a land app, and there's no reliable
+  // ocean polygon to filter markers against). Report 0% so the panel still shows
+  // the ocean name and gauge rather than erroring.
+  if (region?.ocean) {
+    return { percent: 0, discoveredCells: 0, discoveredAreaKm2: 0, regionAreaKm2: 0 };
+  }
+
   // Region area: polygon area when we have one, else the static table.
   let regionAreaM2 = region?.areaM2 || 0;
   if (!regionAreaM2) {
@@ -219,10 +301,18 @@ export function computeDiscovery(markers, region, level, refLat, regionName) {
   const cellDegLng = side / (M_PER_DEG * Math.max(Math.cos(phi), 0.01));
   const cellAreaM2 = side * side;
 
+  // Region membership: exact polygon when we have one (city…country), a rough
+  // bounding box at continent level, and no filter for earth (everything counts).
+  const inRegion = (lat, lng) => {
+    if (region?.geometry) return pointInGeometry(lat, lng, region.geometry);
+    if (region?.bbox) return inBBox(lat, lng, region.bbox);
+    return true;
+  };
+
   const cells = new Set();
   for (const [lat, lng] of markers) {
     if (typeof lat !== 'number' || typeof lng !== 'number') continue;
-    if (region?.geometry && !pointInGeometry(lat, lng, region.geometry)) continue;
+    if (!inRegion(lat, lng)) continue;
     cells.add(`${Math.floor(lat / cellDegLat)}:${Math.floor(lng / cellDegLng)}`);
   }
 
