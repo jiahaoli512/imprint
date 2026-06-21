@@ -80,9 +80,9 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
             pathOptions={{
               color: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
               fillColor: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
-              fillOpacity: 0.15,
+              fillOpacity: 0.07,
               weight: 1.5,
-              opacity: 0.6,
+              opacity: 0.4,
             }}
           />
           <Marker
