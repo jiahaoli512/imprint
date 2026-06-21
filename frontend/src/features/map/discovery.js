@@ -38,6 +38,28 @@ const STATIC_AREA_KM2 = {
   Oceania: 8526000, Antarctica: 14200000,
 };
 
+// Approximate continent bounding boxes [minLng, minLat, maxLng, maxLat]. There
+// are no continent boundary polygons from Nominatim, so at continent level we
+// filter markers to a rough box instead — far better than counting every marker
+// on the planet toward one continent (which the polygon-less path used to do).
+// Boxes are intentionally generous and overlap at the Eurasia seam; a box whose
+// minLng > maxLng wraps the antimeridian (matches lng >= minLng OR lng <= maxLng).
+const CONTINENT_BBOX = {
+  'North America': [-170, 7, -50, 84],
+  'South America': [-82, -56, -34, 13],
+  Europe: [-25, 34, 45, 72],
+  Africa: [-18, -35, 52, 38],
+  Asia: [25, 0, 180, 81],
+  Oceania: [110, -50, -150, 10], // wraps the antimeridian (Australia → Pacific)
+  Antarctica: [-180, -90, 180, -60],
+};
+
+// Point-in-box test that supports antimeridian wrap (minLng > maxLng).
+function inBBox(lat, lng, [minLng, minLat, maxLng, maxLat]) {
+  if (lat < minLat || lat > maxLat) return false;
+  return minLng <= maxLng ? (lng >= minLng && lng <= maxLng) : (lng >= minLng || lng <= maxLng);
+}
+
 // Bounded cache so panning within one region doesn't refetch its boundary. Keyed
 // by level + rounded lat/lng (approximate — can reuse a neighbour near a border,
 // an acceptable trade for far fewer Nominatim calls). Capped so a long session
@@ -185,7 +207,9 @@ export async function fetchRegionGeometry(lat, lng, level) {
     // Don't let an unmapped continent silently fall through to Earth's area
     // (which would show a planet-scale denominator while the UI says continent).
     if (!areaKm2) throw new Error('Unknown continent');
-    result = { name, geometry: null, areaM2: areaKm2 * 1e6 };
+    // Attach the rough bbox so computeDiscovery only counts markers on this
+    // continent (no polygon available — see CONTINENT_BBOX).
+    result = { name, geometry: null, bbox: CONTINENT_BBOX[name] || null, areaM2: areaKm2 * 1e6 };
   } else {
     const geometry = data?.geojson && /Polygon$/.test(data.geojson.type) ? data.geojson : null;
     result = {
@@ -219,10 +243,18 @@ export function computeDiscovery(markers, region, level, refLat, regionName) {
   const cellDegLng = side / (M_PER_DEG * Math.max(Math.cos(phi), 0.01));
   const cellAreaM2 = side * side;
 
+  // Region membership: exact polygon when we have one (city…country), a rough
+  // bounding box at continent level, and no filter for earth (everything counts).
+  const inRegion = (lat, lng) => {
+    if (region?.geometry) return pointInGeometry(lat, lng, region.geometry);
+    if (region?.bbox) return inBBox(lat, lng, region.bbox);
+    return true;
+  };
+
   const cells = new Set();
   for (const [lat, lng] of markers) {
     if (typeof lat !== 'number' || typeof lng !== 'number') continue;
-    if (region?.geometry && !pointInGeometry(lat, lng, region.geometry)) continue;
+    if (!inRegion(lat, lng)) continue;
     cells.add(`${Math.floor(lat / cellDegLat)}:${Math.floor(lng / cellDegLng)}`);
   }
 
