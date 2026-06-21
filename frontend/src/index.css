@@ -79,6 +79,31 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.nav-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-github {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: color 0.15s, transform 0.06s ease;
+}
+.nav-github:hover { color: var(--text); }
+.nav-github:active { transform: scale(0.88); }
+
+.nav-drawer-github {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.nav-drawer-github:hover { color: var(--text); }
+
 .logo {
   display: flex;
   align-items: center;
