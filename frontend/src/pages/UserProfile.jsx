@@ -23,7 +23,7 @@ const fieldLabelStyle = {
 };
 
 // Red asterisk marking a required field.
-const RequiredMark = () => <span style={{ color: 'var(--danger, #e2685a)' }}> *</span>;
+const RequiredMark = () => <span style={{ color: 'var(--error)' }}> *</span>;
 
 const cooldownHint = (wait, cadence) =>
   wait > 0 ? `Available again in ${wait} day${wait === 1 ? '' : 's'}.` : `Can be changed once ${cadence}.`;
@@ -213,7 +213,7 @@ export default function UserProfile() {
             ))}
           </div>
           {!isAdminView && (
-            <div className="modal-sub" style={{ marginTop: '12px', color: '#e2685a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="modal-sub" style={{ marginTop: '12px', color: 'var(--error)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {edit.pendingSave.changes.some(c => c.label === 'Username') && (
                 <p>You can only change your username once a month.</p>
               )}

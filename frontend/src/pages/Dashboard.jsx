@@ -81,7 +81,7 @@ export default function Dashboard() {
           {(isNative || isAdminView) && <UserSearch isAdminView={isAdminView} variant="block" />}
 
           {locationError && (
-            <p style={{ fontSize: '12px', color: '#e2685a', marginTop: '-8px' }}>{locationError}</p>
+            <p style={{ fontSize: '12px', color: 'var(--error)', marginTop: '-8px' }}>{locationError}</p>
           )}
           {user?.firstName && (
             <Greeting

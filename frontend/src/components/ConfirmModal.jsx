@@ -6,7 +6,7 @@ export default function ConfirmModal({ title, message, error, confirmLabel = 'Co
       <div className="modal confirm-modal" onClick={e => e.stopPropagation()}>
         <h2 className="modal-title">{title}</h2>
         {message && <p className="modal-sub">{message}</p>}
-        {error && <p className="modal-sub" style={{ color: '#e2685a' }}>{error}</p>}
+        {error && <p className="modal-sub" style={{ color: 'var(--error)' }}>{error}</p>}
         <div className="confirm-modal-actions">
           {altLabel && (
             <button className="btn confirm-modal-btn confirm-modal-danger" onClick={onAlt} disabled={busy}>
