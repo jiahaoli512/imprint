@@ -15,13 +15,23 @@ const User = require('../src/models/User');
 const { thinPoints, MARKER_SPACING_M } = require('../src/services/markerService');
 
 const APPLY = process.argv.includes('--apply');
+const CONFIRM_PROD = process.argv.includes('--yes-prod');
 
 (async () => {
   const uri = process.env.MONGODB_URI;
   if (!uri) { console.error('MONGODB_URI not set'); process.exit(1); }
 
+  // Guard against accidentally writing to a non-local (e.g. Atlas) database.
+  const isLocal = /(localhost|127\.0\.0\.1)/.test(uri);
+  if (APPLY && !isLocal && !CONFIRM_PROD) {
+    console.error('Refusing to --apply against a non-local database without --yes-prod.');
+    console.error('Target:', uri.replace(/\/\/[^@]*@/, '//<credentials>@'));
+    process.exit(1);
+  }
+
   await mongoose.connect(uri);
   console.log('Connected to:', uri.replace(/\/\/[^@]*@/, '//<credentials>@'));
+  console.log(`Database: ${mongoose.connection.name}${isLocal ? '' : '  ⚠ NON-LOCAL'}`);
   console.log(`Mode: ${APPLY ? 'APPLY (will write)' : 'DRY RUN (no writes)'}  •  spacing: ${MARKER_SPACING_M}m\n`);
 
   const docs = await MapMarkers.find({});
