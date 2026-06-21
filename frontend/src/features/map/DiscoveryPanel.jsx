@@ -11,11 +11,12 @@ const LEVEL_LABEL = {
   country: 'Country', continent: 'Continent', earth: 'Planet',
 };
 
-export default function DiscoveryPanel({ region, status, percent = 0, level, discoveredCells = 0 }) {
+export default function DiscoveryPanel({ region, status, percent = 0, level }) {
   const loading = status === 'loading' || status === 'idle';
   const firstLoad = status === 'idle';     // nothing computed yet
   const error = status === 'error';
-  const pct = Math.round(percent * 10) / 10;
+  // Show "<0.1%" for positive-but-tiny coverage rather than a flat "0%".
+  const pctLabel = percent > 0 && percent < 0.1 ? '<0.1%' : `${Math.round(percent * 10) / 10}%`;
   const dashoffset = C * (1 - Math.min(percent, 100) / 100);
   const name = region || (level === 'earth' ? 'Earth' : '—');
 
@@ -24,7 +25,7 @@ export default function DiscoveryPanel({ region, status, percent = 0, level, dis
       <div className="discovery-title">Discovery</div>
 
       <div className="discovery-donut" role="img"
-        aria-label={loading ? 'Calculating discovery' : `${pct}% of ${name} discovered`}>
+        aria-label={loading ? 'Calculating discovery' : `${pctLabel} of ${name} discovered`}>
         <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width="132" height="132">
           <defs>
             <linearGradient id="discoveryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -58,7 +59,7 @@ export default function DiscoveryPanel({ region, status, percent = 0, level, dis
         </svg>
         <div className="discovery-center">
           <span className={`discovery-pct${loading ? ' dim' : ''}`}>
-            {firstLoad ? '' : error ? '!' : `${pct}%`}
+            {firstLoad ? '' : error ? '!' : pctLabel}
           </span>
         </div>
       </div>
@@ -66,13 +67,11 @@ export default function DiscoveryPanel({ region, status, percent = 0, level, dis
       <div className="discovery-meta">
         <div className="discovery-region">{name}</div>
         <div className="discovery-level">{LEVEL_LABEL[level] || ''}</div>
-        <div className="discovery-cells">
-          {error
-            ? "Couldn't load this region"
-            : loading
-              ? 'Updating…'
-              : `${discoveredCells.toLocaleString()} ${discoveredCells === 1 ? 'area' : 'areas'} discovered`}
-        </div>
+        {(error || loading) && (
+          <div className="discovery-cells">
+            {error ? "Couldn't load this region" : 'Updating…'}
+          </div>
+        )}
       </div>
     </div>
   );

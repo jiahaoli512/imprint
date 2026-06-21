@@ -10,13 +10,19 @@ const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
 
 // Grid cell size (degrees) per level — the discovery "resolution". Smaller cells
 // at finer levels so a city reads differently from a country. Main tuning knob.
+// Tuned against route-like synthetic markers (passive tracking follows roads, so
+// uniform scatter overstates coverage). A months-active local reads ~15% at city
+// and ~2% at county; a pure commuter stays ~3%. Values decrease monotonically as
+// you zoom out with no country→continent inversion (continent cells kept small).
+// State and above are tiny by nature — one person can't cover a meaningful
+// fraction of a state by area; the UI shows "<0.1%" rather than a flat 0%.
 export const CELL_DEG = {
-  city:      0.0015,
-  county:    0.004,
-  state:     0.02,
-  country:   0.06,
-  continent: 0.4,
-  earth:     0.8,
+  city:      0.022,
+  county:    0.03,
+  state:     0.09,
+  country:   0.28,
+  continent: 0.30,
+  earth:     0.80,
 };
 
 // Our region level → Nominatim reverse `zoom` (controls which admin entity, and
