@@ -18,8 +18,16 @@ const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
 // target would make a country-cell ~180 km wide) and the percentage degrades
 // monotonically as you zoom out. Tuned so an active city local reads ~15% and a
 // pure commuter ~3%.
+//
+// The macro levels (state→earth) climb steeply: one cell is worth (100/target)%
+// regardless of region size, so a shallow progression let a single GPS ping
+// claim a huge slice of a continent/planet (4000 earth cells = 357 km/cell, so
+// ~5 scattered points read 0.1%). At earth=50000 a cell is ~101 km and ~10
+// far-flung points read <0.1%, which is the intended "barely anything" planet
+// score. city/county stay low so they remain scale-invariant for nearly all
+// real regions (the MIN_CELL_M floor below only bites under ~4.3 km² / 11.5 km²).
 const TARGET_CELLS = {
-  city: 300, county: 600, state: 1200, country: 2000, continent: 2500, earth: 4000,
+  city: 300, county: 800, state: 2500, country: 8000, continent: 20000, earth: 50000,
 };
 // Floor the cell side near the marker spacing so very small regions don't give
 // every marker its own cell.
