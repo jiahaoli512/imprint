@@ -44,19 +44,4 @@ async function logLocations(userId, points) {
   return { inserted: docs.length, markersAdded };
 }
 
-async function getUserLocations(userId, limit = 500) {
-  return Location.find({ userId }, 'lat lng accuracy visitedAt')
-    .sort({ visitedAt: -1 })
-    .limit(limit);
-}
-
-async function getCoverage(userId) {
-  const [total, countries, regions] = await Promise.all([
-    Location.countDocuments({ userId }),
-    Location.distinct('country', { userId, country: { $ne: null } }),
-    Location.distinct('region', { userId, region: { $ne: null } }),
-  ]);
-  return { total, countriesVisited: countries.length, regionsVisited: regions.length };
-}
-
-module.exports = { logLocations, getUserLocations, getCoverage };
+module.exports = { logLocations };

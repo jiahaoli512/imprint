@@ -87,10 +87,8 @@ export const api = {
   adminGetUserMarkers: (username)    => adminRequest(`/api/markers/user/${encodeURIComponent(username)}`),
   adminSaveMarkers: (username, points) => adminRequest.put(`/api/markers/user/${encodeURIComponent(username)}`, { points }),
 
-  // Locations (background tracking)
+  // Locations (background tracking — upload only)
   logLocations: (points) => request.post('/api/locations', { points }),
-  getLocations: ()       => request('/api/locations'),
-  getCoverage:  ()       => request('/api/locations/coverage'),
 
   // Waitlist (public)
   joinWaitlist:  (body)  => request.post('/api/waitlist', body),
