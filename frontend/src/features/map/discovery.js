@@ -10,14 +10,19 @@ const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
 
 // Grid cell size (degrees) per level — the discovery "resolution". Smaller cells
 // at finer levels so a city reads differently from a country. Main tuning knob.
-// Each region is divided into ~TARGET_CELLS grid cells sized from the region's
-// OWN area, so the metric is scale-invariant: a marker can never claim half a
-// small city (a fixed-degree cell did — e.g. one tile = 50% of tiny Temple City).
-// The percentage is effectively "fraction of the region's cells you've touched",
-// so small towns are genuinely discoverable (a resident can reach 60%+) while a
-// megacity stays low for the same behaviour. Tuned so an active city local reads
-// ~15-18% and a pure commuter ~3%.
-const TARGET_CELLS = 300;
+// Each region is divided into ~TARGET_CELLS[level] grid cells sized from the
+// region's OWN area, so the metric is scale-invariant: a marker can never claim
+// half a small city (a fixed-degree cell did — e.g. one tile = 50% of tiny
+// Temple City). The percentage is effectively "fraction of the region's cells
+// you've touched", so small towns are genuinely discoverable (a resident can
+// reach 60%+) while a megacity stays low for the same behaviour. Targets rise
+// with level so coarse regions keep geographically sensible cell sizes (a flat
+// target would make a country-cell ~180 km wide) and the percentage degrades
+// monotonically as you zoom out. Tuned so an active city local reads ~15% and a
+// pure commuter ~3%.
+const TARGET_CELLS = {
+  city: 300, county: 600, state: 1200, country: 2000, continent: 2500, earth: 4000,
+};
 // Floor the cell side near the marker spacing so very small regions don't give
 // every marker its own cell.
 const MIN_CELL_M = 120;
@@ -136,7 +141,7 @@ export async function fetchRegionGeometry(lat, lng, level) {
 // Computes the discovery percentage for the given markers within a region.
 // `region` is the { geometry, areaM2 } from fetchRegionGeometry; `regionName`
 // lets continent/earth pick a static area. Returns percent + supporting counts.
-export function computeDiscovery(markers, region, refLat, regionName) {
+export function computeDiscovery(markers, region, level, refLat, regionName) {
   // Region area: polygon area when we have one, else the static table.
   let regionAreaM2 = region?.areaM2 || 0;
   if (!regionAreaM2) {
@@ -147,7 +152,8 @@ export function computeDiscovery(markers, region, refLat, regionName) {
   // Cell side scales with the region's own area (floored near marker spacing).
   // Longitude cells shrink toward the poles so cells stay roughly square in m².
   const phi = (refLat * Math.PI) / 180;
-  const side = Math.max(Math.sqrt(regionAreaM2 / TARGET_CELLS), MIN_CELL_M);
+  const target = TARGET_CELLS[level] ?? TARGET_CELLS.country;
+  const side = Math.max(Math.sqrt(regionAreaM2 / target), MIN_CELL_M);
   const cellDegLat = side / M_PER_DEG;
   const cellDegLng = side / (M_PER_DEG * Math.max(Math.cos(phi), 0.01));
   const cellAreaM2 = side * side;
