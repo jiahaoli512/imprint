@@ -23,7 +23,7 @@ export default function AdminDashboard() {
     savePrompt,
   } = useMarkers({
     load: api.getAdminMarkers,
-    save: api.saveMarkers,
+    save: api.saveAdminMarkers,
     editable: true,
   });
 

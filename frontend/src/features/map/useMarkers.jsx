@@ -15,6 +15,8 @@ export function useMarkers({ load, save, editable = false, deps = [] }) {
   const [draft, setDraft] = useState([]);
   const [mode, setMode] = useState('view');
   const [promptOpen, setPromptOpen] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -35,7 +37,18 @@ export function useMarkers({ load, save, editable = false, deps = [] }) {
   function clearDraft() { setDraft([]); }
 
   async function commit() {
-    try { await save(draft); } catch { /* silently fail — user keeps stale view */ }
+    setSaving(true);
+    setSaveError('');
+    try {
+      await save(draft);
+    } catch (e) {
+      // Surface the failure instead of pretending it saved: keep the draft and
+      // the prompt open so the user can retry or discard.
+      setSaveError(e?.message || 'Could not save your changes. Please try again.');
+      return;
+    } finally {
+      setSaving(false);
+    }
     setSaved(draft);
     setDraft([]);
     setMode('view');
@@ -46,17 +59,19 @@ export function useMarkers({ load, save, editable = false, deps = [] }) {
     setDraft([]);
     setMode('view');
     setPromptOpen(false);
+    setSaveError('');
   }
 
   const savePrompt = promptOpen ? (
     <ConfirmModal
       title="Save changes?"
       message="Do you want to save your changes to the map?"
-      confirmLabel="Save"
+      error={saveError}
+      confirmLabel={saving ? 'Saving…' : 'Save'}
       altLabel="Discard"
       onConfirm={commit}
       onAlt={discard}
-      onCancel={() => setPromptOpen(false)}
+      onCancel={() => { setPromptOpen(false); setSaveError(''); }}
     />
   ) : null;
 

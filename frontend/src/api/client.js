@@ -67,6 +67,7 @@ export const api = {
   getMarkers:      (username) => request(`/api/markers/user/${encodeURIComponent(username)}`),
   saveMarkers:     (points)   => request.put('/api/markers', { points }),
   getAdminMarkers: ()                => adminRequest('/api/markers'),
+  saveAdminMarkers: (points)         => adminRequest.put('/api/markers/singleton', { points }),
   adminGetUserMarkers: (username)    => adminRequest(`/api/markers/user/${encodeURIComponent(username)}`),
   adminSaveMarkers: (username, points) => adminRequest.put(`/api/markers/user/${encodeURIComponent(username)}`, { points }),
 
