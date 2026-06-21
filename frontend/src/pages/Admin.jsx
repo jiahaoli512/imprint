@@ -12,7 +12,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const { entries, loading, error, approvingId, approve, remove, reorder, exportCSV } = useWaitlist();
-  const { users } = useUsers();
+  const { users, loading: usersLoading, error: usersError } = useUsers();
 
   return (
     <div className="admin-page">
@@ -44,7 +44,7 @@ export default function Admin() {
           onReorder={reorder}
           onExport={exportCSV}
         />
-        <UsersTable users={users} />
+        <UsersTable users={users} loading={usersLoading} error={usersError} />
       </div>
 
       {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
