@@ -4,9 +4,14 @@ const { sendApprovalEmail } = require('../utils/email');
 const { checkLength, checkRequired, checkEmail, normalizeEmail } = require('../utils/validate');
 const httpError = require('../utils/httpError');
 
+// Reassign positions to a clean 0..n-1 sequence in their current sort order.
+// One bulkWrite (a single round trip) rather than N separate updateOne calls.
 async function normalizePositions() {
-  const all = await Waitlist.find({}).sort({ position: 1, createdAt: 1 });
-  await Promise.all(all.map((e, i) => Waitlist.updateOne({ _id: e._id }, { position: i })));
+  const all = await Waitlist.find({}, '_id').sort({ position: 1, createdAt: 1 });
+  if (!all.length) return;
+  await Waitlist.bulkWrite(
+    all.map((e, i) => ({ updateOne: { filter: { _id: e._id }, update: { position: i } } }))
+  );
 }
 
 async function joinWaitlist(email, name) {
@@ -16,11 +21,16 @@ async function joinWaitlist(email, name) {
   checkLength('name', name);
   email = normalizeEmail(email);
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) throw httpError(409, 'An account with this email is already registered.');
-
-  const existing = await Waitlist.findOne({ email });
-  if (existing) throw httpError(409, 'This email is already on the waitlist.');
+  // Don't disclose *which* state an email is in. Returning distinct messages for
+  // "already registered" vs "already on the waitlist" turns this public endpoint
+  // into an account-existence / email-enumeration oracle. Collapse both to one
+  // indistinguishable response so a registered account can't be probed here.
+  const [existingUser, existing] = await Promise.all([
+    User.findOne({ email }, '_id'),
+    Waitlist.findOne({ email }, '_id'),
+  ]);
+  if (existingUser || existing)
+    throw httpError(409, "This email is unable to join the waitlist. If you already have an account, log in instead. If you are already on the waitlist, please wait for approval.");
 
   const count = await Waitlist.countDocuments();
   await Waitlist.create({ email, name: name || null, position: count });
@@ -62,7 +72,9 @@ async function reorderWaitlist(ids) {
   const currentSet = new Set(current.map((e) => e._id.toString()));
   if (!asStrings.every((id) => currentSet.has(id))) throw httpError(400, 'Unknown waitlist id in reorder');
 
-  await Promise.all(asStrings.map((id, i) => Waitlist.updateOne({ _id: id }, { position: i })));
+  await Waitlist.bulkWrite(
+    asStrings.map((id, i) => ({ updateOne: { filter: { _id: id }, update: { position: i } } }))
+  );
 }
 
 async function approveEntry(id) {
