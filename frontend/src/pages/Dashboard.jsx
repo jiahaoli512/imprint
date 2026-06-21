@@ -46,7 +46,7 @@ export default function Dashboard() {
 
   // Web-only discovery gauge (to the right of the map). Hidden on native and
   // while the map is enlarged.
-  const showDiscovery = !isNative && !expanded;
+  const showDiscovery = !expanded;
   const discovery = useDiscovery(displayMarkers);
 
   return (
