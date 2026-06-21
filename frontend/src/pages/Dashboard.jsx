@@ -141,7 +141,6 @@ export default function Dashboard() {
                 status={discovery.status}
                 percent={discovery.percent}
                 level={discovery.level}
-                discoveredCells={discovery.discoveredCells}
               />
             )}
           </div>
