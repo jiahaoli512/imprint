@@ -1,7 +1,7 @@
 const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const { sendApprovalEmail } = require('../utils/email');
-const { checkLength, checkRequired, normalizeEmail } = require('../utils/validate');
+const { checkLength, checkRequired, checkEmail, normalizeEmail } = require('../utils/validate');
 const httpError = require('../utils/httpError');
 
 async function normalizePositions() {
@@ -12,6 +12,7 @@ async function normalizePositions() {
 async function joinWaitlist(email, name) {
   checkRequired('Email', email);
   checkLength('email', email);
+  checkEmail(email);
   checkLength('name', name);
   email = normalizeEmail(email);
 
