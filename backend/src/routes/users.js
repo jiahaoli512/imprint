@@ -17,7 +17,9 @@ router.post('/login', authLimiter, handle(async (req, res) => {
   res.json({ ok: true, ...result });
 }));
 
-router.get('/check-username', handle(async (req, res) => {
+// Auth-gated: only signed-in users probe availability (during profile setup),
+// so anonymous callers can't enumerate which usernames exist.
+router.get('/check-username', requireAuth, handle(async (req, res) => {
   res.json(await checkUsername(req.query.username));
 }));
 
@@ -26,7 +28,9 @@ router.patch('/profile', requireAuth, handle(async (req, res) => {
   res.json(await setupProfile(req.user.email, { firstName, lastName, username, dateOfBirth }));
 }));
 
-router.get('/search', handle(async (req, res) => {
+// Auth-gated: user search (returns usernames + real names) is a signed-in
+// feature, so anonymous callers can't harvest the userbase + PII.
+router.get('/search', requireAuth, handle(async (req, res) => {
   res.json(await searchUsers(req.query.q || ''));
 }));
 

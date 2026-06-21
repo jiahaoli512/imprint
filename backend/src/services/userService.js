@@ -95,7 +95,9 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
 }
 
 async function searchUsers(q) {
-  const clean = q.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  // Strip non-alphanumerics (no regex injection) and cap length to bound the
+  // regex scan. Username max is 20, so 30 is generous.
+  const clean = String(q || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
   if (!clean) return [];
   return User.find({ username: { $regex: clean, $options: 'i' } }, SEARCH_FIELDS).limit(8);
 }
