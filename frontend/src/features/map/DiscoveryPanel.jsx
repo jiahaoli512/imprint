@@ -8,17 +8,21 @@ const SIZE = 132;                   // svg viewBox size
 
 const LEVEL_LABEL = {
   city: 'City', county: 'County', state: 'State / Region',
-  country: 'Country', continent: 'Continent', earth: 'Planet',
+  country: 'Country', continent: 'Continent', earth: 'Planet', ocean: 'Ocean',
 };
 
-export default function DiscoveryPanel({ region, status, percent = 0, level }) {
+export default function DiscoveryPanel({ region, regionName, status, percent = 0, level }) {
   const loading = status === 'loading' || status === 'idle';
   const firstLoad = status === 'idle';     // nothing computed yet
   const error = status === 'error';
   // Show "<0.1%" for positive-but-tiny coverage rather than a flat "0%".
   const pctLabel = percent > 0 && percent < 0.1 ? '<0.1%' : `${Math.round(percent * 10) / 10}%`;
   const dashoffset = C * (1 - Math.min(percent, 100) / 100);
-  const name = region || (level === 'earth' ? 'Earth' : '—');
+  // Over open water the toolbar's place label is empty, so use the discovery-
+  // resolved ocean name; otherwise prefer the toolbar region label.
+  const name = level === 'ocean'
+    ? (regionName || 'Ocean')
+    : (region || (level === 'earth' ? 'Earth' : '—'));
 
   return (
     <div className="discovery-panel">

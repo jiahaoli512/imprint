@@ -68,29 +68,42 @@ function inBBox(lat, lng, [minLng, minLat, maxLng, maxLat]) {
   return minLng <= maxLng ? (lng >= minLng && lng <= maxLng) : (lng >= minLng || lng <= maxLng);
 }
 
-// Squared degree distance from a point to a bbox (0 if inside). Antimeridian
-// wrap is ignored here — it only feeds the ocean fallback, where a coarse
-// nearest-continent guess is fine.
-function bboxDist(lat, lng, [minLng, minLat, maxLng, maxLat]) {
-  const dLat = lat < minLat ? minLat - lat : lat > maxLat ? lat - maxLat : 0;
-  const dLng = lng < minLng ? minLng - lng : lng > maxLng ? lng - maxLng : 0;
-  return dLat * dLat + dLng * dLng;
-}
-
-// Resolve a continent name from a coordinate using the bounding boxes — no
-// network call, so it can't fail over open ocean (where reverse-geocoding the
-// map centre returns no country). First box that contains the point wins
-// (insertion order breaks the Eurasia overlap toward Europe); if the point is
-// over ocean and inside no box, fall back to the nearest box.
-function continentAt(lat, lng) {
-  const names = Object.keys(CONTINENT_BBOX);
-  for (const name of names) {
+// The continent whose (generous, coast-inclusive) box contains the point, or
+// null if the point is outside every continent — i.e. over open ocean. First
+// box wins; insertion order breaks the Eurasia overlap toward Europe.
+function continentContaining(lat, lng) {
+  for (const name of Object.keys(CONTINENT_BBOX)) {
     if (inBBox(lat, lng, CONTINENT_BBOX[name])) return name;
   }
-  let best = names[0];
+  return null;
+}
+
+// Ocean anchor points — oceans have no clean boxes (the Pacific wraps the
+// antimeridian and they interlock), so we name open water by the nearest anchor.
+// The poles are decided by latitude first.
+const OCEAN_ANCHORS = [
+  ['Pacific Ocean', 0, -140], ['Pacific Ocean', 25, -150], ['Pacific Ocean', -25, -120],
+  ['Pacific Ocean', 0, 180], ['Pacific Ocean', 30, 165], ['Pacific Ocean', -30, -150],
+  ['Atlantic Ocean', 0, -25], ['Atlantic Ocean', 40, -40], ['Atlantic Ocean', -30, -15],
+  ['Indian Ocean', -20, 80], ['Indian Ocean', 0, 70], ['Indian Ocean', -30, 95],
+];
+
+// Shortest angular distance between two longitudes, accounting for the ±180 wrap.
+function lngDelta(a, b) {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+// Name the ocean at a coordinate (only called for points over open water).
+function oceanAt(lat, lng) {
+  if (lat <= -60) return 'Southern Ocean';
+  if (lat >= 66) return 'Arctic Ocean';
+  let best = OCEAN_ANCHORS[0][0];
   let bestDist = Infinity;
-  for (const name of names) {
-    const d = bboxDist(lat, lng, CONTINENT_BBOX[name]);
+  for (const [name, aLat, aLng] of OCEAN_ANCHORS) {
+    const dLat = lat - aLat;
+    const dLng = lngDelta(lng, aLng);
+    const d = dLat * dLat + dLng * dLng;
     if (d < bestDist) { bestDist = d; best = name; }
   }
   return best;
@@ -212,13 +225,21 @@ export async function fetchRegionGeometry(lat, lng, level) {
     return { name: 'Earth', geometry: null, areaM2: STATIC_AREA_KM2.earth * 1e6 };
   }
 
-  // Continents have no admin polygon. Resolve them from the centre coordinate
-  // (bbox, with a nearest fallback) instead of reverse-geocoding — that returns
-  // no country over open ocean, which made the panel error whenever a multi-
-  // continent view was centred on water. The bbox also bounds marker membership.
+  // Open water: a centre outside every continent box is over open ocean. The
+  // continent boxes are coast-inclusive, so coastal/inland views still resolve
+  // to land — only genuinely oceanic centres land here. Naming it from the
+  // coordinate avoids reverse-geocoding (which returns no country at sea and
+  // errored the panel). `ocean: true` tells computeDiscovery there's nothing to
+  // discover, and `level: 'ocean'` drives the panel's "Ocean" label.
+  const continent = continentContaining(lat, lng);
+  if (!continent) {
+    return { name: oceanAt(lat, lng), level: 'ocean', ocean: true, geometry: null, areaM2: 0 };
+  }
+
+  // Continents have no admin polygon — resolve from the (containing) box. The
+  // box also bounds marker membership in computeDiscovery.
   if (level === 'continent') {
-    const name = continentAt(lat, lng);
-    return { name, geometry: null, bbox: CONTINENT_BBOX[name], areaM2: STATIC_AREA_KM2[name] * 1e6 };
+    return { name: continent, geometry: null, bbox: CONTINENT_BBOX[continent], areaM2: STATIC_AREA_KM2[continent] * 1e6 };
   }
 
   const key = `${level}:${lat.toFixed(2)}:${lng.toFixed(2)}`;
@@ -257,6 +278,13 @@ export async function fetchRegionGeometry(lat, lng, level) {
 // `region` is the { geometry, areaM2 } from fetchRegionGeometry; `regionName`
 // lets continent/earth pick a static area. Returns percent + supporting counts.
 export function computeDiscovery(markers, region, level, refLat, regionName) {
+  // Open ocean: nothing to discover (this is a land app, and there's no reliable
+  // ocean polygon to filter markers against). Report 0% so the panel still shows
+  // the ocean name and gauge rather than erroring.
+  if (region?.ocean) {
+    return { percent: 0, discoveredCells: 0, discoveredAreaKm2: 0, regionAreaKm2: 0 };
+  }
+
   // Region area: polygon area when we have one, else the static table.
   let regionAreaM2 = region?.areaM2 || 0;
   if (!regionAreaM2) {
