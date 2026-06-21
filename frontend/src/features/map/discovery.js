@@ -10,20 +10,22 @@ const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
 
 // Grid cell size (degrees) per level — the discovery "resolution". Smaller cells
 // at finer levels so a city reads differently from a country. Main tuning knob.
-// Tuned against route-like synthetic markers (passive tracking follows roads, so
-// uniform scatter overstates coverage). A months-active local reads ~15% at city
-// and ~2% at county; a pure commuter stays ~3%. Values decrease monotonically as
-// you zoom out with no country→continent inversion (continent cells kept small).
-// State and above are tiny by nature — one person can't cover a meaningful
-// fraction of a state by area; the UI shows "<0.1%" rather than a flat 0%.
-export const CELL_DEG = {
-  city:      0.022,
-  county:    0.03,
-  state:     0.09,
-  country:   0.28,
-  continent: 0.30,
-  earth:     0.80,
+// Each region is divided into ~TARGET_CELLS[level] grid cells sized from the
+// region's OWN area, so the metric is scale-invariant: a marker can never claim
+// half a small city (a fixed-degree cell did — e.g. one tile = 50% of tiny
+// Temple City). The percentage is effectively "fraction of the region's cells
+// you've touched", so small towns are genuinely discoverable (a resident can
+// reach 60%+) while a megacity stays low for the same behaviour. Targets rise
+// with level so coarse regions keep geographically sensible cell sizes (a flat
+// target would make a country-cell ~180 km wide) and the percentage degrades
+// monotonically as you zoom out. Tuned so an active city local reads ~15% and a
+// pure commuter ~3%.
+const TARGET_CELLS = {
+  city: 300, county: 600, state: 1200, country: 2000, continent: 2500, earth: 4000,
 };
+// Floor the cell side near the marker spacing so very small regions don't give
+// every marker its own cell.
+const MIN_CELL_M = 120;
 
 // Our region level → Nominatim reverse `zoom` (controls which admin entity, and
 // thus which boundary polygon, is returned). earth/continent have no admin
@@ -140,8 +142,6 @@ export async function fetchRegionGeometry(lat, lng, level) {
 // `region` is the { geometry, areaM2 } from fetchRegionGeometry; `regionName`
 // lets continent/earth pick a static area. Returns percent + supporting counts.
 export function computeDiscovery(markers, region, level, refLat, regionName) {
-  const cellDeg = CELL_DEG[level] ?? CELL_DEG.country;
-
   // Region area: polygon area when we have one, else the static table.
   let regionAreaM2 = region?.areaM2 || 0;
   if (!regionAreaM2) {
@@ -149,15 +149,20 @@ export function computeDiscovery(markers, region, level, refLat, regionName) {
     regionAreaM2 = km2 * 1e6;
   }
 
-  // Cell area at the reference latitude (cells shrink in longitude toward poles).
+  // Cell side scales with the region's own area (floored near marker spacing).
+  // Longitude cells shrink toward the poles so cells stay roughly square in m².
   const phi = (refLat * Math.PI) / 180;
-  const cellAreaM2 = (M_PER_DEG * cellDeg) * (M_PER_DEG * cellDeg * Math.max(Math.cos(phi), 0.01));
+  const target = TARGET_CELLS[level] ?? TARGET_CELLS.country;
+  const side = Math.max(Math.sqrt(regionAreaM2 / target), MIN_CELL_M);
+  const cellDegLat = side / M_PER_DEG;
+  const cellDegLng = side / (M_PER_DEG * Math.max(Math.cos(phi), 0.01));
+  const cellAreaM2 = side * side;
 
   const cells = new Set();
   for (const [lat, lng] of markers) {
     if (typeof lat !== 'number' || typeof lng !== 'number') continue;
     if (region?.geometry && !pointInGeometry(lat, lng, region.geometry)) continue;
-    cells.add(`${Math.floor(lat / cellDeg)}:${Math.floor(lng / cellDeg)}`);
+    cells.add(`${Math.floor(lat / cellDegLat)}:${Math.floor(lng / cellDegLng)}`);
   }
 
   const discoveredAreaM2 = cells.size * cellAreaM2;
