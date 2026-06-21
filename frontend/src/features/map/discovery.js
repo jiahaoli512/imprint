@@ -36,7 +36,10 @@ const MIN_CELL_M = 120;
 // Our region level → Nominatim reverse `zoom` (controls which admin entity, and
 // thus which boundary polygon, is returned). earth/continent have no admin
 // polygon and use static areas instead.
-const LEVEL_NOMINATIM_ZOOM = { country: 3, state: 5, county: 8, city: 10 };
+// continent has no admin polygon; we reverse-geocode at country zoom (3) purely
+// to read the country_code at the map centre and map it to a continent. Omitting
+// it sent `zoom=undefined`, which Nominatim rejects with a 400 → the panel error.
+const LEVEL_NOMINATIM_ZOOM = { continent: 3, country: 3, state: 5, county: 8, city: 10 };
 
 // Static fallback areas (km²) for levels Nominatim can't return a polygon for.
 const STATIC_AREA_KM2 = {
