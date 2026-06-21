@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, LogOut } from 'lucide-react';
-import LogoutModal from '../components/LogoutModal';
+import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard } from 'lucide-react';
+import LogoutButton from '../components/LogoutButton';
+import AdminViewingBadge from '../components/AdminViewingBadge';
 import Modal from '../components/Modal';
 import Spinner from '../components/Spinner';
 import { getUsername, profileApiFor } from '../api/client';
@@ -10,6 +11,7 @@ import { formatDate } from '../utils/formatDate';
 import { fullName } from '../utils/fullName';
 import { useAdminView } from '../utils/useAdminView';
 import { useFitText } from '../utils/useFitText';
+import { useUser } from '../features/users/useUser';
 import { useProfileEdit } from '../features/users/useProfileEdit';
 
 const isNative = Capacitor.isNativePlatform();
@@ -33,9 +35,7 @@ export default function UserProfile() {
   const isMe = isAdminView || username === getUsername();
   const { getUser, updateUser } = profileApiFor(isAdminView);
 
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [confirmLogout, setConfirmLogout] = useState(false);
+  const { user, setUser, loading } = useUser(username, { fetcher: getUser, redirectOnNotFound: true });
 
   // All edit-flow state/logic lives in the hook; this page just renders it.
   const edit = useProfileEdit({ user, setUser, username, isAdminView, updateUser });
@@ -43,15 +43,6 @@ export default function UserProfile() {
   // Shrink an over-long name to fit one line — mobile app only.
   const nameRef = useRef(null);
   useFitText(nameRef, [user, edit.editing], { enabled: isNative, min: 14 });
-
-  useEffect(() => {
-    getUser(username)
-      .then(data => setUser(data))
-      .catch(err => {
-        if (err.status === 404) navigate('/user-not-found', { replace: true });
-      })
-      .finally(() => setLoading(false));
-  }, [username]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <Spinner />;
   if (!user) return null;
@@ -63,9 +54,8 @@ export default function UserProfile() {
   return (
     <div className="auth-page" style={isAdminView ? { paddingTop: 'calc(80px + env(safe-area-inset-top))' } : {}}>
       {isAdminView && (
-        <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top))', right: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-          <span className="admin-badge">Admin</span>
-          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>viewing @{username}</span>
+        <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top))', right: '20px' }}>
+          <AdminViewingBadge username={username} />
         </div>
       )}
       <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top))', left: '20px', display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: 'calc(100vw - 100px)' }}>
@@ -87,9 +77,7 @@ export default function UserProfile() {
             <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
               <LayoutDashboard size={15} /> <span className="btn-label">Admin Dashboard</span>
             </button>
-            <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
-              <LogOut size={15} /> <span className="btn-label">Log out of Admin</span>
-            </button>
+            <LogoutButton admin />
           </>
         )}
       </div>
@@ -213,7 +201,6 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
-      {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
       {edit.pendingSave && (
         <Modal onClose={edit.closePending}>
           <h2 className="modal-title">Save these changes?</h2>

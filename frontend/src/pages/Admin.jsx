@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, LogOut } from 'lucide-react';
-import LogoutModal from '../components/LogoutModal';
-import LogoMark from '../components/LogoMark';
+import { LayoutDashboard } from 'lucide-react';
+import AppHeader from '../components/AppHeader';
+import LogoutButton from '../components/LogoutButton';
 import WaitlistTable from '../features/admin/WaitlistTable';
 import UsersTable from '../features/admin/UsersTable';
 import { useWaitlist } from '../features/admin/useWaitlist';
@@ -10,29 +9,22 @@ import { useUsers } from '../features/admin/useUsers';
 
 export default function Admin() {
   const navigate = useNavigate();
-  const [confirmLogout, setConfirmLogout] = useState(false);
   const { entries, loading, error, approvingId, approve, remove, reorder, exportCSV } = useWaitlist();
   const { users, loading: usersLoading, error: usersError } = useUsers();
 
   return (
     <div className="admin-page">
-      <div className="admin-header">
-        <div className="logo">
-          <LogoMark size={32} />
-          Imprint
-        </div>
-        <div className="admin-header-right">
-          <span className="admin-badge">Admin</span>
-          <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
-            <LayoutDashboard size={15} /> <span className="btn-label">Admin Dashboard</span>
-          </button>
-          <button className="btn btn-ghost" onClick={() => setConfirmLogout(true)}>
-            <LogOut size={15} /> <span className="btn-label">Log out of Admin</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="admin-header-spacer" />
+      <AppHeader
+        right={
+          <>
+            <span className="admin-badge">Admin</span>
+            <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
+              <LayoutDashboard size={15} /> <span className="btn-label">Admin Dashboard</span>
+            </button>
+            <LogoutButton admin />
+          </>
+        }
+      />
       <div className="admin-body">
         <WaitlistTable
           entries={entries}
@@ -46,8 +38,6 @@ export default function Admin() {
         />
         <UsersTable users={users} loading={usersLoading} error={usersError} />
       </div>
-
-      {confirmLogout && <LogoutModal admin onCancel={() => setConfirmLogout(false)} />}
     </div>
   );
 }
