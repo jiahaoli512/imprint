@@ -39,7 +39,9 @@ export function useBackgroundTracking() {
 
   const start = useCallback(async () => {
     setBusy(true);
-    try { await startTracking(); setTracking(true); await refreshAuth(); }
+    // Reflect whether the watcher actually started — startTracking swallows
+    // failures internally, so don't claim "on" unless it really is.
+    try { const ok = await startTracking(); setTracking(ok); await refreshAuth(); }
     finally { setBusy(false); }
   }, [refreshAuth]);
 
