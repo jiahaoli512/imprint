@@ -100,11 +100,14 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
 }
 
 async function searchUsers(q) {
-  // Strip non-alphanumerics (no regex injection) and cap length to bound the
-  // regex scan. Username max is 20, so 30 is generous.
+  // Strip non-username chars (no regex injection possible — only [a-z0-9_]
+  // remain) and cap length. Username max is 20, so 30 is generous.
   const clean = String(q || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
   if (!clean) return [];
-  return User.find({ username: { $regex: clean, $options: 'i' } }, SEARCH_FIELDS).limit(8);
+  // Anchored prefix match: `^clean` is a left-rooted range the `username` index
+  // can serve, instead of an unanchored `$regex` that forces a full collection
+  // scan. usernames are stored lowercase, so no case-insensitive flag is needed.
+  return User.find({ username: { $regex: `^${clean}` } }, SEARCH_FIELDS).limit(8);
 }
 
 async function getUserByUsername(username) {
