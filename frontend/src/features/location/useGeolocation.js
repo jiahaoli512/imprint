@@ -1,15 +1,34 @@
 import { useState, useEffect } from 'react';
 import { createStore } from './createStore';
 
-function getCurrentPosition() {
+// Resolves [lat, lng] from the browser, with the given options.
+function requestPosition(options) {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) { reject(new Error('Geolocation not supported.')); return; }
     navigator.geolocation.getCurrentPosition(
       p => resolve([p.coords.latitude, p.coords.longitude]),
-      e => reject(new Error(e.code === 1 ? 'Location permission denied.' : 'Could not get location.')),
-      { enableHighAccuracy: true, timeout: 10000 }
+      reject,
+      options
     );
   });
+}
+
+// High accuracy (GPS) often times out on desktop browsers with no GPS chip, so
+// first try a high-accuracy fix that accepts a recent cached position, then
+// fall back to a low-accuracy lookup (Wi-Fi/IP) before giving up.
+async function getCurrentPosition() {
+  if (!navigator.geolocation) throw new Error('Geolocation not supported.');
+  try {
+    return await requestPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  } catch (e) {
+    if (e.code === 1) throw new Error('Location permission denied.', { cause: e }); // PERMISSION_DENIED — retry won't help
+    try {
+      return await requestPosition({ enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
+    } catch (e2) {
+      if (e2.code === 1) throw new Error('Location permission denied.', { cause: e2 });
+      if (e2.code === 3) throw new Error('Location timed out. Please try again.', { cause: e2 });
+      throw new Error('Could not get location. Check that location services are enabled.', { cause: e2 });
+    }
+  }
 }
 
 // Module-level store so a located position survives navigation (the dashboard
