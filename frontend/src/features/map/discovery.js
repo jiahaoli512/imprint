@@ -3,7 +3,7 @@
 // testable. The metric is "discovered grid cells": the region is split into
 // cells sized by zoom level, a cell counts once any marker falls in it, and the
 // percentage is the discovered cell area over the region's true area.
-import { getLevel, CONTINENT } from './mapUtils';
+import { getLevel } from './mapUtils';
 
 const EARTH_RADIUS_M = 6371000;
 const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
@@ -34,12 +34,9 @@ const TARGET_CELLS = {
 const MIN_CELL_M = 120;
 
 // Our region level → Nominatim reverse `zoom` (controls which admin entity, and
-// thus which boundary polygon, is returned). earth/continent have no admin
-// polygon and use static areas instead.
-// continent has no admin polygon; we reverse-geocode at country zoom (3) purely
-// to read the country_code at the map centre and map it to a continent. Omitting
-// it sent `zoom=undefined`, which Nominatim rejects with a 400 → the panel error.
-const LEVEL_NOMINATIM_ZOOM = { continent: 3, country: 3, state: 5, county: 8, city: 10 };
+// thus which boundary polygon, is returned). earth/continent never reach the
+// fetch — they resolve to static areas before it.
+const LEVEL_NOMINATIM_ZOOM = { country: 3, state: 5, county: 8, city: 10 };
 
 // Static fallback areas (km²) for levels Nominatim can't return a polygon for.
 const STATIC_AREA_KM2 = {
@@ -69,6 +66,34 @@ const CONTINENT_BBOX = {
 function inBBox(lat, lng, [minLng, minLat, maxLng, maxLat]) {
   if (lat < minLat || lat > maxLat) return false;
   return minLng <= maxLng ? (lng >= minLng && lng <= maxLng) : (lng >= minLng || lng <= maxLng);
+}
+
+// Squared degree distance from a point to a bbox (0 if inside). Antimeridian
+// wrap is ignored here — it only feeds the ocean fallback, where a coarse
+// nearest-continent guess is fine.
+function bboxDist(lat, lng, [minLng, minLat, maxLng, maxLat]) {
+  const dLat = lat < minLat ? minLat - lat : lat > maxLat ? lat - maxLat : 0;
+  const dLng = lng < minLng ? minLng - lng : lng > maxLng ? lng - maxLng : 0;
+  return dLat * dLat + dLng * dLng;
+}
+
+// Resolve a continent name from a coordinate using the bounding boxes — no
+// network call, so it can't fail over open ocean (where reverse-geocoding the
+// map centre returns no country). First box that contains the point wins
+// (insertion order breaks the Eurasia overlap toward Europe); if the point is
+// over ocean and inside no box, fall back to the nearest box.
+function continentAt(lat, lng) {
+  const names = Object.keys(CONTINENT_BBOX);
+  for (const name of names) {
+    if (inBBox(lat, lng, CONTINENT_BBOX[name])) return name;
+  }
+  let best = names[0];
+  let bestDist = Infinity;
+  for (const name of names) {
+    const d = bboxDist(lat, lng, CONTINENT_BBOX[name]);
+    if (d < bestDist) { bestDist = d; best = name; }
+  }
+  return best;
 }
 
 // Bounded cache so panning within one region doesn't refetch its boundary. Keyed
@@ -187,6 +212,15 @@ export async function fetchRegionGeometry(lat, lng, level) {
     return { name: 'Earth', geometry: null, areaM2: STATIC_AREA_KM2.earth * 1e6 };
   }
 
+  // Continents have no admin polygon. Resolve them from the centre coordinate
+  // (bbox, with a nearest fallback) instead of reverse-geocoding — that returns
+  // no country over open ocean, which made the panel error whenever a multi-
+  // continent view was centred on water. The bbox also bounds marker membership.
+  if (level === 'continent') {
+    const name = continentAt(lat, lng);
+    return { name, geometry: null, bbox: CONTINENT_BBOX[name], areaM2: STATIC_AREA_KM2[name] * 1e6 };
+  }
+
   const key = `${level}:${lat.toFixed(2)}:${lng.toFixed(2)}`;
   if (geometryCache.has(key)) return geometryCache.get(key);
 
@@ -208,27 +242,12 @@ export async function fetchRegionGeometry(lat, lng, level) {
     clearTimeout(timer);
   }
 
-  let result;
-  if (level === 'continent') {
-    // No admin polygon for continents — resolve the continent from the country
-    // code and use its static area so the percentage denominator is correct.
-    const cc = data?.address?.country_code?.toUpperCase();
-    const name = CONTINENT[cc] || data?.address?.country || '';
-    const areaKm2 = STATIC_AREA_KM2[name] || 0;
-    // Don't let an unmapped continent silently fall through to Earth's area
-    // (which would show a planet-scale denominator while the UI says continent).
-    if (!areaKm2) throw new Error('Unknown continent');
-    // Attach the rough bbox so computeDiscovery only counts markers on this
-    // continent (no polygon available — see CONTINENT_BBOX).
-    result = { name, geometry: null, bbox: CONTINENT_BBOX[name] || null, areaM2: areaKm2 * 1e6 };
-  } else {
-    const geometry = data?.geojson && /Polygon$/.test(data.geojson.type) ? data.geojson : null;
-    result = {
-      name: data?.name || data?.display_name?.split(',')[0] || '',
-      geometry,
-      areaM2: geometry ? polygonAreaM2(geometry) : 0,
-    };
-  }
+  const geometry = data?.geojson && /Polygon$/.test(data.geojson.type) ? data.geojson : null;
+  const result = {
+    name: data?.name || data?.display_name?.split(',')[0] || '',
+    geometry,
+    areaM2: geometry ? polygonAreaM2(geometry) : 0,
+  };
   return cacheGeometry(key, result);
 }
 
