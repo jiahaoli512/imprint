@@ -13,6 +13,22 @@ const markerRoutes = require('./routes/markers');
 const locationRoutes = require('./routes/locations');
 const contactRoutes = require('./routes/contact');
 
+// Fail fast at startup if a critical secret is missing, rather than discovering
+// it at first use (a 500 mid-request). Email vars only warn — the app runs
+// without them, just can't send mail.
+function validateConfig() {
+  const required = ['MONGODB_URI', 'JWT_SECRET', 'ADMIN_PASSWORD'];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.error(`[config] Missing required env var(s): ${missing.join(', ')}`);
+    process.exit(1);
+  }
+  for (const k of ['BREVO_API_KEY', 'EMAIL_USER']) {
+    if (!process.env[k]) console.warn(`[config] ${k} not set — email features will not work.`);
+  }
+}
+validateConfig();
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -32,14 +48,21 @@ const defaultOrigins = [
 
 const originAllowlist = new Set([...defaultOrigins, ...allowedOrigins]);
 
+// Vercel deployments are matched by project slug so previews work without
+// allowing every *.vercel.app site. Override via VERCEL_PROJECT_SLUG.
+const VERCEL_PROJECT = (process.env.VERCEL_PROJECT_SLUG || 'imprint').toLowerCase();
+
 function isAllowedOrigin(origin) {
   if (originAllowlist.has(origin)) return true;
   let hostname;
   try { hostname = new URL(origin).hostname; } catch { return false; }
   // Any localhost / loopback port (Vite may pick 5173, 5174, 5180, … in dev)
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') return true;
-  // Vercel preview + production deployments
-  if (/\.vercel\.app$/.test(hostname)) return true;
+  // Vercel deployments for THIS project only (preview URLs are dynamic), e.g.
+  // imprint.vercel.app, imprint-git-<branch>.vercel.app, imprint-<hash>-<scope>.vercel.app.
+  // Previously any *.vercel.app was allowed — far too broad. Custom prod domains
+  // go in ALLOWED_ORIGINS.
+  if (hostname.endsWith('.vercel.app') && hostname.includes(VERCEL_PROJECT)) return true;
   return false;
 }
 

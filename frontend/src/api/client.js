@@ -22,10 +22,19 @@ export const clearAdminSession = () => {
   sessionStorage.removeItem('admin_token');
 };
 
+// Parses a response body defensively: 204/empty and non-JSON responses (a proxy
+// HTML error page, a 502, etc.) return null instead of throwing an opaque
+// "Unexpected token <" so the caller sees the real status/message.
+async function parseJson(res) {
+  if (res.status === 204 || res.status === 205) return null;
+  if (!(res.headers.get('content-type') || '').includes('application/json')) return null;
+  try { return await res.json(); } catch { return null; }
+}
+
 // Builds a request function bound to a token source (user vs. admin). Both
 // variants share identical URL/header/error handling — only the token differs.
 // Verb helpers (post/patch/put/del) wrap the JSON-body boilerplate.
-function makeRequest(getTokenFn) {
+function makeRequest(getTokenFn, clearSessionFn) {
   async function request(path, options = {}) {
     const token = getTokenFn();
     const url = `${apiBase}${path}`;
@@ -34,9 +43,16 @@ function makeRequest(getTokenFn) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(url, { ...options, headers });
-    const data = await res.json();
+    const data = await parseJson(res);
     if (!res.ok) {
-      const err = new Error(data.error || 'Request failed');
+      // A 401 on a request we authenticated means the token is missing/expired
+      // (wrong-role is 403). Drop the stale session so the app stops believing
+      // it's signed in, and bounce to home unless we're already on a public page.
+      if (res.status === 401 && token) {
+        clearSessionFn();
+        if (!/^\/(home|login)\b/.test(window.location.pathname)) window.location.assign('/home');
+      }
+      const err = new Error(data?.error || `Request failed (${res.status})`);
       err.status = res.status;
       throw err;
     }
@@ -49,8 +65,8 @@ function makeRequest(getTokenFn) {
   return request;
 }
 
-const request = makeRequest(getToken);
-const adminRequest = makeRequest(getAdminToken);
+const request = makeRequest(getToken, clearSession);
+const adminRequest = makeRequest(getAdminToken, clearAdminSession);
 
 export const api = {
   // Users / Auth
@@ -67,13 +83,12 @@ export const api = {
   getMarkers:      (username) => request(`/api/markers/user/${encodeURIComponent(username)}`),
   saveMarkers:     (points)   => request.put('/api/markers', { points }),
   getAdminMarkers: ()                => adminRequest('/api/markers'),
+  saveAdminMarkers: (points)         => adminRequest.put('/api/markers/singleton', { points }),
   adminGetUserMarkers: (username)    => adminRequest(`/api/markers/user/${encodeURIComponent(username)}`),
   adminSaveMarkers: (username, points) => adminRequest.put(`/api/markers/user/${encodeURIComponent(username)}`, { points }),
 
-  // Locations (background tracking)
+  // Locations (background tracking — upload only)
   logLocations: (points) => request.post('/api/locations', { points }),
-  getLocations: ()       => request('/api/locations'),
-  getCoverage:  ()       => request('/api/locations/coverage'),
 
   // Waitlist (public)
   joinWaitlist:  (body)  => request.post('/api/waitlist', body),

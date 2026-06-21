@@ -1,17 +1,24 @@
 const Location = require('../models/Location');
 const httpError = require('../utils/httpError');
 const { addMarkersFromPoints } = require('./markerService');
+const { isValidLocationPoint } = require('../utils/validate');
 
 const MAX_BATCH = 200;
 
-const isValidPoint = (p) => p && typeof p.lat === 'number' && typeof p.lng === 'number';
+// A sane upload date: a parseable visitedAt that isn't in the future, else now.
+function safeVisitedAt(raw) {
+  if (!raw) return new Date();
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime()) || d.getTime() > Date.now() + 60_000) return new Date();
+  return d;
+}
 
 const toDoc = (userId, p) => ({
   userId,
   lat: p.lat,
   lng: p.lng,
-  accuracy: typeof p.accuracy === 'number' ? p.accuracy : undefined,
-  visitedAt: p.visitedAt ? new Date(p.visitedAt) : new Date(),
+  accuracy: Number.isFinite(p.accuracy) && p.accuracy >= 0 ? p.accuracy : undefined,
+  visitedAt: safeVisitedAt(p.visitedAt),
 });
 
 // Validates an uploaded batch and shapes it into Location docs. Invalid points
@@ -23,7 +30,7 @@ function buildLocationDocs(userId, points) {
   if (points.length > MAX_BATCH)
     throw httpError(400, `Too many points in one batch (max ${MAX_BATCH}).`);
 
-  const docs = points.filter(isValidPoint).map((p) => toDoc(userId, p));
+  const docs = points.filter(isValidLocationPoint).map((p) => toDoc(userId, p));
   if (docs.length === 0) throw httpError(400, 'No valid points in batch.');
   return docs;
 }
@@ -37,19 +44,4 @@ async function logLocations(userId, points) {
   return { inserted: docs.length, markersAdded };
 }
 
-async function getUserLocations(userId, limit = 500) {
-  return Location.find({ userId }, 'lat lng accuracy visitedAt')
-    .sort({ visitedAt: -1 })
-    .limit(limit);
-}
-
-async function getCoverage(userId) {
-  const [total, countries, regions] = await Promise.all([
-    Location.countDocuments({ userId }),
-    Location.distinct('country', { userId, country: { $ne: null } }),
-    Location.distinct('region', { userId, region: { $ne: null } }),
-  ]);
-  return { total, countriesVisited: countries.length, regionsVisited: regions.length };
-}
-
-module.exports = { logLocations, getUserLocations, getCoverage };
+module.exports = { logLocations };

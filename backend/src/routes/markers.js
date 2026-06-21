@@ -10,6 +10,11 @@ router.get('/', requireAdminAuth, handle(async (req, res) => {
   res.json(await getAdminMarkers());
 }));
 
+// Admin: save the singleton demo map (keyed by the 'singleton' id)
+router.put('/singleton', requireAdminAuth, handle(async (req, res) => {
+  res.json(await saveUserMarkers('singleton', req.body.points));
+}));
+
 // Per-user markers. Readable by any signed-in user or an admin — not public,
 // since markers can be auto-built from a user's background location history.
 router.get('/user/:username', requireUserOrAdmin, handle(async (req, res) => {

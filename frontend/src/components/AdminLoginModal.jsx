@@ -42,7 +42,7 @@ export default function AdminLoginModal({ onClose }) {
       {confirmLogout ? (
         <>
           <h2 className="modal-title">Log out & continue?</h2>
-          <p className="modal-sub" style={{ marginTop: '16px', color: '#e2685a' }}>
+          <p className="modal-sub" style={{ marginTop: '16px', color: 'var(--error)' }}>
             You're currently logged in. Entering the admin panel will log you out of your account.
           </p>
           <button className="btn btn-primary modal-submit" onClick={enterAdmin}>

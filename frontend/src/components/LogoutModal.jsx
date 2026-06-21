@@ -16,7 +16,7 @@ export default function LogoutModal({ admin = false, onCancel }) {
   return (
     <Modal onClose={onCancel}>
       <h2 className="modal-title">{admin ? 'Log out of Admin?' : 'Log out?'}</h2>
-      <p className="modal-sub" style={{ marginTop: '16px', color: '#e2685a' }}>
+      <p className="modal-sub" style={{ marginTop: '16px', color: 'var(--error)' }}>
         {admin
           ? 'You will be returned to the home page and your admin session will end.'
           : 'You will be returned to the home page and signed out of your account.'}

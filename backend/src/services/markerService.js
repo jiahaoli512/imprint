@@ -1,7 +1,7 @@
 const MapMarkers = require('../models/MapMarkers');
 const User = require('../models/User');
 const httpError = require('../utils/httpError');
-const { normalizeUsername } = require('../utils/validate');
+const { normalizeUsername, validatePoints } = require('../utils/validate');
 
 const MARKER_RADIUS_M = 15.24;   // matches the circle drawn on the map (~30m wide)
 // Minimum spacing between markers. Decoupled from the render radius: at ~100m a
@@ -47,7 +47,7 @@ async function getUserMarkers(username) {
 }
 
 async function saveUserMarkers(userId, points) {
-  if (!Array.isArray(points)) throw httpError(400, 'points must be an array');
+  validatePoints(points);
   const doc = await MapMarkers.findByIdAndUpdate(
     userId,
     { points },
@@ -58,7 +58,6 @@ async function saveUserMarkers(userId, points) {
 
 // Admin path: save markers to a specific user's map, looked up by username.
 async function saveUserMarkersByUsername(username, points) {
-  if (!Array.isArray(points)) throw httpError(400, 'points must be an array');
   const user = await User.findOne({ username: normalizeUsername(username) });
   if (!user) throw httpError(404, 'User not found');
   return saveUserMarkers(user._id.toString(), points);

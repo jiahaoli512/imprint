@@ -17,7 +17,7 @@ function safeEqual(a, b) {
 function login(password) {
   if (!password || !safeEqual(password, process.env.ADMIN_PASSWORD))
     throw httpError(401, 'Incorrect password.');
-  const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  const token = jwt.sign({ type: 'admin', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '8h' });
   return { token };
 }
 

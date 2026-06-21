@@ -8,8 +8,6 @@ import { getLevel, CONTINENT } from './mapUtils';
 const EARTH_RADIUS_M = 6371000;
 const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
 
-// Grid cell size (degrees) per level — the discovery "resolution". Smaller cells
-// at finer levels so a city reads differently from a country. Main tuning knob.
 // Each region is divided into ~TARGET_CELLS[level] grid cells sized from the
 // region's OWN area, so the metric is scale-invariant: a marker can never claim
 // half a small city (a fixed-degree cell did — e.g. one tile = 50% of tiny
@@ -40,8 +38,21 @@ const STATIC_AREA_KM2 = {
   Oceania: 8526000, Antarctica: 14200000,
 };
 
-// Module-level cache so panning within one region doesn't refetch its boundary.
+// Bounded cache so panning within one region doesn't refetch its boundary. Keyed
+// by level + rounded lat/lng (approximate — can reuse a neighbour near a border,
+// an acceptable trade for far fewer Nominatim calls). Capped so a long session
+// can't grow it without limit.
 const geometryCache = new Map();
+const GEOMETRY_CACHE_MAX = 200;
+const NOMINATIM_TIMEOUT_MS = 8000;
+
+function cacheGeometry(key, value) {
+  geometryCache.set(key, value);
+  if (geometryCache.size > GEOMETRY_CACHE_MAX) {
+    geometryCache.delete(geometryCache.keys().next().value); // evict oldest (insertion order)
+  }
+  return value;
+}
 
 // --- geometry helpers --------------------------------------------------------
 
@@ -114,8 +125,20 @@ export async function fetchRegionGeometry(lat, lng, level) {
   const zoom = LEVEL_NOMINATIM_ZOOM[level];
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}` +
     `&zoom=${zoom}&polygon_geojson=1&polygon_threshold=0.01&addressdetails=1&accept-language=en`;
-  const res = await fetch(url);
-  const data = await res.json();
+
+  // Bound the request and treat a non-2xx (e.g. 429 rate limit) or non-JSON body
+  // as a failure rather than letting res.json() throw an opaque error. We throw
+  // so useDiscovery can show its error state; failures aren't cached.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), NOMINATIM_TIMEOUT_MS);
+  let data;
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`Nominatim ${res.status}`);
+    data = await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 
   let result;
   if (level === 'continent') {
@@ -123,7 +146,11 @@ export async function fetchRegionGeometry(lat, lng, level) {
     // code and use its static area so the percentage denominator is correct.
     const cc = data?.address?.country_code?.toUpperCase();
     const name = CONTINENT[cc] || data?.address?.country || '';
-    result = { name, geometry: null, areaM2: (STATIC_AREA_KM2[name] || 0) * 1e6 };
+    const areaKm2 = STATIC_AREA_KM2[name] || 0;
+    // Don't let an unmapped continent silently fall through to Earth's area
+    // (which would show a planet-scale denominator while the UI says continent).
+    if (!areaKm2) throw new Error('Unknown continent');
+    result = { name, geometry: null, areaM2: areaKm2 * 1e6 };
   } else {
     const geometry = data?.geojson && /Polygon$/.test(data.geojson.type) ? data.geojson : null;
     result = {
@@ -132,8 +159,7 @@ export async function fetchRegionGeometry(lat, lng, level) {
       areaM2: geometry ? polygonAreaM2(geometry) : 0,
     };
   }
-  geometryCache.set(key, result);
-  return result;
+  return cacheGeometry(key, result);
 }
 
 // --- the metric --------------------------------------------------------------

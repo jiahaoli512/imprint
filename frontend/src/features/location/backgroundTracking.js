@@ -12,9 +12,24 @@ const BackgroundGeolocation = isNative ? registerPlugin('BackgroundGeolocation')
 // and nothing is lost if iOS suspends/kills the app before a larger batch.
 const FLUSH_THRESHOLD = 1;
 const ENABLED_KEY = 'imprint_tracking_enabled'; // remembers the user's choice across restarts
+const BUFFER_KEY = 'imprint_tracking_buffer';   // unsent points, persisted so a kill doesn't lose them
 
 let watcherId = null;
-let buffer = [];
+
+// Load any points that failed to upload in a previous session so they aren't
+// lost if the app was killed before a successful flush.
+function loadBuffer() {
+  try { return JSON.parse(localStorage.getItem(BUFFER_KEY)) || []; }
+  catch { return []; }
+}
+function persistBuffer() {
+  try {
+    if (buffer.length) localStorage.setItem(BUFFER_KEY, JSON.stringify(buffer));
+    else localStorage.removeItem(BUFFER_KEY);
+  } catch { /* storage full / unavailable — best effort */ }
+}
+
+let buffer = loadBuffer();
 
 export function wasTrackingEnabled() {
   return localStorage.getItem(ENABLED_KEY) === '1';
@@ -39,13 +54,18 @@ export function getStatus() {
 
 async function flush() {
   if (buffer.length === 0) return;
-  const batch = buffer.splice(0, buffer.length);
+  // Keep points buffered+persisted until the upload is confirmed, so a kill mid-
+  // upload re-sends them next session (at-least-once; raw Location overlap is
+  // allowed and markers dedupe). Only the confirmed prefix is removed afterward.
+  const batch = buffer.slice();
   try {
     await api.logLocations(batch);
+    buffer.splice(0, batch.length); // points captured during the await stay queued
+    persistBuffer();
     setStatus({ uploaded: statusStore.get().uploaded + batch.length });
   } catch {
-    // Re-queue on failure so points aren't lost between sessions.
-    buffer.unshift(...batch);
+    // Leave them in the (persisted) buffer for the next flush.
+    persistBuffer();
   }
 }
 
@@ -62,9 +82,9 @@ export function isTracking() {
 export async function startTracking() {
   if (!isTrackingSupported()) {
     setStatus({ error: 'not supported on this platform' });
-    return;
+    return false;
   }
-  if (watcherId) return;
+  if (watcherId) return true;
   try {
     watcherId = await BackgroundGeolocation.addWatcher(
     {
@@ -87,14 +107,17 @@ export async function startTracking() {
         visitedAt: new Date().toISOString(),
       };
       buffer.push(point);
+      persistBuffer();
       setStatus({ captured: statusStore.get().captured + 1, lastPoint: point, error: null });
       if (buffer.length >= FLUSH_THRESHOLD) flush();
     }
     );
     localStorage.setItem(ENABLED_KEY, '1');
+    flush(); // drain any points left over from a previous session
   } catch (e) {
     setStatus({ error: e?.message || 'failed to start tracking' });
   }
+  return isTracking();
 }
 
 // Re-arms the watcher if the user had tracking enabled (e.g. after an app

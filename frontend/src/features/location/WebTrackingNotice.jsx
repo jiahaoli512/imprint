@@ -23,12 +23,12 @@ export default function WebTrackingNotice() {
         </div>
       </div>
       <div className="cta-actions" style={{ marginTop: '12px' }}>
-        <a href="#" className="store-badge-img apple-badge">
-          <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" />
-        </a>
-        <a href="#" className="store-badge-img google-badge">
-          <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" />
-        </a>
+        <span className="store-badge-img apple-badge" title="Coming soon" style={{ cursor: 'default' }}>
+          <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store (coming soon)" />
+        </span>
+        <span className="store-badge-img google-badge" title="Coming soon" style={{ cursor: 'default' }}>
+          <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play (coming soon)" />
+        </span>
       </div>
     </>
   );
