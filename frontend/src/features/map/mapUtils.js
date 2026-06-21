@@ -50,7 +50,9 @@ export const CONTINENT = {
 };
 
 export function getLevel(zoom) {
-  if (zoom <= 2)  return 'earth';
+  // <=3 covers the hemispheric, multi-continent view → treat as Earth.
+  // 'continent' kicks in only once you're zoomed to roughly a single continent.
+  if (zoom <= 3)  return 'earth';
   if (zoom <= 4)  return 'continent';
   if (zoom <= 6)  return 'country';
   if (zoom <= 9)  return 'state';
