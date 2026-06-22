@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
+import { retry } from '../../utils/retry';
 
 // Loads a user profile by username, centralizing the fetch + optional
 // 404-redirect that several pages repeated. `fetcher` lets callers use the admin
@@ -13,7 +14,9 @@ export function useUser(username, { fetcher = api.getUser, redirectOnNotFound = 
 
   useEffect(() => {
     let active = true;
-    fetcher(username)
+    // Retry transient failures (e.g. a cold backend) so the profile/greeting
+    // doesn't render empty until the user navigates away and back.
+    retry(() => fetcher(username))
       .then((d) => { if (active) setUser(d); })
       .catch((err) => {
         if (active && redirectOnNotFound && err.status === 404) {

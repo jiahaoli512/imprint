@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { retry } from '../../utils/retry';
 
 // Owns map-marker state for a dashboard: loading, the read-only display, and
 // (when `editable`) an editable draft plus the entire save/discard confirmation
@@ -19,7 +20,9 @@ export function useMarkers({ load, save, editable = false, deps = [] }) {
 
   useEffect(() => {
     let active = true;
-    Promise.resolve(load())
+    // Retry transient failures (e.g. a cold backend) so the points aren't left
+    // empty until the user navigates away and back.
+    retry(() => Promise.resolve(load()))
       .then(data => { if (active) setSaved(Array.isArray(data) ? data : []); })
       .catch(() => { if (active) setSaved([]); });
     return () => { active = false; };
