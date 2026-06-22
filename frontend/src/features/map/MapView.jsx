@@ -1,14 +1,29 @@
-import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap } from 'react-leaflet';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker,
-  LOCATION_RADIUS_M, MARKER_COLOR, MARKER_EDIT_COLOR, LOCATE_BLUE,
+  pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker,
+  LOCATION_RADIUS_M, LOCATE_BLUE,
 } from './mapUtils';
 
-// Pixel radius / border of a marker dot — mirrors the old 10px pin icon.
-const MARKER_DOT_RADIUS = 4;
-const MARKER_DOT_BORDER = '#0b0e13';
+// Most DOM pins we'll ever mount at once. Constant-size marker icons zoom
+// smoothly (unlike canvas vectors, which scale + snap), but thousands of DOM
+// nodes lag — so we only render the pins in view and thin them past this cap.
+const MAX_RENDERED_PINS = 1500;
+// Fraction to grow the viewport when culling, so a small pan doesn't reveal an
+// edge with no pins before the next recompute.
+const VIEWPORT_PAD = 0.25;
+
+// Tracks the map's bounds + zoom and lifts them up, so the parent can render
+// only the pins currently in view. Fires on settle (moveend covers zoom too).
+function ViewportTracker({ onChange }) {
+  const map = useMapEvents({
+    moveend() { onChange(map.getBounds()); },
+    zoomend() { onChange(map.getBounds()); },
+  });
+  useEffect(() => { onChange(map.getBounds()); }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
 
 const locationIcon = L.divIcon({
   className: '',
@@ -49,6 +64,26 @@ function InvalidateOnResize({ dep }) {
 // Renders the Leaflet map and all its layers. Stateless: marker data and edit
 // state come in as props; user interactions are reported via callbacks.
 export default function MapView({ displayMarkers, editing, userLocation, onAddMarker, onRemoveMarker, onRegion, onDiscoveryBusy, onDiscoverySettle, expanded }) {
+  const [bounds, setBounds] = useState(null);
+  const onViewChange = useCallback((b) => setBounds(b), []);
+
+  // Original indices of the pins to actually mount: those inside the (padded)
+  // viewport, thinned by a uniform stride if still over the cap. Keeping the
+  // original index lets edit-mode removal target the right marker. O(n) per
+  // settle, which is cheap even for tens of thousands of points.
+  const visibleIndices = useMemo(() => {
+    const padded = bounds ? bounds.pad(VIEWPORT_PAD) : null;
+    const inView = [];
+    for (let i = 0; i < displayMarkers.length; i++) {
+      if (!padded || padded.contains(displayMarkers[i])) inView.push(i);
+    }
+    const stride = Math.max(1, Math.ceil(inView.length / MAX_RENDERED_PINS));
+    if (stride === 1) return inView;
+    const thinned = [];
+    for (let k = 0; k < inView.length; k += stride) thinned.push(inView[k]);
+    return thinned;
+  }, [bounds, displayMarkers]);
+
   return (
     <MapContainer
       center={[20, 0]}
@@ -57,13 +92,13 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
       maxZoom={18}
       style={{ height: '100%', width: '100%' }}
       worldCopyJump={true}
-      preferCanvas={true}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
       <MapClickHandler editing={editing} onAdd={onAddMarker} />
+      <ViewportTracker onChange={onViewChange} />
       <RegionDetector onRegion={onRegion} />
       {onDiscoverySettle && <DiscoverySettleTracker onBusy={onDiscoveryBusy} onSettle={onDiscoverySettle} />}
       <InvalidateOnResize dep={expanded} />
@@ -78,22 +113,14 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
           <Marker position={userLocation} icon={locationIcon} />
         </>
       )}
-      {/* Each point is a single canvas-rendered dot (preferCanvas above), not an
-          SVG path + DOM pin. That collapses ~2N nodes to one <canvas>, so a long
-          trail of thousands of markers stays smooth on pan/zoom. Edit mode keeps
-          click-to-remove via the CircleMarker's own handler. */}
-      {displayMarkers.map((pos, i) => (
-        <CircleMarker
+      {/* Constant-size DOM pins (no zoom scale/snap), but only the ones in view —
+          and thinned past MAX_RENDERED_PINS — so a huge trail stays light. `i` is
+          the original index, so edit-mode removal targets the right marker. */}
+      {visibleIndices.map((i) => (
+        <Marker
           key={i}
-          center={pos}
-          radius={MARKER_DOT_RADIUS}
-          pathOptions={{
-            color: MARKER_DOT_BORDER,
-            weight: 2,
-            fillColor: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
-            fillOpacity: 1,
-            opacity: 1,
-          }}
+          position={displayMarkers[i]}
+          icon={editing ? pinIconEdit : pinIcon}
           eventHandlers={editing ? {
             click(e) { L.DomEvent.stopPropagation(e); onRemoveMarker(i); },
           } : undefined}
