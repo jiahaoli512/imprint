@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
   pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker,
-  LOCATION_RADIUS_M, LOCATE_BLUE,
+  LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_COLOR, MARKER_EDIT_COLOR,
 } from './mapUtils';
+import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
 
 // Most DOM pins we'll ever mount at once — a safety ceiling on top of the
 // screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
@@ -16,13 +17,18 @@ const VIEWPORT_PAD = 0.25;
 // Screen-space dedup cell, in pixels (~ a pin's diameter). Two markers that
 // project into the same cell at the current zoom render as one dot.
 const SCREEN_CELL_PX = 14;
+// CircleMarker dot geometry (the 'low' tier) — mirrors the 10px pin look.
+const DOT_RADIUS = 5;
+const DOT_WEIGHT = 1;
+const DOT_BORDER = '#0b0e13';
 
-// Renders the trail pins, but thinned to the current view: cull to the padded
-// viewport, then keep one pin per SCREEN_CELL_PX screen cell so overlapping
-// points (a tight trail when zoomed out) collapse to a clean line of distinct
-// dots instead of a solid band — bounded by MAX_RENDERED_PINS as a backstop.
+// Renders the trail pins, thinned per the active quality `cfg`:
+//   cfg.cull → only markers in the padded viewport
+//   cfg.grid → one pin per SCREEN_CELL_PX screen cell (overlapping points → one)
+//   cfg.cap  → stride down to MAX_RENDERED_PINS as a backstop
+//   cfg.marker 'dom' → constant-size pin icons; 'circle' → canvas CircleMarkers
 // Lives inside MapContainer so it can project lat/lng to screen pixels.
-function MarkerLayer({ markers, editing, onRemove }) {
+function MarkerLayer({ markers, editing, onRemove, cfg }) {
   const map = useMap();
   const [version, setVersion] = useState(0);
   useMapEvents({
@@ -33,21 +39,23 @@ function MarkerLayer({ markers, editing, onRemove }) {
   // Original indices to mount (original index lets edit-mode removal target the
   // right marker). Recomputed on move/zoom (via `version`); O(n), cheap.
   const indices = useMemo(() => {
-    const bounds = map.getBounds().pad(VIEWPORT_PAD);
+    const bounds = cfg.cull ? map.getBounds().pad(VIEWPORT_PAD) : null;
     const zoom = map.getZoom();
-    const seen = new Set();
+    const seen = cfg.grid ? new Set() : null;
     const kept = [];
     for (let i = 0; i < markers.length; i++) {
       const p = markers[i];
-      if (!bounds.contains(p)) continue;
-      const pt = map.project(p, zoom);
-      const key = `${Math.floor(pt.x / SCREEN_CELL_PX)}:${Math.floor(pt.y / SCREEN_CELL_PX)}`;
-      if (seen.has(key)) continue; // a closer/earlier point already owns this cell
-      seen.add(key);
+      if (bounds && !bounds.contains(p)) continue;
+      if (seen) {
+        const pt = map.project(p, zoom);
+        const key = `${Math.floor(pt.x / SCREEN_CELL_PX)}:${Math.floor(pt.y / SCREEN_CELL_PX)}`;
+        if (seen.has(key)) continue; // an earlier point already owns this cell
+        seen.add(key);
+      }
       kept.push(i);
     }
-    // Backstop: if a fully-explored area still fills the view with distinct
-    // cells, stride down to the cap so node count stays bounded.
+    if (!cfg.cap) return kept;
+    // Backstop: if a fully-explored area still fills the view, stride to the cap.
     const stride = Math.max(1, Math.ceil(kept.length / MAX_RENDERED_PINS));
     if (stride === 1) return kept;
     const thinned = [];
@@ -55,7 +63,24 @@ function MarkerLayer({ markers, editing, onRemove }) {
     return thinned;
     // `version` isn't read in the body — it's the trigger to recompute against
     // the map's live bounds/zoom after a move or zoom.
-  }, [markers, version, map]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [markers, version, map, cfg]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (cfg.marker === 'circle') {
+    return indices.map((i) => (
+      <CircleMarker
+        key={i}
+        center={markers[i]}
+        radius={DOT_RADIUS}
+        pathOptions={{
+          color: DOT_BORDER, weight: DOT_WEIGHT,
+          fillColor: editing ? MARKER_EDIT_COLOR : MARKER_COLOR, fillOpacity: 1, opacity: 1,
+        }}
+        eventHandlers={editing ? {
+          click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
+        } : undefined}
+      />
+    ));
+  }
 
   return indices.map((i) => (
     <Marker
@@ -108,6 +133,9 @@ function InvalidateOnResize({ dep }) {
 // Renders the Leaflet map and all its layers. Stateless: marker data and edit
 // state come in as props; user interactions are reported via callbacks.
 export default function MapView({ displayMarkers, editing, userLocation, onAddMarker, onRemoveMarker, onRegion, onDiscoveryBusy, onDiscoverySettle, expanded }) {
+  const [quality] = useMapQuality();
+  const cfg = QUALITY[quality] || QUALITY[DEFAULT_QUALITY];
+
   return (
     <MapContainer
       center={[20, 0]}
@@ -116,6 +144,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
       maxZoom={18}
       style={{ height: '100%', width: '100%' }}
       worldCopyJump={true}
+      preferCanvas={true}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
@@ -136,7 +165,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
           <Marker position={userLocation} icon={locationIcon} />
         </>
       )}
-      <MarkerLayer markers={displayMarkers} editing={editing} onRemove={onRemoveMarker} />
+      <MarkerLayer markers={displayMarkers} editing={editing} onRemove={onRemoveMarker} cfg={cfg} />
       <InvalidateOnMount />
     </MapContainer>
   );

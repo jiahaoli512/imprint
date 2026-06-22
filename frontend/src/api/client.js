@@ -9,6 +9,12 @@ export const clearSession = () => {
   localStorage.removeItem('imprint_token');
 };
 
+// Per-device map render-quality preference. Validation against the known tiers
+// lives in mapQuality.js (which owns the value set); here we only read/write the
+// raw string, keeping all storage access in this module.
+export const getStoredMapQuality = () => localStorage.getItem('imprint_map_quality');
+export const setStoredMapQuality = (q) => localStorage.setItem('imprint_map_quality', q);
+
 export const getAdminToken = () => sessionStorage.getItem('admin_token');
 // Setting the token also marks the admin session active — the two always go
 // together, so callers never touch the raw 'admin_auth' flag themselves.

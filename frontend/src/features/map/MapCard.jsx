@@ -1,6 +1,11 @@
-import { Eye, Pencil, Trash2, LocateFixed, Maximize2, Minimize2 } from 'lucide-react';
+import { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Eye, Pencil, Trash2, LocateFixed, Maximize2, Minimize2, SlidersHorizontal } from 'lucide-react';
 import MapView from './MapView';
+import MapQualityModal from './MapQualityModal';
 import { LOCATE_BLUE } from './mapUtils';
+
+const isNative = Capacitor.isNativePlatform();
 
 // The shared map panel used by both the user dashboard and the admin dashboards:
 // a window-chrome toolbar (mode toggle when editable, region label, clear/locate
@@ -14,6 +19,8 @@ export default function MapCard({
   userLocation, locating, onLocate, showLocate = false,
   expandable = false, expanded = false, onToggleExpand,
 }) {
+  const [qualityOpen, setQualityOpen] = useState(false);
+
   return (
     <div className={`dashboard-map-card${expanded ? ' expanded' : ''}`}>
       <div className="dashboard-toolbar">
@@ -50,6 +57,15 @@ export default function MapCard({
               <LocateFixed size={13} />
             </button>
           )}
+          {isNative && (
+            <button
+              className="btn btn-ghost dashboard-save-btn"
+              onClick={() => setQualityOpen(true)}
+              title="Map quality"
+            >
+              <SlidersHorizontal size={13} /> Map Quality
+            </button>
+          )}
           {expandable && (
             <button
               className="btn btn-ghost dashboard-save-btn"
@@ -79,6 +95,8 @@ export default function MapCard({
       {editing && (
         <p className="dashboard-hint">Tap to add a pin · Tap a pin to remove it</p>
       )}
+
+      {qualityOpen && <MapQualityModal onClose={() => setQualityOpen(false)} />}
     </div>
   );
 }
