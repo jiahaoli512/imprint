@@ -9,7 +9,8 @@ import {
 // Most DOM pins we'll ever mount at once. Constant-size marker icons zoom
 // smoothly (unlike canvas vectors, which scale + snap), but thousands of DOM
 // nodes lag — so we only render the pins in view and thin them past this cap.
-const MAX_RENDERED_PINS = 1500;
+// Kept conservative for headroom on weaker devices/phones when zoomed out.
+const MAX_RENDERED_PINS = 1000;
 // Fraction to grow the viewport when culling, so a small pan doesn't reveal an
 // edge with no pins before the next recompute.
 const VIEWPORT_PAD = 0.25;
