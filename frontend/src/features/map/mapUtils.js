@@ -49,6 +49,69 @@ export const CONTINENT = {
   AQ:'Antarctica',
 };
 
+// --- coordinate → continent / ocean naming (no network) ----------------------
+// Approximate continent bounding boxes [minLng, minLat, maxLng, maxLat]. Boxes
+// are generous (coast-inclusive) and overlap at the Eurasia seam; a box whose
+// minLng > maxLng wraps the antimeridian (matches lng >= minLng OR lng <= maxLng).
+// Shared by RegionDetector (toolbar label) and discovery.js (marker membership +
+// region resolution), so both name water/coast the same way.
+export const CONTINENT_BBOX = {
+  'North America': [-170, 7, -50, 84],
+  'South America': [-82, -56, -34, 13],
+  Europe: [-25, 34, 45, 72],
+  Africa: [-18, -35, 52, 38],
+  Asia: [25, 0, 180, 81],
+  Oceania: [110, -50, -150, 10], // wraps the antimeridian (Australia → Pacific)
+  Antarctica: [-180, -90, 180, -60],
+};
+
+// Point-in-box test that supports antimeridian wrap (minLng > maxLng).
+export function inBBox(lat, lng, [minLng, minLat, maxLng, maxLat]) {
+  if (lat < minLat || lat > maxLat) return false;
+  return minLng <= maxLng ? (lng >= minLng && lng <= maxLng) : (lng >= minLng || lng <= maxLng);
+}
+
+// The continent whose (coast-inclusive) box contains the point, or null if the
+// point is outside every continent — i.e. over open ocean. First box wins;
+// insertion order breaks the Eurasia overlap toward Europe.
+export function continentContaining(lat, lng) {
+  for (const name of Object.keys(CONTINENT_BBOX)) {
+    if (inBBox(lat, lng, CONTINENT_BBOX[name])) return name;
+  }
+  return null;
+}
+
+// Ocean anchor points — oceans have no clean boxes (the Pacific wraps the
+// antimeridian and they interlock), so we name open water by the nearest anchor.
+// The poles are decided by latitude first.
+const OCEAN_ANCHORS = [
+  ['Pacific Ocean', 0, -140], ['Pacific Ocean', 25, -150], ['Pacific Ocean', -25, -120],
+  ['Pacific Ocean', 0, 180], ['Pacific Ocean', 30, 165], ['Pacific Ocean', -30, -150],
+  ['Atlantic Ocean', 0, -25], ['Atlantic Ocean', 40, -40], ['Atlantic Ocean', -30, -15],
+  ['Indian Ocean', -20, 80], ['Indian Ocean', 0, 70], ['Indian Ocean', -30, 95],
+];
+
+// Shortest angular distance between two longitudes, accounting for the ±180 wrap.
+function lngDelta(a, b) {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+// Name the ocean at a coordinate (only called for points over open water).
+export function oceanAt(lat, lng) {
+  if (lat <= -60) return 'Southern Ocean';
+  if (lat >= 66) return 'Arctic Ocean';
+  let best = OCEAN_ANCHORS[0][0];
+  let bestDist = Infinity;
+  for (const [name, aLat, aLng] of OCEAN_ANCHORS) {
+    const dLat = lat - aLat;
+    const dLng = lngDelta(lng, aLng);
+    const d = dLat * dLat + dLng * dLng;
+    if (d < bestDist) { bestDist = d; best = name; }
+  }
+  return best;
+}
+
 export function getLevel(zoom) {
   // <=3 covers the hemispheric, multi-continent view → treat as Earth.
   // 'continent' kicks in only once you're zoomed to roughly a single continent.
@@ -156,16 +219,20 @@ export function RegionDetector({ onRegion }) {
       if (level === 'earth') { onRegion('Earth'); return; }
 
       const { lat, lng } = map.getCenter();
-      const addr = await reverseGeocode(lat, lng);
-      if (!addr) { onRegion(''); return; }
+      // Open ocean (outside every continent box) → name the sea; no network.
+      if (!continentContaining(lat, lng)) { onRegion(oceanAt(lat, lng)); return; }
 
-      let name = pickName(addr, level);
+      const addr = await reverseGeocode(lat, lng);
+      let name = addr ? pickName(addr, level) : '';
 
       if (level === 'city' && !name) {
-        const fa = await reverseGeocode(lat, lng);
-        const city = fa?.city || fa?.town || fa?.village || fa?.hamlet;
-        name = city ? `Near ${city}` : (fa?.county || '');
+        const city = addr?.city || addr?.town || addr?.village || addr?.hamlet;
+        name = city ? `Near ${city}` : (addr?.county || '');
       }
+
+      // Coastal water (inside a continent box but no land under the centre) →
+      // the nearest continent, matching the discovery panel rather than "—".
+      if (!name) name = continentContaining(lat, lng);
 
       onRegion(name);
     }

@@ -119,7 +119,6 @@ export default function Dashboard() {
             {showDiscovery && (
               <DiscoveryPanel
                 region={region}
-                regionName={discovery.regionName}
                 status={discovery.status}
                 percent={discovery.percent}
                 level={discovery.level}

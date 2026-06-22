@@ -26,7 +26,7 @@ export function useDiscovery(markers) {
       if (id !== reqId.current) return; // a newer settle superseded this one
       // The region may override the zoom-derived level (e.g. open water → 'ocean').
       const resolvedLevel = region.level || level;
-      setState({ status: 'ready', percent, level: resolvedLevel, discoveredCells, regionName: region.name, regionAreaKm2 });
+      setState({ status: 'ready', percent, level: resolvedLevel, discoveredCells, regionAreaKm2 });
     } catch {
       if (id !== reqId.current) return;
       setState((s) => ({ ...s, status: 'error' }));

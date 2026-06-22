@@ -3,7 +3,7 @@
 // testable. The metric is "discovered grid cells": the region is split into
 // cells sized by zoom level, a cell counts once any marker falls in it, and the
 // percentage is the discovered cell area over the region's true area.
-import { getLevel } from './mapUtils';
+import { getLevel, continentContaining, oceanAt, CONTINENT_BBOX, inBBox } from './mapUtils';
 
 const EARTH_RADIUS_M = 6371000;
 const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
@@ -46,68 +46,9 @@ const STATIC_AREA_KM2 = {
   Oceania: 8526000, Antarctica: 14200000,
 };
 
-// Approximate continent bounding boxes [minLng, minLat, maxLng, maxLat]. There
-// are no continent boundary polygons from Nominatim, so at continent level we
-// filter markers to a rough box instead — far better than counting every marker
-// on the planet toward one continent (which the polygon-less path used to do).
-// Boxes are intentionally generous and overlap at the Eurasia seam; a box whose
-// minLng > maxLng wraps the antimeridian (matches lng >= minLng OR lng <= maxLng).
-const CONTINENT_BBOX = {
-  'North America': [-170, 7, -50, 84],
-  'South America': [-82, -56, -34, 13],
-  Europe: [-25, 34, 45, 72],
-  Africa: [-18, -35, 52, 38],
-  Asia: [25, 0, 180, 81],
-  Oceania: [110, -50, -150, 10], // wraps the antimeridian (Australia → Pacific)
-  Antarctica: [-180, -90, 180, -60],
-};
-
-// Point-in-box test that supports antimeridian wrap (minLng > maxLng).
-function inBBox(lat, lng, [minLng, minLat, maxLng, maxLat]) {
-  if (lat < minLat || lat > maxLat) return false;
-  return minLng <= maxLng ? (lng >= minLng && lng <= maxLng) : (lng >= minLng || lng <= maxLng);
-}
-
-// The continent whose (generous, coast-inclusive) box contains the point, or
-// null if the point is outside every continent — i.e. over open ocean. First
-// box wins; insertion order breaks the Eurasia overlap toward Europe.
-function continentContaining(lat, lng) {
-  for (const name of Object.keys(CONTINENT_BBOX)) {
-    if (inBBox(lat, lng, CONTINENT_BBOX[name])) return name;
-  }
-  return null;
-}
-
-// Ocean anchor points — oceans have no clean boxes (the Pacific wraps the
-// antimeridian and they interlock), so we name open water by the nearest anchor.
-// The poles are decided by latitude first.
-const OCEAN_ANCHORS = [
-  ['Pacific Ocean', 0, -140], ['Pacific Ocean', 25, -150], ['Pacific Ocean', -25, -120],
-  ['Pacific Ocean', 0, 180], ['Pacific Ocean', 30, 165], ['Pacific Ocean', -30, -150],
-  ['Atlantic Ocean', 0, -25], ['Atlantic Ocean', 40, -40], ['Atlantic Ocean', -30, -15],
-  ['Indian Ocean', -20, 80], ['Indian Ocean', 0, 70], ['Indian Ocean', -30, 95],
-];
-
-// Shortest angular distance between two longitudes, accounting for the ±180 wrap.
-function lngDelta(a, b) {
-  const d = Math.abs(a - b) % 360;
-  return d > 180 ? 360 - d : d;
-}
-
-// Name the ocean at a coordinate (only called for points over open water).
-function oceanAt(lat, lng) {
-  if (lat <= -60) return 'Southern Ocean';
-  if (lat >= 66) return 'Arctic Ocean';
-  let best = OCEAN_ANCHORS[0][0];
-  let bestDist = Infinity;
-  for (const [name, aLat, aLng] of OCEAN_ANCHORS) {
-    const dLat = lat - aLat;
-    const dLng = lngDelta(lng, aLng);
-    const d = dLat * dLat + dLng * dLng;
-    if (d < bestDist) { bestDist = d; best = name; }
-  }
-  return best;
-}
+// Continent/ocean naming helpers (continentContaining, oceanAt, CONTINENT_BBOX,
+// inBBox) live in mapUtils so the toolbar label and this module resolve water
+// the same way. See the imports above.
 
 // Bounded cache so panning within one region doesn't refetch its boundary. Keyed
 // by level + rounded lat/lng (approximate — can reuse a neighbour near a border,
@@ -264,8 +205,19 @@ export async function fetchRegionGeometry(lat, lng, level) {
   }
 
   const geometry = data?.geojson && /Polygon$/.test(data.geojson.type) ? data.geojson : null;
+  const name = data?.name || data?.display_name?.split(',')[0] || '';
+
+  // Coastal water: inside a continent box (so not open ocean above) but no land
+  // under the centre, so Nominatim names nothing. Fall back to the nearest
+  // continent — its name, area and 'continent' level — so the panel shows the
+  // continent's coverage instead of a dash, matching the toolbar label.
+  if (!name && !geometry) {
+    const result = { name: continent, level: 'continent', geometry: null, bbox: CONTINENT_BBOX[continent], areaM2: STATIC_AREA_KM2[continent] * 1e6 };
+    return cacheGeometry(key, result);
+  }
+
   const result = {
-    name: data?.name || data?.display_name?.split(',')[0] || '',
+    name,
     geometry,
     areaM2: geometry ? polygonAreaM2(geometry) : 0,
   };

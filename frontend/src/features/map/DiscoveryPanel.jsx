@@ -11,18 +11,16 @@ const LEVEL_LABEL = {
   country: 'Country', continent: 'Continent', earth: 'Planet', ocean: 'Ocean',
 };
 
-export default function DiscoveryPanel({ region, regionName, status, percent = 0, level }) {
+export default function DiscoveryPanel({ region, status, percent = 0, level }) {
   const loading = status === 'loading' || status === 'idle';
   const firstLoad = status === 'idle';     // nothing computed yet
   const error = status === 'error';
   // Show "<0.1%" for positive-but-tiny coverage rather than a flat "0%".
   const pctLabel = percent > 0 && percent < 0.1 ? '<0.1%' : `${Math.round(percent * 10) / 10}%`;
   const dashoffset = C * (1 - Math.min(percent, 100) / 100);
-  // Over open water the toolbar's place label is empty, so use the discovery-
-  // resolved ocean name; otherwise prefer the toolbar region label.
-  const name = level === 'ocean'
-    ? (regionName || 'Ocean')
-    : (region || (level === 'earth' ? 'Earth' : '—'));
+  // The place name mirrors the toolbar's region label (RegionDetector now names
+  // oceans/continents over water too), so the panel and the label always agree.
+  const name = region || (level === 'earth' ? 'Earth' : '—');
 
   return (
     <div className="discovery-panel">
