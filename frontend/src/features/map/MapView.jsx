@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
@@ -6,24 +6,67 @@ import {
   LOCATION_RADIUS_M, LOCATE_BLUE,
 } from './mapUtils';
 
-// Most DOM pins we'll ever mount at once. Constant-size marker icons zoom
-// smoothly (unlike canvas vectors, which scale + snap), but thousands of DOM
-// nodes lag — so we only render the pins in view and thin them past this cap.
-// Kept conservative for headroom on weaker devices/phones when zoomed out.
+// Most DOM pins we'll ever mount at once — a safety ceiling on top of the
+// screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
+// canvas vectors, which scale + snap), but thousands of DOM nodes lag.
 const MAX_RENDERED_PINS = 1000;
 // Fraction to grow the viewport when culling, so a small pan doesn't reveal an
 // edge with no pins before the next recompute.
 const VIEWPORT_PAD = 0.25;
+// Screen-space dedup cell, in pixels (~ a pin's diameter). Two markers that
+// project into the same cell at the current zoom render as one dot.
+const SCREEN_CELL_PX = 14;
 
-// Tracks the map's bounds + zoom and lifts them up, so the parent can render
-// only the pins currently in view. Fires on settle (moveend covers zoom too).
-function ViewportTracker({ onChange }) {
-  const map = useMapEvents({
-    moveend() { onChange(map.getBounds()); },
-    zoomend() { onChange(map.getBounds()); },
+// Renders the trail pins, but thinned to the current view: cull to the padded
+// viewport, then keep one pin per SCREEN_CELL_PX screen cell so overlapping
+// points (a tight trail when zoomed out) collapse to a clean line of distinct
+// dots instead of a solid band — bounded by MAX_RENDERED_PINS as a backstop.
+// Lives inside MapContainer so it can project lat/lng to screen pixels.
+function MarkerLayer({ markers, editing, onRemove }) {
+  const map = useMap();
+  const [version, setVersion] = useState(0);
+  useMapEvents({
+    moveend() { setVersion((v) => v + 1); },
+    zoomend() { setVersion((v) => v + 1); },
   });
-  useEffect(() => { onChange(map.getBounds()); }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
-  return null;
+
+  // Original indices to mount (original index lets edit-mode removal target the
+  // right marker). Recomputed on move/zoom (via `version`); O(n), cheap.
+  const indices = useMemo(() => {
+    const bounds = map.getBounds().pad(VIEWPORT_PAD);
+    const zoom = map.getZoom();
+    const seen = new Set();
+    const kept = [];
+    for (let i = 0; i < markers.length; i++) {
+      const p = markers[i];
+      if (!bounds.contains(p)) continue;
+      const pt = map.project(p, zoom);
+      const key = `${Math.floor(pt.x / SCREEN_CELL_PX)}:${Math.floor(pt.y / SCREEN_CELL_PX)}`;
+      if (seen.has(key)) continue; // a closer/earlier point already owns this cell
+      seen.add(key);
+      kept.push(i);
+    }
+    // Backstop: if a fully-explored area still fills the view with distinct
+    // cells, stride down to the cap so node count stays bounded.
+    const stride = Math.max(1, Math.ceil(kept.length / MAX_RENDERED_PINS));
+    if (stride === 1) return kept;
+    const thinned = [];
+    for (let k = 0; k < kept.length; k += stride) thinned.push(kept[k]);
+    return thinned;
+    // `version` isn't read in the body — it's the trigger to recompute against
+    // the map's live bounds/zoom after a move or zoom.
+  }, [markers, version, map]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return indices.map((i) => (
+    <Marker
+      key={i}
+      position={markers[i]}
+      icon={editing ? pinIconEdit : pinIcon}
+      eventHandlers={editing ? {
+        click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
+      } : undefined}
+    />
+  ));
 }
 
 const locationIcon = L.divIcon({
@@ -65,26 +108,6 @@ function InvalidateOnResize({ dep }) {
 // Renders the Leaflet map and all its layers. Stateless: marker data and edit
 // state come in as props; user interactions are reported via callbacks.
 export default function MapView({ displayMarkers, editing, userLocation, onAddMarker, onRemoveMarker, onRegion, onDiscoveryBusy, onDiscoverySettle, expanded }) {
-  const [bounds, setBounds] = useState(null);
-  const onViewChange = useCallback((b) => setBounds(b), []);
-
-  // Original indices of the pins to actually mount: those inside the (padded)
-  // viewport, thinned by a uniform stride if still over the cap. Keeping the
-  // original index lets edit-mode removal target the right marker. O(n) per
-  // settle, which is cheap even for tens of thousands of points.
-  const visibleIndices = useMemo(() => {
-    const padded = bounds ? bounds.pad(VIEWPORT_PAD) : null;
-    const inView = [];
-    for (let i = 0; i < displayMarkers.length; i++) {
-      if (!padded || padded.contains(displayMarkers[i])) inView.push(i);
-    }
-    const stride = Math.max(1, Math.ceil(inView.length / MAX_RENDERED_PINS));
-    if (stride === 1) return inView;
-    const thinned = [];
-    for (let k = 0; k < inView.length; k += stride) thinned.push(inView[k]);
-    return thinned;
-  }, [bounds, displayMarkers]);
-
   return (
     <MapContainer
       center={[20, 0]}
@@ -99,7 +122,6 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
       <MapClickHandler editing={editing} onAdd={onAddMarker} />
-      <ViewportTracker onChange={onViewChange} />
       <RegionDetector onRegion={onRegion} />
       {onDiscoverySettle && <DiscoverySettleTracker onBusy={onDiscoveryBusy} onSettle={onDiscoverySettle} />}
       <InvalidateOnResize dep={expanded} />
@@ -114,19 +136,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
           <Marker position={userLocation} icon={locationIcon} />
         </>
       )}
-      {/* Constant-size DOM pins (no zoom scale/snap), but only the ones in view —
-          and thinned past MAX_RENDERED_PINS — so a huge trail stays light. `i` is
-          the original index, so edit-mode removal targets the right marker. */}
-      {visibleIndices.map((i) => (
-        <Marker
-          key={i}
-          position={displayMarkers[i]}
-          icon={editing ? pinIconEdit : pinIcon}
-          eventHandlers={editing ? {
-            click(e) { L.DomEvent.stopPropagation(e); onRemoveMarker(i); },
-          } : undefined}
-        />
-      ))}
+      <MarkerLayer markers={displayMarkers} editing={editing} onRemove={onRemoveMarker} />
       <InvalidateOnMount />
     </MapContainer>
   );
