@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
+import { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker,
-  MARKER_RADIUS_M, LOCATION_RADIUS_M, MARKER_COLOR, MARKER_EDIT_COLOR, LOCATE_BLUE,
+  InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker,
+  LOCATION_RADIUS_M, MARKER_COLOR, MARKER_EDIT_COLOR, LOCATE_BLUE,
 } from './mapUtils';
+
+// Pixel radius / border of a marker dot — mirrors the old 10px pin icon.
+const MARKER_DOT_RADIUS = 4;
+const MARKER_DOT_BORDER = '#0b0e13';
 
 const locationIcon = L.divIcon({
   className: '',
@@ -53,6 +57,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
       maxZoom={18}
       style={{ height: '100%', width: '100%' }}
       worldCopyJump={true}
+      preferCanvas={true}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
@@ -73,27 +78,26 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
           <Marker position={userLocation} icon={locationIcon} />
         </>
       )}
+      {/* Each point is a single canvas-rendered dot (preferCanvas above), not an
+          SVG path + DOM pin. That collapses ~2N nodes to one <canvas>, so a long
+          trail of thousands of markers stays smooth on pan/zoom. Edit mode keeps
+          click-to-remove via the CircleMarker's own handler. */}
       {displayMarkers.map((pos, i) => (
-        <React.Fragment key={i}>
-          <Circle
-            center={pos}
-            radius={MARKER_RADIUS_M}
-            pathOptions={{
-              color: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
-              fillColor: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
-              fillOpacity: 0.01,
-              weight: 1.5,
-              opacity: 0.05,
-            }}
-          />
-          <Marker
-            position={pos}
-            icon={editing ? pinIconEdit : pinIcon}
-            eventHandlers={editing ? {
-              click(e) { L.DomEvent.stopPropagation(e); onRemoveMarker(i); },
-            } : {}}
-          />
-        </React.Fragment>
+        <CircleMarker
+          key={i}
+          center={pos}
+          radius={MARKER_DOT_RADIUS}
+          pathOptions={{
+            color: MARKER_DOT_BORDER,
+            weight: 2,
+            fillColor: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
+            fillOpacity: 1,
+            opacity: 1,
+          }}
+          eventHandlers={editing ? {
+            click(e) { L.DomEvent.stopPropagation(e); onRemoveMarker(i); },
+          } : undefined}
+        />
       ))}
       <InvalidateOnMount />
     </MapContainer>
