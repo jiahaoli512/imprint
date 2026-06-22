@@ -6,8 +6,11 @@ import {
   LOCATION_RADIUS_M, MARKER_COLOR, MARKER_EDIT_COLOR, LOCATE_BLUE,
 } from './mapUtils';
 
-// Pixel radius / border of a marker dot — mirrors the old 10px pin icon.
-const MARKER_DOT_RADIUS = 4;
+// Marker dot geometry — mirrors the old 10px pin icon (10px dot, thin dark rim).
+// A thin (1px) rim keeps the dot mostly its orange fill rather than reading as a
+// dark blob, and leaves little stroke to scale during the zoom animation.
+const MARKER_DOT_RADIUS = 5;
+const MARKER_DOT_WEIGHT = 1;
 const MARKER_DOT_BORDER = '#0b0e13';
 
 const locationIcon = L.divIcon({
@@ -89,7 +92,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
           radius={MARKER_DOT_RADIUS}
           pathOptions={{
             color: MARKER_DOT_BORDER,
-            weight: 2,
+            weight: MARKER_DOT_WEIGHT,
             fillColor: editing ? MARKER_EDIT_COLOR : MARKER_COLOR,
             fillOpacity: 1,
             opacity: 1,
