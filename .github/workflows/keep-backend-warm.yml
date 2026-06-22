@@ -1,0 +1,22 @@
+name: keep-backend-warm
+
+# Render's free tier sleeps the backend after ~15 min with no inbound traffic,
+# causing a slow cold start (and the empty-dashboard symptom) on the next visit.
+# Ping /health every ~10 min so it stays warm. This is external by design — it
+# runs on GitHub's infrastructure, so it can wake the server even while it's
+# asleep, unlike a self-ping from the backend itself.
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every 10 minutes (GitHub may delay under load)
+  workflow_dispatch: {}       # allow manual runs
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        # Generous timeout + retries so a cold start (first wake can take ~50s)
+        # still counts as a successful warm-up rather than a failed run.
+        run: |
+          curl -fsS --max-time 90 --retry 4 --retry-all-errors --retry-delay 15 \
+            https://imprint-backend-6yok.onrender.com/health
