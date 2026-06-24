@@ -1,4 +1,4 @@
-# Imprint (v2.1) *Updated Jun 20, 2026*
+# Imprint (v2.3) *Updated Jun 22, 2026*
 
 How much of the world have you seen?
 
@@ -14,17 +14,19 @@ Imprint maps every place you've ever been - turning your travels into a living p
 - **Database** — MongoDB via Mongoose
 - **Email** — Brevo (Sendinblue) transactional API for approval and contact‑form emails
 - **Auth** — JWT for users and admins; bcrypt password hashing
-- **Deployment** — Frontend on Vercel, backend on Render
+- **Deployment** — Frontend on Vercel, backend on Render (a scheduled GitHub Action pings `/health` to limit free‑tier cold starts; the web client also retries transient load failures)
 
 ## Features
 
 - **Waitlist** — public signup; admins approve entries, which triggers an approval email
 - **Accounts** — registration is gated to approved waitlist emails; passwords are hashed with bcrypt
 - **Profiles** — username, first/last name, and an 18+ date‑of‑birth gate set during onboarding
-- **Interactive map** — a Leaflet map of per‑user markers, built passively from mobile background tracking (admins can also edit a user's map); zoom‑aware region labels (city → county → state → country → continent → Earth) via reverse geocoding
+- **Interactive map** — a Leaflet map of per‑user markers, built passively from mobile background tracking (admins can also edit a user's map); zoom‑aware region labels (city → county → state → country → continent → Earth) via reverse geocoding. Over water the label names the nearest **ocean** (open sea) or **continent** (coastal) instead of going blank.
+- **Discovery gauge** — a radial gauge showing the **% of the current region you've discovered** (markers bucketed into scale‑invariant grid cells over the region's area). Its place name always matches the map's region label, including oceans/continents.
+- **Map Quality** — a per‑device setting (Low → Medium → High → Ultra High → Max) trading marker fidelity for performance: it controls viewport culling, screen‑grid thinning, a render cap, and DOM‑pin vs. canvas rendering. Medium (the default) keeps large maps smooth; this is render‑only and never affects the discovery %.
 - **Locate me** — a one‑shot "where am I" control (web and mobile) that drops a blue location circle and flies to street‑level zoom
 - **Enlarge map** — a web‑only toggle that grows the map to fill the content area (header/footer untouched)
-- **Passive tracking (mobile)** — opt‑in background location that records a point roughly every 50 m of movement and passively builds your map; new places become markers, de‑duplicated so their circles never overlap. On the web a static notice explains it's mobile‑only.
+- **Passive tracking (mobile)** — opt‑in background location that records a point roughly every 100 m of movement and passively builds your map; new places become markers, thinned to a sparse 100 m trail rather than a continuous tube. On the web a static notice explains it's mobile‑only.
 - **Public profiles & search** — look up other users by username and view their profiles (signed‑in users only)
 - **Admin dashboard** — password‑protected (server‑side) panel to manage the waitlist and edit any user's map/profile
 - **Privacy Policy & Contact** — a `/privacy` policy page and a `/contact` form that emails the Imprint inbox, both linked from the footer
@@ -47,14 +49,17 @@ frontend/
     components/    # shared UI (AuthShell, Modal, LogoMark, LogoutModal,
                    #   AdminLoginModal, ConfirmModal, Spinner, Footer, Nav, ...)
     auth/          # route guards
-    features/map/      # Leaflet map (MapView, MapCard, useMarkers, mapUtils)
+    features/map/      # Leaflet map (MapView, MapCard, useMarkers, mapUtils),
+                       #   discovery gauge (discovery, useDiscovery, DiscoveryPanel),
+                       #   render quality (mapQuality, MapQualityModal)
     features/location/ # geolocation + passive tracking (useGeolocation,
                        #   backgroundTracking, LocationTrackingPanel, WebTrackingNotice)
     features/users/    # user search
     features/admin/    # waitlist + users tables and their hooks
-    utils/         # validateName, fullName, matchesQuery, formatDate, hooks
+    utils/         # validateName, fullName, matchesQuery, formatDate, retry, hooks
     api/client.js  # single API layer + session/token helpers
   ios/             # Capacitor iOS project
+.github/workflows/ # keep-backend-warm (pings /health to avoid Render cold starts)
 ```
 
 ## Getting started
@@ -80,7 +85,8 @@ JWT_SECRET=<long random secret>
 MONGODB_URI=mongodb://localhost:27017/imprint
 
 # Comma-separated production frontend origins. localhost ports,
-# capacitor://localhost, and *.vercel.app are always allowed.
+# capacitor://localhost, and this project's Vercel deploys (matched by
+# project slug, set via VERCEL_PROJECT_SLUG, default "imprint") are always allowed.
 ALLOWED_ORIGINS=https://your-frontend.vercel.app
 
 # Email (Brevo transactional API)
@@ -122,7 +128,7 @@ Some behaviors are intentionally platform‑specific (e.g. the search bar positi
 
 ### Passive background tracking
 
-Background location uses `@capacitor-community/background-geolocation` and is **native‑only** — it requests "Always" location permission and records a point about every 50 m of movement. Uploaded points are stored as raw history and passively turned into map markers, de‑duplicated within ~30 m so marker circles never overlap. On the web the feature is unsupported; the dashboard shows a static "Location Tracking: OFF" notice instead.
+Background location uses `@capacitor-community/background-geolocation` and is **native‑only** — it requests "Always" location permission and records a point about every 100 m of movement. Uploaded points are stored as raw history and passively turned into map markers, thinned so no two markers sit within 100 m of each other (a sparse trail, not a continuous tube). On the web the feature is unsupported; the dashboard shows a static "Location Tracking: OFF" notice instead.
 
 ## Admin dashboard
 
@@ -136,12 +142,12 @@ The backend enforces security server‑side (not just in the UI):
 - **Admin auth** — the admin password is validated server‑side in constant time; the panel uses a signed admin JWT, never a client‑side password check. The client‑side admin flag is cosmetic — every admin route still verifies the admin JWT
 - **Authorization** — per‑user markers and location history are gated to a signed‑in user or admin (not public); profile edits enforce ownership in the service layer
 - **Rate limiting** — a general API limiter, a strict limiter on login/registration/admin‑login, and a dedicated cap on the public contact form
-- **CORS allowlist** — restricted to known origins (configurable via `ALLOWED_ORIGINS`), plus localhost (dev), `capacitor://localhost` (iOS), and `*.vercel.app`
-- **Security headers** — Helmet, with a capped JSON body size
+- **CORS allowlist** — restricted to known origins (configurable via `ALLOWED_ORIGINS`), plus localhost (dev), `capacitor://localhost` (iOS), and this project's Vercel deploys (matched by project slug — not any `*.vercel.app`)
+- **Security headers** — Helmet, with JSON body-size caps (100 kb globally; a larger 4 MB limit only on the marker‑save routes, which carry the full points array)
 - **Input validation** — length limits, name character rules, email‑format checks, a 4‑digit DOB/18+ check, and a password policy (≥12 chars with mixed character classes) all enforced server‑side
 - **NoSQL injection hardening** — request bodies are scrubbed of Mongo operators (`$…`) and dotted keys; query values are normalized to strings
 - **CSV‑injection‑safe export** — the waitlist CSV escapes quotes and neutralizes formula triggers (`= + - @`)
-- **Email‑enumeration hardening** — the public waitlist check collapses to `approved` / `unavailable`, never revealing whether an email is registered
+- **Email‑enumeration hardening** — the public waitlist check collapses to `approved` / `unavailable`, and the join endpoint gives one indistinguishable response for already‑registered vs. already‑waitlisted, so neither reveals whether an email has an account; login timing is equalized for the same reason
 - **Privacy** — date of birth is returned only to the profile owner or an admin; secrets live in `backend/.env` (gitignored)
 
 > Note: set `ALLOWED_ORIGINS` and a strong `ADMIN_PASSWORD` in your production host (e.g. Render) before deploying. Because the admin password is the single factor that mints an admin token, keep both `ADMIN_PASSWORD` and `JWT_SECRET` strong.
