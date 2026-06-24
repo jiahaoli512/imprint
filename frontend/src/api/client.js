@@ -40,7 +40,7 @@ async function parseJson(res) {
 // Builds a request function bound to a token source (user vs. admin). Both
 // variants share identical URL/header/error handling — only the token differs.
 // Verb helpers (post/patch/put/del) wrap the JSON-body boilerplate.
-function makeRequest(getTokenFn, clearSessionFn) {
+function makeRequest(getTokenFn, clearSessionFn, onSessionEnded) {
   async function request(path, options = {}) {
     const token = getTokenFn();
     const url = `${apiBase}${path}`;
@@ -56,6 +56,7 @@ function makeRequest(getTokenFn, clearSessionFn) {
       // it's signed in, and bounce to home unless we're already on a public page.
       if (res.status === 401 && token) {
         clearSessionFn();
+        if (onSessionEnded) await onSessionEnded(); // e.g. stop native tracking on user-token expiry
         if (!/^\/(home|login)\b/.test(window.location.pathname)) window.location.assign('/home');
       }
       const err = new Error(data?.error || `Request failed (${res.status})`);
@@ -71,7 +72,13 @@ function makeRequest(getTokenFn, clearSessionFn) {
   return request;
 }
 
-const request = makeRequest(getToken, clearSession);
+// On user-token expiry (401), also stop native passive tracking so a logged-out
+// session can't keep tracking / re-arm. Dynamic import avoids a circular
+// dependency (backgroundTracking imports `api` from this module). The inner
+// flush's own request 401s without a token, so its handler is skipped — no loop.
+const request = makeRequest(getToken, clearSession, () =>
+  import('../features/location/backgroundTracking').then((m) => m.stopTracking()).catch(() => {})
+);
 const adminRequest = makeRequest(getAdminToken, clearAdminSession);
 
 export const api = {
