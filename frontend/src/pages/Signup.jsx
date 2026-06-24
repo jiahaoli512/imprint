@@ -184,13 +184,20 @@ export default function Signup() {
               {registerError && <p className="auth-error">{registerError}</p>}
 
               {passwordsMatch && (
-                <button
-                  className="btn btn-primary auth-submit"
-                  onClick={() => setConfirmCreate(true)}
-                  disabled={loading}
-                >
-                  {loading ? 'Creating account…' : 'Continue'}
-                </button>
+                <>
+                  <p style={{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', margin: '4px 0 0' }}>
+                    By signing up, you agree to our{' '}
+                    <a href="/privacy" target="_blank" rel="noreferrer" className="auth-link">Privacy Policy</a>
+                    {' '}and Terms.
+                  </p>
+                  <button
+                    className="btn btn-primary auth-submit"
+                    onClick={() => setConfirmCreate(true)}
+                    disabled={loading}
+                  >
+                    {loading ? 'Creating account…' : 'Continue'}
+                  </button>
+                </>
               )}
             </div>
           </>
