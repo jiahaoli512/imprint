@@ -226,10 +226,34 @@ export async function fetchRegionGeometry(lat, lng, level) {
 
 // --- the metric --------------------------------------------------------------
 
+// A latitude tied to the REGION (not the live map view) for the cell-width
+// cosine, so the grid — and therefore the percentage — is identical no matter
+// where you pan/zoom within the same region. Uses the polygon's latitude-extent
+// centre (memoized), the bbox centre for continents, or 0 for earth. Previously
+// this was the map centre, so panning resized cells and the % drifted slightly.
+function regionRefLat(region) {
+  if (region?.geometry) {
+    if (region.__refLat != null) return region.__refLat;
+    let minY = Infinity, maxY = -Infinity;
+    const scan = (rings) => {
+      for (const ring of rings) for (const [, y] of ring) {
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    };
+    if (region.geometry.type === 'MultiPolygon') region.geometry.coordinates.forEach(scan);
+    else scan(region.geometry.coordinates);
+    region.__refLat = (minY + maxY) / 2;
+    return region.__refLat;
+  }
+  if (region?.bbox) return (region.bbox[1] + region.bbox[3]) / 2;
+  return 0;
+}
+
 // Computes the discovery percentage for the given markers within a region.
 // `region` is the { geometry, areaM2 } from fetchRegionGeometry; `regionName`
 // lets continent/earth pick a static area. Returns percent + supporting counts.
-export function computeDiscovery(markers, region, level, refLat, regionName) {
+export function computeDiscovery(markers, region, level, regionName) {
   // Open ocean: nothing to discover (this is a land app, and there's no reliable
   // ocean polygon to filter markers against). Report 0% so the panel still shows
   // the ocean name and gauge rather than erroring.
@@ -246,7 +270,9 @@ export function computeDiscovery(markers, region, level, refLat, regionName) {
 
   // Cell side scales with the region's own area (floored near marker spacing).
   // Longitude cells shrink toward the poles so cells stay roughly square in m².
-  const phi = (refLat * Math.PI) / 180;
+  // The reference latitude comes from the region itself (stable), not the map
+  // view, so the grid doesn't shift as you pan/zoom within one region.
+  const phi = (regionRefLat(region) * Math.PI) / 180;
   const target = TARGET_CELLS[level] ?? TARGET_CELLS.country;
   const side = Math.max(Math.sqrt(regionAreaM2 / target), MIN_CELL_M);
   const cellDegLat = side / M_PER_DEG;
