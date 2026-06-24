@@ -5,7 +5,7 @@ import AuthShell from '../components/AuthShell';
 import ConfirmModal from '../components/ConfirmModal';
 import { api } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
-const SPECIAL_RE = /[~`!@#$%^&*()\-_+=\[\]{}|\\;:"<>,./?]/;
+const SPECIAL_RE = /[~`!@#$%^&*()\-_+=[\]{}|\\;:"<>,./?]/;
 
 const PW_RULES = [
   { key: 'length',  label: 'At least 12 characters',
