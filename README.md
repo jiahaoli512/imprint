@@ -14,7 +14,7 @@ Imprint maps every place you've ever been - turning your travels into a living p
 - **Database** — MongoDB via Mongoose
 - **Email** — Brevo (Sendinblue) transactional API for approval and contact‑form emails
 - **Auth** — JWT for users and admins; bcrypt password hashing
-- **Deployment** — Frontend on Vercel, backend on Render (a scheduled GitHub Action pings `/health` to limit free‑tier cold starts; the web client also retries transient load failures)
+- **Deployment** — Frontend on Vercel, backend on Render (an external uptime monitor pings `/health` to limit free‑tier cold starts; the web client also retries transient load failures)
 
 ## Features
 
@@ -59,7 +59,6 @@ frontend/
     utils/         # validateName, fullName, matchesQuery, formatDate, retry, hooks
     api/client.js  # single API layer + session/token helpers
   ios/             # Capacitor iOS project
-.github/workflows/ # keep-backend-warm (pings /health to avoid Render cold starts)
 ```
 
 ## Getting started
