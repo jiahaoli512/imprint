@@ -80,6 +80,11 @@ app.use(cors({
     return callback(new Error('Not allowed by CORS'));
   },
 }));
+// Marker saves carry the whole points array — a busy map can be a couple MB (up
+// to the 50k-point validatePoints cap) — so the markers routes get a larger body
+// limit. This parser runs first and sets req._body, so the global 100kb parser
+// below skips re-parsing those requests. Everything else stays tight at 100kb.
+app.use('/api/markers', express.json({ limit: '4mb' }));
 app.use(express.json({ limit: '100kb' }));
 app.use(sanitizeBody);
 app.use('/api', apiLimiter);
