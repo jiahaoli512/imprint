@@ -1,22 +1,46 @@
 name: keep-backend-warm
 
-# Render's free tier sleeps the backend after ~15 min with no inbound traffic,
-# causing a slow cold start (and the empty-dashboard symptom) on the next visit.
-# Ping /health every ~10 min so it stays warm. This is external by design — it
-# runs on GitHub's infrastructure, so it can wake the server even while it's
-# asleep, unlike a self-ping from the backend itself.
+# Render's free tier sleeps the backend after ~15 min idle, causing slow cold
+# starts. GitHub's *scheduled* runs are heavily throttled — in practice they fire
+# every 1-4h, not every 10 min (see the Actions run history) — so a plain cron
+# ping can't keep a 15-min idle timer warm.
+#
+# Instead, each run LOOPS: it pings /health every 5 min for ~5h50m (just under
+# GitHub's 6h per-job cap). `concurrency` (cancel-in-progress: false) keeps the
+# next scheduled trigger queued so it starts the moment the current run ends —
+# so a single active job gives near-continuous coverage no matter how irregularly
+# the schedule fires. The schedule just needs to fire *once* during each ~6h
+# window (it fires many times a day) to keep the relay going.
+#
+# NOTE: this is a best-effort hack on a free tier. The fully reliable fix is an
+# external uptime monitor (e.g. UptimeRobot, free, 5-min interval) pointed at the
+# /health URL below, or upgrading Render off the free tier.
 on:
   schedule:
-    - cron: '*/10 * * * *'   # every 10 minutes (GitHub may delay under load)
-  workflow_dispatch: {}       # allow manual runs
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+# One active run at a time; a newer scheduled trigger queues (doesn't cancel the
+# running one) and starts as soon as it finishes → continuous relay.
+concurrency:
+  group: keep-backend-warm
+  cancel-in-progress: false
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 355   # just under GitHub's 6h hard cap
     steps:
-      - name: Ping /health
-        # Generous timeout + retries so a cold start (first wake can take ~50s)
-        # still counts as a successful warm-up rather than a failed run.
+      - name: Ping /health every 5 min until just before the job times out
         run: |
-          curl -fsS --max-time 90 --retry 4 --retry-all-errors --retry-delay 15 \
-            https://imprint-backend-6yok.onrender.com/health
+          URL="https://imprint-backend-6yok.onrender.com/health"
+          deadline=$(( SECONDS + 350*60 ))   # stop ~5 min before the timeout
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            # Generous timeout + retries so a cold wake (~50s) still counts as warm.
+            if curl -fsS --max-time 90 --retry 3 --retry-all-errors --retry-delay 10 "$URL" >/dev/null; then
+              echo "ok   $(date -u +%H:%M:%S)"
+            else
+              echo "fail $(date -u +%H:%M:%S)"
+            fi
+            sleep 300
+          done
