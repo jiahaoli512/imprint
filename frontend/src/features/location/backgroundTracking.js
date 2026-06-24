@@ -148,10 +148,21 @@ export async function getAuthorizationStatus() {
   }
 }
 
-// Only a deliberate user action stops tracking — this clears the saved choice
-// so it won't auto-resume.
+// Only a deliberate user action (the Stop button) stops tracking — this clears
+// the saved choice so it won't auto-resume.
 export async function stopTracking() {
   localStorage.removeItem(ENABLED_KEY);
+  if (watcherId) {
+    await BackgroundGeolocation.removeWatcher({ id: watcherId });
+    watcherId = null;
+  }
+  await flush();
+}
+
+// Pauses the live watcher (e.g. on logout or token expiry) WITHOUT clearing the
+// saved choice, so the same user's next login auto-resumes tracking. Use this
+// for session-end; use stopTracking only when the user explicitly opts out.
+export async function pauseTracking() {
   if (watcherId) {
     await BackgroundGeolocation.removeWatcher({ id: watcherId });
     watcherId = null;

@@ -72,12 +72,13 @@ function makeRequest(getTokenFn, clearSessionFn, onSessionEnded) {
   return request;
 }
 
-// On user-token expiry (401), also stop native passive tracking so a logged-out
-// session can't keep tracking / re-arm. Dynamic import avoids a circular
-// dependency (backgroundTracking imports `api` from this module). The inner
-// flush's own request 401s without a token, so its handler is skipped — no loop.
+// On user-token expiry (401), pause native passive tracking so a logged-out
+// session can't keep tracking — but keep the saved choice so the same user's
+// next login resumes. Dynamic import avoids a circular dependency
+// (backgroundTracking imports `api` from this module). The inner flush's own
+// request 401s without a token, so its handler is skipped — no loop.
 const request = makeRequest(getToken, clearSession, () =>
-  import('../features/location/backgroundTracking').then((m) => m.stopTracking()).catch(() => {})
+  import('../features/location/backgroundTracking').then((m) => m.pauseTracking()).catch(() => {})
 );
 const adminRequest = makeRequest(getAdminToken, clearAdminSession);
 

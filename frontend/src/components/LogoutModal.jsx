@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { clearSession, clearAdminSession } from '../api/client';
-import { stopTracking } from '../features/location/backgroundTracking';
+import { pauseTracking } from '../features/location/backgroundTracking';
 import Modal from './Modal';
 
 // Confirms logging out. `admin` switches between ending the admin session and a
@@ -12,12 +12,11 @@ export default function LogoutModal({ admin = false, onCancel }) {
     if (admin) {
       clearAdminSession();
     } else {
-      // Stop passive tracking before clearing the session: stopTracking removes
-      // the native watcher and clears the auto-resume flag (so it doesn't keep
-      // tracking / re-arm after logout), and flushes any buffered points while
-      // the user token is still valid. No-op on web. (Order matters — flush
-      // needs the token, so this runs before clearSession.)
-      await stopTracking();
+      // Pause passive tracking before clearing the session: pauseTracking removes
+      // the native watcher and flushes buffered points while the token is still
+      // valid, but KEEPS the saved choice so the user's next login auto-resumes.
+      // No-op on web. (Order matters — flush needs the token, so this runs first.)
+      await pauseTracking();
       clearSession();
     }
     navigate('/home');
