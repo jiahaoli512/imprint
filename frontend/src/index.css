@@ -911,6 +911,21 @@ footer {
 .badge-nav-arrow:hover { color: var(--text); background: var(--border); }
 .badge-nav-arrow:active { transform: scale(0.92); }
 
+/* Carousel slide: the viewport clips the horizontal travel so paging doesn't
+   spawn a scrollbar; the inner .badge-slide animates in from the side of travel.
+   key=index in BadgesModal remounts it so the animation re-runs each change. */
+.badge-slide-viewport { overflow-x: hidden; }
+.badge-slide-next { animation: badgeSlideNext 0.28s ease; }
+.badge-slide-prev { animation: badgeSlidePrev 0.28s ease; }
+@keyframes badgeSlideNext {
+  from { opacity: 0; transform: translateX(38px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes badgeSlidePrev {
+  from { opacity: 0; transform: translateX(-38px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 /* Shown when a category has no badges yet (e.g. Passports). Min-height keeps the
    modal from collapsing/jumping when paging to an empty category. */
 .badge-empty {
