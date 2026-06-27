@@ -20,7 +20,7 @@ export default function BadgesModal({ user, onClose }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1); // 1 = forward (slide in from right), -1 = back
   const [query, setQuery] = useState('');
-  const [continent, setContinent] = useState('all');
+  const [selected, setSelected] = useState([]); // selected continents; [] = All
   const touchX = useRef(null);
 
   // Reset filters whenever the category changes so each opens unfiltered.
@@ -28,7 +28,7 @@ export default function BadgesModal({ user, onClose }) {
     setDir(direction);
     setIndex((next + count) % count);
     setQuery('');
-    setContinent('all');
+    setSelected([]);
   };
   const go = (d) => goTo(index + d, d);
 
@@ -53,9 +53,18 @@ export default function BadgesModal({ user, onClose }) {
   const q = query.trim().toLowerCase();
   const visible = filterable
     ? badges.filter((b) =>
-        (continent === 'all' || b.continent === continent) &&
+        (selected.length === 0 || selected.includes(b.continent)) &&
         (!q || b.label.toLowerCase().includes(q)))
     : badges;
+
+  // Toggle a continent. Selecting all of them, or clearing the last one,
+  // collapses back to "All" (an empty selection).
+  const toggleContinent = (c) => {
+    setSelected((prev) => {
+      const next = prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c];
+      return next.length === 0 || next.length === continents.length ? [] : next;
+    });
+  };
 
   return (
     <Modal onClose={onClose} icon={false} closable className="modal-badges">
@@ -93,16 +102,16 @@ export default function BadgesModal({ user, onClose }) {
           />
           <div className="badge-chips">
             <button
-              className={`badge-chip ${continent === 'all' ? 'is-active' : ''}`}
-              onClick={() => setContinent('all')}
+              className={`badge-chip ${selected.length === 0 ? 'is-active' : ''}`}
+              onClick={() => setSelected([])}
             >
               All
             </button>
             {continents.map((c) => (
               <button
                 key={c}
-                className={`badge-chip ${continent === c ? 'is-active' : ''}`}
-                onClick={() => setContinent(c)}
+                className={`badge-chip ${selected.includes(c) ? 'is-active' : ''}`}
+                onClick={() => toggleContinent(c)}
               >
                 {c}
               </button>
