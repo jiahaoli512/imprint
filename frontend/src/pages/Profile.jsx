@@ -12,6 +12,10 @@ const maxDob = new Date();
 maxDob.setFullYear(maxDob.getFullYear() - 18);
 const MAX_DOB = maxDob.toISOString().split('T')[0];
 
+// Field label + required asterisk, mirroring the edit-profile form in UserProfile.
+const fieldLabelStyle = { fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' };
+const RequiredMark = () => <span style={{ color: 'var(--error)' }}> *</span>;
+
 // mirrors ageFromDob() in userService.js — keep in sync if the threshold changes
 function ageOk(dobStr) {
   if (!dobStr) return false;
@@ -94,49 +98,58 @@ export default function Profile() {
         <p className="auth-sub">Just a few details to get started.</p>
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
-          <input
-            type="text"
-            className="auth-input"
-            placeholder="First name"
-            value={values.firstName}
-            maxLength={50}
-            onChange={setField('firstName')}
-            autoComplete="given-name"
-          />
-          <input
-            type="text"
-            className="auth-input"
-            placeholder="Last name (optional)"
-            value={values.lastName}
-            maxLength={50}
-            onChange={setField('lastName')}
-            autoComplete="family-name"
-          />
-
-          <div className="auth-input-wrap">
+          <div>
+            <label style={fieldLabelStyle}>First name<RequiredMark /></label>
             <input
               type="text"
               className="auth-input"
-              placeholder="Username"
-              value={values.username}
-              onChange={e => handleUsernameChange(e.target.value)}
-              autoComplete="username"
-              style={{ paddingRight: '40px' }}
+              placeholder="First name"
+              value={values.firstName}
+              maxLength={50}
+              onChange={setField('firstName')}
+              autoComplete="given-name"
             />
-            <span className="auth-eye" style={{ pointerEvents: 'none' }}>
-              {usernameStatus === 'checking'  && <Loader size={15} className="spin" />}
-              {usernameStatus === 'available' && <Check size={15} color="var(--success)" />}
-              {usernameStatus === 'taken'     && <X size={15} color="var(--error)" />}
-              {usernameStatus === 'invalid'   && <X size={15} color="var(--error)" />}
-            </span>
+          </div>
+          <div>
+            <label style={fieldLabelStyle}>Last name</label>
+            <input
+              type="text"
+              className="auth-input"
+              placeholder="Last name (optional)"
+              value={values.lastName}
+              maxLength={50}
+              onChange={setField('lastName')}
+              autoComplete="family-name"
+            />
+          </div>
+
+          <div>
+            <label style={fieldLabelStyle}>Username<RequiredMark /></label>
+            <div className="auth-input-wrap">
+              <input
+                type="text"
+                className="auth-input"
+                placeholder="Username"
+                value={values.username}
+                onChange={e => handleUsernameChange(e.target.value)}
+                autoComplete="username"
+                style={{ paddingRight: '40px' }}
+              />
+              <span className="auth-eye" style={{ pointerEvents: 'none' }}>
+                {usernameStatus === 'checking'  && <Loader size={15} className="spin" />}
+                {usernameStatus === 'available' && <Check size={15} color="var(--success)" />}
+                {usernameStatus === 'taken'     && <X size={15} color="var(--error)" />}
+                {usernameStatus === 'invalid'   && <X size={15} color="var(--error)" />}
+              </span>
+            </div>
           </div>
           {usernameStatus === 'taken'   && <p className="auth-error" style={{ marginTop: '-4px' }}>Username already taken.</p>}
           {usernameStatus === 'invalid' && <p className="auth-error" style={{ marginTop: '-4px' }}>3–20 characters, letters, numbers and _ only.</p>}
           {usernameStatus === 'available' && <p style={{ fontSize: '12px', color: 'var(--accent)', marginTop: '-4px' }}>Username available!</p>}
 
           <div>
-            <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
-              Date of birth (must be 18+)
+            <label style={fieldLabelStyle}>
+              Date of birth (must be 18+)<RequiredMark />
             </label>
             <input
               type="date"
