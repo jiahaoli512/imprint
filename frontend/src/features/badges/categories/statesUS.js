@@ -22,9 +22,10 @@ const US_THEME = {
   delay: '0s',
 };
 
-// The 50 states only — excludes D.C. and territories (American Samoa, Guam,
+// The 50 states + D.C. — excludes the territories (American Samoa, Guam,
 // Northern Mariana Islands, Puerto Rico, U.S. Virgin Islands) present in /flags.
 const US_STATES = new Set([
+  'District of Columbia',
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
   'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
   'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine',
