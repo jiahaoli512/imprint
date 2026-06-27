@@ -1,7 +1,7 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, Award } from 'lucide-react';
 import LogoutButton from '../components/LogoutButton';
 import AdminViewingBadge from '../components/AdminViewingBadge';
 import Modal from '../components/Modal';
@@ -13,6 +13,7 @@ import { useAdminView } from '../utils/useAdminView';
 import { useFitText } from '../utils/useFitText';
 import { useUser } from '../features/users/useUser';
 import { useProfileEdit } from '../features/users/useProfileEdit';
+import BadgesModal from '../features/users/BadgesModal';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -39,6 +40,8 @@ export default function UserProfile() {
 
   // All edit-flow state/logic lives in the hook; this page just renders it.
   const edit = useProfileEdit({ user, setUser, username, isAdminView, updateUser });
+
+  const [showBadges, setShowBadges] = useState(false);
 
   // Shrink an over-long name to fit one line — mobile app only.
   const nameRef = useRef(null);
@@ -199,8 +202,12 @@ export default function UserProfile() {
             <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Member since:</span>
             <span style={{ fontSize: '13px', fontWeight: '600' }}>{joined}</span>
           </div>
+          <button className="btn btn-ghost" style={{ alignSelf: 'center' }} onClick={() => setShowBadges(true)}>
+            <Award size={15} /> Badges
+          </button>
         </div>
       </div>
+      {showBadges && <BadgesModal user={user} onClose={() => setShowBadges(false)} />}
       {edit.pendingSave && (
         <Modal onClose={edit.closePending}>
           <h2 className="modal-title">Save these changes?</h2>
