@@ -1,10 +1,11 @@
-import countries from 'flag-icons/country.json';
+import { PASSPORT_COUNTRIES } from './passportCountries';
 
-// Countries badge category ("Passports") — one badge per country, the flag shown
-// in the coin. The ring/halo/tails are tinted by continent (the flag carries the
-// per-country identity). All badges are locked for now; visited-country detection
-// (markers → country) is a later feature that will flip `earned` per country via
-// ctx, with no change needed here, in Badge, or in the modal.
+// Countries badge category ("Passports") — one badge per country from the
+// provided list (passportCountries.js, derived from countries_continents.csv),
+// the flag shown in the coin. The ring/halo/tails are tinted by continent (the
+// flag carries the per-country identity). All badges are locked for now;
+// visited-country detection (markers → country) is a later feature that will flip
+// `earned` per country via ctx, with no change needed here, in Badge, or the modal.
 
 // Per-continent medallion colors: c1/c2 are the coin gradient behind the flag,
 // halo tints the glow. spin/delay only matter once a badge is earned (animated).
@@ -19,9 +20,10 @@ const CONTINENT_COLORS = {
 };
 const FALLBACK_COLORS = { c1: '#93897a', c2: '#6b6356', halo: 'rgba(147,137,122,0.3)' };
 
-// Built once at module load (pure data). Only ISO countries, sorted by name.
-const BADGES = countries
-  .filter((c) => c.iso)
+// Built once at module load (pure data). The CSV list is already de-duped; sort
+// by name for the grid.
+const BADGES = PASSPORT_COUNTRIES
+  .slice()
   .sort((a, b) => a.name.localeCompare(b.name))
   .map((c) => ({
     key: c.code,
