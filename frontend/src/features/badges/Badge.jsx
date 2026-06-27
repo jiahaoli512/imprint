@@ -66,7 +66,7 @@ export default function Badge({ badge }) {
         )}
       </div>
       <div className="badge-text">
-        <span className={`badge-label ${earned ? '' : 'is-locked'}`}>{badge.label}</span>
+        <span className={`badge-label ${earned ? '' : 'is-locked'}`} title={badge.label}>{badge.label}</span>
         <span className="badge-caption">{earned ? badge.caption : 'Not yet earned'}</span>
       </div>
     </div>

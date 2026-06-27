@@ -6,7 +6,7 @@ import { Fingerprint, X } from 'lucide-react';
 // optional Fingerprint icon. Clicking the card itself never closes it. Callers
 // supply the card's contents (title, copy, action buttons) as children.
 // `closable` renders a visible top-right X (in addition to overlay-click).
-export default function Modal({ onClose, icon = true, closable = false, className = '', children }) {
+export default function Modal({ onClose, icon = true, closable = false, className = '', containerRef, children }) {
   // Lock background scroll while the modal is open. `overflow: hidden` alone is
   // unreliable (notably iOS/Capacitor, where the body still rubber-band scrolls),
   // so pin the body with `position: fixed` and offset it by the current scroll
@@ -30,7 +30,7 @@ export default function Modal({ onClose, icon = true, closable = false, classNam
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal ${className}`.trim()} onClick={e => e.stopPropagation()}>
+      <div ref={containerRef} className={`modal ${className}`.trim()} onClick={e => e.stopPropagation()}>
         {closable && (
           <button className="icon-btn modal-close-x" onClick={onClose} aria-label="Close">
             <X size={20} />

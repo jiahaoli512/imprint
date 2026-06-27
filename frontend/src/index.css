@@ -909,6 +909,11 @@ footer {
   height: 40px;
 }
 
+/* Scroll-to-top: a zero-height sticky anchor keeps the button pinned to the top
+   of the scrolling badges modal without taking layout space. */
+.badge-top-anchor { position: sticky; top: 0; height: 0; z-index: 6; }
+.badge-scrolltop { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; }
+
 /* Search + continent filter for large badge categories (e.g. Passports). */
 .badge-filters { margin-bottom: 20px; }
 .badge-search {
@@ -1071,8 +1076,8 @@ footer {
 .badge-sparkle { position: absolute; top: 4px; right: 10px; width: 11px; height: 11px; }
 .badge-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 
-.badge-text { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; }
-.badge-label { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--text); }
+.badge-text { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; width: 100%; }
+.badge-label { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--text); display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .badge-label.is-locked { color: var(--muted); }
 .badge-caption { font-size: 12px; line-height: 1.45; color: var(--muted); max-width: 130px; }
 

@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import Modal from '../../components/Modal';
 import Badge from './Badge';
@@ -22,7 +22,20 @@ export default function BadgesModal({ user, onClose }) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState([]); // selected continents; [] = All
   const [status, setStatus] = useState('all');  // all | unlocked | locked
+  const [showTop, setShowTop] = useState(false); // scroll-to-top affordance
   const touchX = useRef(null);
+  const scrollRef = useRef(null);
+
+  // Toggle the scroll-to-top button once the modal is scrolled past the header.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => setShowTop(el.scrollTop > 240);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = () => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
   // Reset filters whenever the category changes so each opens unfiltered.
   const goTo = (next, direction) => {
@@ -71,7 +84,14 @@ export default function BadgesModal({ user, onClose }) {
   };
 
   return (
-    <Modal onClose={onClose} icon={false} closable className="modal-badges">
+    <Modal onClose={onClose} icon={false} closable className="modal-badges" containerRef={scrollRef}>
+      <div className="badge-top-anchor">
+        {showTop && (
+          <button className="icon-btn badge-scrolltop" onClick={scrollToTop} aria-label="Scroll to top">
+            <ChevronUp size={20} />
+          </button>
+        )}
+      </div>
       <div className="badge-nav">
         {count > 1 && (
           <button className="icon-btn badge-nav-arrow" onClick={() => go(-1)} aria-label="Previous category">
