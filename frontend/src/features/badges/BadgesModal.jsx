@@ -31,6 +31,7 @@ export default function BadgesModal({ user, onClose }) {
 
   const category = BADGE_CATEGORIES[index];
   const badges = category.getBadges(ctx);
+  const earnedCount = badges.filter((b) => b.earned).length;
 
   return (
     <Modal onClose={onClose} icon={false} closable className="modal-badges">
@@ -43,6 +44,9 @@ export default function BadgesModal({ user, onClose }) {
         <div className="badge-nav-title">
           <h2 className="modal-title">{category.title}</h2>
           <p className="modal-sub" style={{ marginBottom: 0 }}>{category.subtitle}</p>
+          {badges.length > 0 && (
+            <p className="badge-progress">{earnedCount} / {badges.length} earned</p>
+          )}
         </div>
         {count > 1 && (
           <button className="badge-nav-arrow" onClick={() => go(1)} aria-label="Next category">
