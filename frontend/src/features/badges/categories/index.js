@@ -1,5 +1,6 @@
 import { accountAgeCategory } from './accountAge';
 import { countriesCategory } from './countries';
+import { statesUSCategory } from './statesUS';
 
 // Registry of badge categories, rendered in order by BadgesModal. To add a new
 // category (e.g. countries visited, distance travelled), implement the category
@@ -13,4 +14,5 @@ import { countriesCategory } from './countries';
 export const BADGE_CATEGORIES = [
   accountAgeCategory,
   countriesCategory,
+  statesUSCategory,
 ];

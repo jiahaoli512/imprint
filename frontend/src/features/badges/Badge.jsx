@@ -18,6 +18,7 @@ const CheckMark = () => (
 function CoinFace({ badge }) {
   if (badge.coin === 'check') return <CheckMark />;
   if (badge.coin === 'flag') return <span className={`fi fi-${badge.code} badge-flag`} />;
+  if (badge.coin === 'img') return <span className="badge-flag" style={{ backgroundImage: `url("${badge.img}")` }} />;
   return (
     <>
       <span className="badge-coin-value">{badge.value}</span>
@@ -47,7 +48,7 @@ export default function Badge({ badge }) {
         <div
           className="badge-ring"
           style={{
-            background: `conic-gradient(from 0deg, ${badge.c1}, ${badge.c2}, ${badge.c1})`,
+            background: badge.ring || `conic-gradient(from 0deg, ${badge.c1}, ${badge.c2}, ${badge.c1})`,
             animation: `badgeRingSpin ${badge.spin} linear infinite`,
           }}
         />

@@ -138,8 +138,9 @@ export default function BadgesModal({ user, onClose }) {
               </button>
             ))}
           </div>
-          {/* Continent filter — only for large categories (Passports). */}
-          {filterable && (
+          {/* Region filter — only when the category's badges carry continents
+              (Passports). Categories without them (e.g. US states) skip it. */}
+          {continents.length > 0 && (
             <div className="badge-chips">
               <button
                 className={`badge-chip ${selected.length === 0 ? 'is-active' : ''}`}
