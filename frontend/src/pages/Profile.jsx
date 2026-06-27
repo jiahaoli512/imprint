@@ -65,6 +65,9 @@ export default function Profile() {
         const data = await api.setupProfile({ email, firstName, lastName, username, dateOfBirth: dob });
         saveUsername(data.username);
         refreshGreeting();
+        // Brief pause so the "Saving…" state is visible instead of an instant
+        // jump to the dashboard (submitting stays true until this resolves).
+        await new Promise((resolve) => setTimeout(resolve, 700));
         navigate(`/${data.username}/dashboard`);
       },
     }
