@@ -22,7 +22,22 @@ const US_THEME = {
   delay: '0s',
 };
 
-// "…/Flag_of_the_Northern_Mariana_Islands.svg" → "Northern Mariana Islands".
+// The 50 states only — excludes D.C. and territories (American Samoa, Guam,
+// Northern Mariana Islands, Puerto Rico, U.S. Virgin Islands) present in /flags.
+const US_STATES = new Set([
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+  'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+  'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine',
+  'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
+  'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+  'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+  'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina',
+  'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia',
+  'Washington', 'West Virginia', 'Wisconsin', 'Wyoming',
+]);
+
+// "…/Flag_of_the_Northern_Mariana_Islands.svg" → "Northern Mariana Islands";
+// "…/Flag_of_Georgia_(U.S._state).svg" → "Georgia".
 function nameFromPath(path) {
   return path
     .split('/').pop()
@@ -30,7 +45,8 @@ function nameFromPath(path) {
     .replace(/^Flag_of_/, '')
     .replace(/^the_/, '')
     .replace(/_/g, ' ')
-    .replace(/ designed by.*$/i, '') // Colorado's long filename
+    .replace(/ designed by.*$/i, '')   // Colorado's long filename
+    .replace(/ \(U\.S\. state\)$/i, '') // Georgia
     .trim();
 }
 
@@ -44,6 +60,7 @@ const BADGES = Object.entries(flagUrls)
     earned: false,
     ...US_THEME,
   }))
+  .filter((b) => US_STATES.has(b.label))
   .sort((a, b) => a.label.localeCompare(b.label));
 
 export const statesUSCategory = {
