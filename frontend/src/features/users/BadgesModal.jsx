@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react';
+import { Lock, X } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { earnedTiers } from './badges';
 
@@ -72,12 +72,14 @@ export default function BadgesModal({ user, onClose }) {
   const tiers = earnedTiers(user?.createdAt);
   return (
     <Modal onClose={onClose} icon={false} className="modal-badges">
+      <button className="modal-close-x" onClick={onClose} aria-label="Close">
+        <X size={20} />
+      </button>
       <h2 className="modal-title">Account milestone badges</h2>
       <p className="modal-sub">Awarded automatically as the account reaches each age milestone.</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'flex-start', gap: '14px' }}>
         {tiers.map((t) => <Medallion key={t.label} tier={t} />)}
       </div>
-      <button className="modal-cancel" onClick={onClose} style={{ marginTop: '24px' }}>Close</button>
     </Modal>
   );
 }

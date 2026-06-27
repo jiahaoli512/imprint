@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Fingerprint } from 'lucide-react';
 
@@ -5,6 +6,27 @@ import { Fingerprint } from 'lucide-react';
 // optional Fingerprint icon. Clicking the card itself never closes it. Callers
 // supply the card's contents (title, copy, action buttons) as children.
 export default function Modal({ onClose, icon = true, className = '', children }) {
+  // Lock background scroll while the modal is open. `overflow: hidden` alone is
+  // unreliable (notably iOS/Capacitor, where the body still rubber-band scrolls),
+  // so pin the body with `position: fixed` and offset it by the current scroll
+  // position — then restore both on close so the page doesn't jump.
+  useEffect(() => {
+    const { body } = document;
+    const scrollY = window.scrollY;
+    const prev = {
+      position: body.style.position, top: body.style.top,
+      width: body.style.width, overflow: body.style.overflow,
+    };
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    return () => {
+      Object.assign(body.style, prev);
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className={`modal ${className}`.trim()} onClick={e => e.stopPropagation()}>

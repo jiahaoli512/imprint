@@ -845,8 +845,39 @@ footer {
   margin: 0 auto 20px;
 }
 
-/* Wide variant for the account-milestone badges popup (5 medallions in a row). */
-.modal-badges { max-width: 720px; max-height: calc(100vh - 48px); overflow-y: auto; }
+/* Wide variant for the account-milestone badges popup. Scrolls internally on
+   small screens (mobile) while the background stays locked; the contained
+   overscroll keeps the scroll from chaining to the page behind it. */
+.modal-badges {
+  position: relative;
+  max-width: 720px;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 52px;
+}
+
+/* Visible top-right close button (replaces a bottom Close link). */
+.modal-close-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.06s ease;
+  z-index: 1;
+}
+.modal-close-x:hover { color: var(--text); background: var(--border); }
+.modal-close-x:active { transform: scale(0.92); }
 
 /* Account-milestone badge animations (ported from account_milestone.html).
    Earned badges breathe (grow then shrink); unearned ones are grayed + frozen. */
