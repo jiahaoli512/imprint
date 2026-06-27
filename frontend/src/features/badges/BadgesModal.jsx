@@ -1,24 +1,35 @@
 import { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import Modal from '../../components/Modal';
 import Badge from './Badge';
 import { BADGE_CATEGORIES } from './categories';
 
 const SWIPE_THRESHOLD = 50; // px of horizontal drag before a swipe registers
+const FILTERABLE_MIN = 12;  // show search + continent filter past this many badges
+const isNative = Capacitor.isNativePlatform();
 
 // Popup that pages through badge categories one at a time. Left/right arrows (and
 // touch swipes) wrap around (last → first, first → last); dots mirror the
-// position. Each change slides the content in from the direction of travel.
-// Generic over the registry — adding a category is a new file + a line in
-// ./categories, and it joins the carousel automatically.
+// position. Each change slides the content in from the direction of travel. Large
+// categories (e.g. Passports) get a name search + continent filter. Generic over
+// the registry — adding a category is a new file + a line in ./categories.
 export default function BadgesModal({ user, onClose }) {
   const ctx = { user };
   const count = BADGE_CATEGORIES.length;
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1); // 1 = forward (slide in from right), -1 = back
+  const [query, setQuery] = useState('');
+  const [continent, setContinent] = useState('all');
   const touchX = useRef(null);
 
-  const goTo = (next, direction) => { setDir(direction); setIndex((next + count) % count); };
+  // Reset filters whenever the category changes so each opens unfiltered.
+  const goTo = (next, direction) => {
+    setDir(direction);
+    setIndex((next + count) % count);
+    setQuery('');
+    setContinent('all');
+  };
   const go = (d) => goTo(index + d, d);
 
   const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
@@ -33,6 +44,18 @@ export default function BadgesModal({ user, onClose }) {
   const badges = category.getBadges(ctx);
   const earnedCount = badges.filter((b) => b.earned).length;
   const earnedPct = badges.length ? Math.round((earnedCount / badges.length) * 100) : 0;
+
+  const filterable = badges.length > FILTERABLE_MIN;
+  // Continent options derived from the badges that carry a continent.
+  const continents = filterable
+    ? [...new Set(badges.map((b) => b.continent).filter(Boolean))].sort()
+    : [];
+  const q = query.trim().toLowerCase();
+  const visible = filterable
+    ? badges.filter((b) =>
+        (continent === 'all' || b.continent === continent) &&
+        (!q || b.label.toLowerCase().includes(q)))
+    : badges;
 
   return (
     <Modal onClose={onClose} icon={false} closable className="modal-badges">
@@ -51,21 +74,55 @@ export default function BadgesModal({ user, onClose }) {
         </div>
         {count > 1 && (
           <button className="icon-btn badge-nav-arrow" onClick={() => go(1)} aria-label="Next category">
-            <ChevronRight size={20} /> 
+            <ChevronRight size={20} />
           </button>
         )}
       </div>
+
+      {filterable && (
+        <div className="badge-filters">
+          <input
+            className="badge-search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${category.title.toLowerCase()}…`}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            style={isNative ? { fontSize: '16px' } : undefined}
+          />
+          <div className="badge-chips">
+            <button
+              className={`badge-chip ${continent === 'all' ? 'is-active' : ''}`}
+              onClick={() => setContinent('all')}
+            >
+              All
+            </button>
+            {continents.map((c) => (
+              <button
+                key={c}
+                className={`badge-chip ${continent === c ? 'is-active' : ''}`}
+                onClick={() => setContinent(c)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="badge-slide-viewport" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {/* key=index remounts on change so the slide animation re-runs; the
             direction class picks which side it enters from. */}
         <div key={index} className={`badge-slide ${dir < 0 ? 'badge-slide-prev' : 'badge-slide-next'}`}>
-          {badges.length > 0 ? (
+          {badges.length === 0 ? (
+            <div className="badge-empty">No badges in this category yet — coming soon.</div>
+          ) : visible.length > 0 ? (
             <div className="badge-grid">
-              {badges.map((b) => <Badge key={b.key} badge={b} />)}
+              {visible.map((b) => <Badge key={b.key} badge={b} />)}
             </div>
           ) : (
-            <div className="badge-empty">No badges in this category yet — coming soon.</div>
+            <div className="badge-empty">No matches.</div>
           )}
         </div>
       </div>

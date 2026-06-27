@@ -909,6 +909,34 @@ footer {
   height: 40px;
 }
 
+/* Search + continent filter for large badge categories (e.g. Passports). */
+.badge-filters { margin-bottom: 20px; }
+.badge-search {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+}
+.badge-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+.badge-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 100px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.badge-chip:hover { color: var(--text); }
+.badge-chip.is-active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+
 /* Carousel slide: the viewport clips the horizontal travel so paging doesn't
    spawn a scrollbar; the inner .badge-slide animates in from the side of travel.
    key=index in BadgesModal remounts it so the animation re-runs each change. */

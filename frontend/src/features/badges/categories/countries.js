@@ -31,6 +31,7 @@ const BADGES = PASSPORT_COUNTRIES
     coin: 'flag',
     label: c.name,
     caption: c.continent || 'Visited',
+    continent: c.continent || 'Other',
     earned: false,
     spin: '10s',
     delay: '0s',
