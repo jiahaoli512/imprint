@@ -38,7 +38,7 @@ export default function BadgesModal({ user, onClose }) {
     <Modal onClose={onClose} icon={false} closable className="modal-badges">
       <div className="badge-nav">
         {count > 1 && (
-          <button className="badge-nav-arrow" onClick={() => go(-1)} aria-label="Previous category">
+          <button className="icon-btn badge-nav-arrow" onClick={() => go(-1)} aria-label="Previous category">
             <ChevronLeft size={20} />
           </button>
         )}
@@ -50,7 +50,7 @@ export default function BadgesModal({ user, onClose }) {
           )}
         </div>
         {count > 1 && (
-          <button className="badge-nav-arrow" onClick={() => go(1)} aria-label="Next category">
+          <button className="icon-btn badge-nav-arrow" onClick={() => go(1)} aria-label="Next category">
             <ChevronRight size={20} /> 
           </button>
         )}

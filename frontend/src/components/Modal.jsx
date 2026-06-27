@@ -32,7 +32,7 @@ export default function Modal({ onClose, icon = true, closable = false, classNam
     <div className="modal-overlay" onClick={onClose}>
       <div className={`modal ${className}`.trim()} onClick={e => e.stopPropagation()}>
         {closable && (
-          <button className="modal-close-x" onClick={onClose} aria-label="Close">
+          <button className="icon-btn modal-close-x" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
         )}

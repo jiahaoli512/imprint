@@ -7,14 +7,11 @@ import { validateName, USERNAME_RE } from '../utils/validateName';
 import { useDebouncedCallback } from '../utils/useDebouncedCallback';
 import { refreshGreeting } from '../utils/greeting';
 import { useForm } from '../utils/useForm';
+import FieldLabel from '../components/FieldLabel';
 
 const maxDob = new Date();
 maxDob.setFullYear(maxDob.getFullYear() - 18);
 const MAX_DOB = maxDob.toISOString().split('T')[0];
-
-// Field label + required asterisk, mirroring the edit-profile form in UserProfile.
-const fieldLabelStyle = { fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' };
-const RequiredMark = () => <span style={{ color: 'var(--error)' }}> *</span>;
 
 // mirrors ageFromDob() in userService.js — keep in sync if the threshold changes
 function ageOk(dobStr) {
@@ -102,7 +99,7 @@ export default function Profile() {
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
           <div>
-            <label style={fieldLabelStyle}>First name<RequiredMark /></label>
+            <FieldLabel required>First name</FieldLabel>
             <input
               type="text"
               className="auth-input"
@@ -114,7 +111,7 @@ export default function Profile() {
             />
           </div>
           <div>
-            <label style={fieldLabelStyle}>Last name</label>
+            <FieldLabel>Last name</FieldLabel>
             <input
               type="text"
               className="auth-input"
@@ -127,7 +124,7 @@ export default function Profile() {
           </div>
 
           <div>
-            <label style={fieldLabelStyle}>Username<RequiredMark /></label>
+            <FieldLabel required>Username</FieldLabel>
             <div className="auth-input-wrap">
               <input
                 type="text"
@@ -151,9 +148,7 @@ export default function Profile() {
           {usernameStatus === 'available' && <p style={{ fontSize: '12px', color: 'var(--accent)', marginTop: '-4px' }}>Username available!</p>}
 
           <div>
-            <label style={fieldLabelStyle}>
-              Date of birth (must be 18+)<RequiredMark />
-            </label>
+            <FieldLabel required>Date of birth (must be 18+)</FieldLabel>
             <input
               type="date"
               className="auth-input"

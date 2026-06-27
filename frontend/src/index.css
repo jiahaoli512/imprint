@@ -860,13 +860,10 @@ footer {
   padding-top: 52px;
 }
 
-/* Visible top-right close button (replaces a bottom Close link). */
-.modal-close-x {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 36px;
-  height: 36px;
+/* Round icon button: a circular surface2 button with a muted glyph (shared by
+   the modal close X and the badge carousel arrows). Position/size live on the
+   variant classes below. */
+.icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -876,10 +873,19 @@ footer {
   color: var(--muted);
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease, transform 0.06s ease;
+}
+.icon-btn:hover { color: var(--text); background: var(--border); }
+.icon-btn:active { transform: scale(0.92); }
+
+/* Visible top-right close button (replaces a bottom Close link). */
+.modal-close-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
   z-index: 1;
 }
-.modal-close-x:hover { color: var(--text); background: var(--border); }
-.modal-close-x:active { transform: scale(0.92); }
 
 /* Badge medallions (ported from the account-milestone bundles). Structural
    styling lives here; only per-badge colors/animation-timing are inline, since
@@ -901,18 +907,7 @@ footer {
   flex: 0 0 auto;
   width: 40px;
   height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, transform 0.06s ease;
 }
-.badge-nav-arrow:hover { color: var(--text); background: var(--border); }
-.badge-nav-arrow:active { transform: scale(0.92); }
 
 /* Carousel slide: the viewport clips the horizontal travel so paging doesn't
    spawn a scrollbar; the inner .badge-slide animates in from the side of travel.

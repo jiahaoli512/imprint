@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { User, Pencil, X, Check, Award } from 'lucide-react';
 import Modal from '../components/Modal';
 import Spinner from '../components/Spinner';
+import FieldLabel from '../components/FieldLabel';
 import { getUsername, profileApiFor } from '../api/client';
 import { formatDate } from '../utils/formatDate';
 import { fullName } from '../utils/fullName';
@@ -15,15 +16,6 @@ import ProfileToolbar from '../features/users/ProfileToolbar';
 import BadgesModal from '../features/badges/BadgesModal';
 
 const isNative = Capacitor.isNativePlatform();
-
-// Field labels in the edit form — serif display face, slightly larger.
-const fieldLabelStyle = {
-  fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--muted)',
-  display: 'block', marginBottom: '6px',
-};
-
-// Red asterisk marking a required field.
-const RequiredMark = () => <span style={{ color: 'var(--error)' }}> *</span>;
 
 const cooldownHint = (wait, cadence) =>
   wait > 0 ? `Available again in ${wait} day${wait === 1 ? '' : 's'}.` : `Can be changed once ${cadence}.`;
@@ -65,7 +57,7 @@ export default function UserProfile() {
           {edit.editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
               <div>
-                <label style={fieldLabelStyle}>First Name<RequiredMark /></label>
+                <FieldLabel variant="display" required>First Name</FieldLabel>
                 <input
                   className="auth-input"
                   placeholder="First name"
@@ -78,7 +70,7 @@ export default function UserProfile() {
                 />
               </div>
               <div>
-                <label style={fieldLabelStyle}>Last Name</label>
+                <FieldLabel variant="display">Last Name</FieldLabel>
                 <input
                   className="auth-input"
                   placeholder="Last name (optional)"
@@ -93,9 +85,7 @@ export default function UserProfile() {
                 {cooldownHint(nameWait, 'a week')}
               </p>
               <div>
-                <label style={fieldLabelStyle}>
-                  Username<RequiredMark />
-                </label>
+                <FieldLabel variant="display" required>Username</FieldLabel>
                 <input
                   className="auth-input"
                   placeholder="Username"
@@ -115,9 +105,7 @@ export default function UserProfile() {
               </div>
               {user.dateOfBirth && (
                 <div>
-                  <label style={fieldLabelStyle}>
-                    Date of birth
-                  </label>
+                  <FieldLabel variant="display">Date of birth</FieldLabel>
                   <input
                     className="auth-input"
                     value={formatDate(user.dateOfBirth, { long: true })}
