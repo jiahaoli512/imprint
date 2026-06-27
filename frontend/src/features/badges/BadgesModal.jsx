@@ -21,6 +21,7 @@ export default function BadgesModal({ user, onClose }) {
   const [dir, setDir] = useState(1); // 1 = forward (slide in from right), -1 = back
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState([]); // selected continents; [] = All
+  const [status, setStatus] = useState('all');  // all | unlocked | locked
   const touchX = useRef(null);
 
   // Reset filters whenever the category changes so each opens unfiltered.
@@ -29,6 +30,7 @@ export default function BadgesModal({ user, onClose }) {
     setIndex((next + count) % count);
     setQuery('');
     setSelected([]);
+    setStatus('all');
   };
   const go = (d) => goTo(index + d, d);
 
@@ -51,11 +53,13 @@ export default function BadgesModal({ user, onClose }) {
     ? [...new Set(badges.map((b) => b.continent).filter(Boolean))].sort()
     : [];
   const q = query.trim().toLowerCase();
-  const visible = filterable
-    ? badges.filter((b) =>
-        (selected.length === 0 || selected.includes(b.continent)) &&
-        (!q || b.label.toLowerCase().includes(q)))
-    : badges;
+  const statusOk = (b) => status === 'all' || (status === 'unlocked' ? b.earned : !b.earned);
+  // Status applies to every category; search + continent only when filterable
+  // (their state stays default — empty — for small categories, so it's a no-op).
+  const visible = badges.filter((b) =>
+    statusOk(b) &&
+    (selected.length === 0 || selected.includes(b.continent)) &&
+    (!q || b.label.toLowerCase().includes(q)));
 
   // Toggle a continent. Selecting all of them, or clearing the last one,
   // collapses back to "All" (an empty selection).
@@ -88,35 +92,52 @@ export default function BadgesModal({ user, onClose }) {
         )}
       </div>
 
-      {filterable && (
+      {badges.length > 0 && (
         <div className="badge-filters">
-          <input
-            className="badge-search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${category.title.toLowerCase()}…`}
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            style={isNative ? { fontSize: '16px' } : undefined}
-          />
+          {filterable && (
+            <input
+              className="badge-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search ${category.title.toLowerCase()}…`}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              style={isNative ? { fontSize: '16px' } : undefined}
+            />
+          )}
+          {/* Lock status — shown for every category. */}
           <div className="badge-chips">
-            <button
-              className={`badge-chip ${selected.length === 0 ? 'is-active' : ''}`}
-              onClick={() => setSelected([])}
-            >
-              All
-            </button>
-            {continents.map((c) => (
+            {[['all', 'All'], ['unlocked', 'Unlocked'], ['locked', 'Locked']].map(([val, label]) => (
               <button
-                key={c}
-                className={`badge-chip ${selected.includes(c) ? 'is-active' : ''}`}
-                onClick={() => toggleContinent(c)}
+                key={val}
+                className={`badge-chip ${status === val ? 'is-active' : ''}`}
+                onClick={() => setStatus(val)}
               >
-                {c}
+                {label}
               </button>
             ))}
           </div>
+          {/* Continent filter — only for large categories (Passports). */}
+          {filterable && (
+            <div className="badge-chips">
+              <button
+                className={`badge-chip ${selected.length === 0 ? 'is-active' : ''}`}
+                onClick={() => setSelected([])}
+              >
+                All
+              </button>
+              {continents.map((c) => (
+                <button
+                  key={c}
+                  className={`badge-chip ${selected.includes(c) ? 'is-active' : ''}`}
+                  onClick={() => toggleContinent(c)}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
