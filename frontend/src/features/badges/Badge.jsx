@@ -17,6 +17,7 @@ const CheckMark = () => (
 // new branch here — the rest of the medallion is unchanged.
 function CoinFace({ badge }) {
   if (badge.coin === 'check') return <CheckMark />;
+  if (badge.coin === 'flag') return <span className={`fi fi-${badge.code} badge-flag`} />;
   return (
     <>
       <span className="badge-coin-value">{badge.value}</span>
