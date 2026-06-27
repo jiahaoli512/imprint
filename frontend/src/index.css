@@ -851,7 +851,9 @@ footer {
 .modal-badges {
   position: relative;
   max-width: 720px;
-  max-height: calc(100dvh - 48px);
+  /* Subtract the iOS safe-area insets so a tall modal, when centered, never
+     slips under the status bar / notch (native app). */
+  max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
