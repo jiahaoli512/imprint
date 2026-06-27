@@ -885,6 +885,64 @@ footer {
    shrink); unearned ones are grayed + frozen. */
 .badge-category + .badge-category { margin-top: 32px; }
 
+/* Category carousel header: ‹ title/subtitle › */
+.badge-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.badge-nav-title { flex: 1; min-width: 0; }
+.badge-nav-arrow {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.06s ease;
+}
+.badge-nav-arrow:hover { color: var(--text); background: var(--border); }
+.badge-nav-arrow:active { transform: scale(0.92); }
+
+/* Shown when a category has no badges yet (e.g. Passports). Min-height keeps the
+   modal from collapsing/jumping when paging to an empty category. */
+.badge-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 0 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Position dots for the carousel. */
+.badge-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.badge-dot.is-active { background: var(--accent); transform: scale(1.25); }
+
 .badge-grid {
   display: flex;
   flex-wrap: wrap;
