@@ -893,7 +893,7 @@ footer {
   gap: 14px;
 }
 
-.badge { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 8px; width: 150px; }
+.badge-card { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 8px; width: 150px; }
 
 .badge-medallion {
   position: relative;

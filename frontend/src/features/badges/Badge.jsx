@@ -33,7 +33,7 @@ function CoinFace({ badge }) {
 export default function Badge({ badge }) {
   const { earned } = badge;
   return (
-    <div className="badge">
+    <div className="badge-card">
       <div className={`badge-medallion ${earned ? 'badge-earned' : 'badge-locked'}`}>
         {/* Medal ribbon tails — rendered first so the disc paints over their
             tops, making them appear to hang from behind the coin. Equal length
