@@ -1,9 +1,7 @@
 import { useRef, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { ArrowLeft, User, Pencil, X, Check, List, LayoutDashboard, Award } from 'lucide-react';
-import LogoutButton from '../components/LogoutButton';
-import AdminViewingBadge from '../components/AdminViewingBadge';
+import { User, Pencil, X, Check, Award } from 'lucide-react';
 import Modal from '../components/Modal';
 import Spinner from '../components/Spinner';
 import { getUsername, profileApiFor } from '../api/client';
@@ -13,7 +11,8 @@ import { useAdminView } from '../utils/useAdminView';
 import { useFitText } from '../utils/useFitText';
 import { useUser } from '../features/users/useUser';
 import { useProfileEdit } from '../features/users/useProfileEdit';
-import BadgesModal from '../features/users/BadgesModal';
+import ProfileToolbar from '../features/users/ProfileToolbar';
+import BadgesModal from '../features/badges/BadgesModal';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -31,7 +30,6 @@ const cooldownHint = (wait, cadence) =>
 
 export default function UserProfile() {
   const { username } = useParams();
-  const navigate = useNavigate();
   const isAdminView = useAdminView();
   const isMe = isAdminView || username === getUsername();
   const { getUser, updateUser } = profileApiFor(isAdminView);
@@ -55,43 +53,12 @@ export default function UserProfile() {
   const { nameWait, usernameWait } = edit;
 
   return (
-    <div className="auth-page" style={isAdminView ? { paddingTop: 'calc(80px + env(safe-area-inset-top))' } : {}}>
-      {isAdminView && (
-        <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top))', right: '20px' }}>
-          <AdminViewingBadge username={username} />
-        </div>
-      )}
-      <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top))', left: '20px', display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: 'calc(100vw - 100px)' }}>
-        <button
-          className="btn btn-ghost"
-          onClick={() => {
-            if (isAdminView) navigate(`/admin/${username}/dashboard`);
-            else if (isMe) navigate(`/${username}/dashboard`);
-            else navigate(-1);
-          }}
-        >
-          <ArrowLeft size={16} /> <span className="btn-label">{isAdminView ? `@${username}'s dashboard` : isMe ? 'Dashboard' : 'Back'}</span>
-        </button>
-        {isAdminView && (
-          <>
-            <button className="btn btn-ghost" onClick={() => navigate('/admin/waitlist')}>
-              <List size={15} /> <span className="btn-label">Admin Waitlist</span>
-            </button>
-            <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')}>
-              <LayoutDashboard size={15} /> <span className="btn-label">Admin Dashboard</span>
-            </button>
-            <LogoutButton admin />
-          </>
-        )}
-      </div>
+    <div className={`auth-page${isAdminView ? ' profile-page-admin' : ''}`}>
+      <ProfileToolbar username={username} isAdminView={isAdminView} isMe={isMe} />
 
-      <div className="auth-card" style={{ gap: '0' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '8px 0 32px', width: '100%' }}>
-          <div style={{
-            width: '72px', height: '72px', borderRadius: '50%',
-            background: 'var(--surface2)', border: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
+      <div className="auth-card profile-card">
+        <div className="profile-header">
+          <div className="profile-avatar">
             <User size={32} color="var(--muted)" />
           </div>
 
@@ -179,15 +146,11 @@ export default function UserProfile() {
           ) : (
             <>
               {displayName && (
-                <h1 ref={nameRef} style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>
-                  {displayName}
-                </h1>
+                <h1 ref={nameRef} className="profile-name">{displayName}</h1>
               )}
-              <p style={{ margin: 0, fontSize: '15px', color: 'var(--accent)', fontWeight: '600' }}>
-                @{user.username}
-              </p>
+              <p className="profile-handle">@{user.username}</p>
               {isMe && (
-                <button className="btn btn-ghost" style={{ marginTop: '4px' }} onClick={edit.start}>
+                <button className="btn btn-ghost profile-edit-btn" onClick={edit.start}>
                   <Pencil size={14} /> Edit Profile
                 </button>
               )}
@@ -195,14 +158,14 @@ export default function UserProfile() {
           )}
         </div>
 
-        <div style={{ height: '1px', background: 'var(--border)', margin: '0 -40px' }} />
+        <div className="profile-divider" />
 
-        <div style={{ paddingTop: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Member since:</span>
-            <span style={{ fontSize: '13px', fontWeight: '600' }}>{joined}</span>
+        <div className="profile-info">
+          <div className="profile-info-row">
+            <span className="profile-info-label">Member since:</span>
+            <span className="profile-info-value">{joined}</span>
           </div>
-          <button className="btn btn-ghost" style={{ alignSelf: 'center' }} onClick={() => setShowBadges(true)}>
+          <button className="btn btn-ghost profile-badges-btn" onClick={() => setShowBadges(true)}>
             <Award size={15} /> Badges
           </button>
         </div>

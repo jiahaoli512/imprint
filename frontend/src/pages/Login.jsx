@@ -5,40 +5,31 @@ import AuthShell from '../components/AuthShell';
 import { api, setUsername, setToken, clearAdminSession } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
 import { refreshGreeting } from '../utils/greeting';
+import { useForm } from '../utils/useForm';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
-    if (!isValidEmail(email)) {
-      setError('Enter a valid email address.');
-      return;
+  const { values, setField, error, submitting, handleSubmit } = useForm(
+    { email: '', password: '' },
+    {
+      validate: ({ email }) => (isValidEmail(email) ? '' : 'Enter a valid email address.'),
+      onSubmit: async ({ email, password }) => {
+        const normalized = email.trim().toLowerCase();
+        const data = await api.login({ email: normalized, password });
+        clearAdminSession(); // a user session is mutually exclusive with admin
+        refreshGreeting();   // new random dashboard greeting per login
+        if (data.token) setToken(data.token);
+        if (data.username) {
+          setUsername(data.username);
+          navigate(`/${data.username}/dashboard`);
+        } else {
+          navigate('/login/profile', { state: { email: normalized } });
+        }
+      },
     }
-    setLoading(true);
-    try {
-      const data = await api.login({ email: email.trim().toLowerCase(), password });
-      clearAdminSession(); // a user session is mutually exclusive with admin
-      refreshGreeting();   // new random dashboard greeting per login
-      if (data.token) setToken(data.token);
-      if (data.username) {
-        setUsername(data.username);
-        navigate(`/${data.username}/dashboard`);
-      } else {
-        navigate('/login/profile', { state: { email: email.trim().toLowerCase() } });
-      }
-    } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
+  );
 
   return (
     <AuthShell onBack={() => navigate('/home')}>
@@ -50,8 +41,8 @@ export default function Login() {
                 type="email"
                 className="auth-input"
                 placeholder="Email address"
-                value={email}
-                onChange={e => { setEmail(e.target.value); setError(''); }}
+                value={values.email}
+                onChange={setField('email')}
                 autoComplete="email"
               />
               <div className="auth-input-wrap">
@@ -59,8 +50,8 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   className="auth-input"
                   placeholder="Password"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError(''); }}
+                  value={values.password}
+                  onChange={setField('password')}
                   autoComplete="current-password"
                 />
                 <button type="button" className="auth-eye" onClick={() => setShowPassword(s => !s)}>
@@ -71,9 +62,9 @@ export default function Login() {
               <button
                 type="submit"
                 className="btn btn-primary auth-submit"
-                disabled={loading || !email || !password}
+                disabled={submitting || !values.email || !values.password}
               >
-                {loading ? 'Logging in…' : 'Log In'}
+                {submitting ? 'Logging in…' : 'Log In'}
               </button>
             </form>
             <p className="auth-switch">

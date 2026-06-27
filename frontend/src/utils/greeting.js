@@ -15,16 +15,16 @@ const GREETINGS = [
   'Greetings'
 ];
 
-const KEY = 'imprint_greeting';
+import { getStoredGreeting, setStoredGreeting } from '../api/client';
 
 // Pick a fresh random greeting and remember it for this session. Call on login.
 export function refreshGreeting() {
   const g = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-  sessionStorage.setItem(KEY, g);
+  setStoredGreeting(g);
   return g;
 }
 
 // The greeting chosen for this session (rolls one if none has been set yet).
 export function getGreeting() {
-  return sessionStorage.getItem(KEY) || refreshGreeting();
+  return getStoredGreeting() || refreshGreeting();
 }

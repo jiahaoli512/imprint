@@ -3,38 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import AuthShell from '../components/AuthShell';
 import { api } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
+import { useForm } from '../utils/useForm';
 
 // Public contact form — collects name, email, and feedback, then sends it to
 // the Imprint inbox via the backend (/api/contact → Brevo).
 export default function Contact() {
   const navigate = useNavigate();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [feedback, setFeedback] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
-    if (!firstName.trim() || !lastName.trim()) { setError('Please enter your first and last name.'); return; }
-    if (!isValidEmail(email)) { setError('Please enter a valid email address.'); return; }
-    if (!feedback.trim()) { setError('Please enter your feedback.'); return; }
-
-    setLoading(true);
-    try {
-      await api.sendContact({ firstName, lastName, email, feedback });
-      setSent(true);
-    } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
+  const { values, setField, error, submitting, handleSubmit } = useForm(
+    { firstName: '', lastName: '', email: '', feedback: '' },
+    {
+      validate: ({ firstName, lastName, email, feedback }) => {
+        if (!firstName.trim() || !lastName.trim()) return 'Please enter your first and last name.';
+        if (!isValidEmail(email)) return 'Please enter a valid email address.';
+        if (!feedback.trim()) return 'Please enter your feedback.';
+        return '';
+      },
+      onSubmit: async (v) => { await api.sendContact(v); setSent(true); },
     }
-  }
+  );
 
   return (
     <AuthShell onBack={() => navigate(-1)} logoText={false}>
@@ -54,41 +44,41 @@ export default function Contact() {
               <input
                 className="auth-input"
                 placeholder="First name"
-                value={firstName}
+                value={values.firstName}
                 maxLength={50}
-                onChange={(e) => { setFirstName(e.target.value); setError(''); }}
-                disabled={loading}
+                onChange={setField('firstName')}
+                disabled={submitting}
               />
               <input
                 className="auth-input"
                 placeholder="Last name"
-                value={lastName}
+                value={values.lastName}
                 maxLength={50}
-                onChange={(e) => { setLastName(e.target.value); setError(''); }}
-                disabled={loading}
+                onChange={setField('lastName')}
+                disabled={submitting}
               />
               <input
                 className="auth-input"
                 type="email"
                 placeholder="Email address"
-                value={email}
+                value={values.email}
                 maxLength={254}
-                onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                disabled={loading}
+                onChange={setField('email')}
+                disabled={submitting}
               />
               <textarea
                 className="auth-input"
                 placeholder="Your feedback"
-                value={feedback}
+                value={values.feedback}
                 maxLength={5000}
-                onChange={(e) => { setFeedback(e.target.value); setError(''); }}
-                disabled={loading}
+                onChange={setField('feedback')}
+                disabled={submitting}
                 rows={5}
                 style={{ resize: 'vertical', minHeight: '120px' }}
               />
               {error && <p className="auth-error">{error}</p>}
-              <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
-                {loading ? 'Sending…' : 'Submit'}
+              <button type="submit" className="btn btn-primary auth-submit" disabled={submitting}>
+                {submitting ? 'Sending…' : 'Submit'}
               </button>
             </form>
           </>

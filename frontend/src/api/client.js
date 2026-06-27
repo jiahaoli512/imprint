@@ -15,6 +15,11 @@ export const clearSession = () => {
 export const getStoredMapQuality = () => localStorage.getItem('imprint_map_quality');
 export const setStoredMapQuality = (q) => localStorage.setItem('imprint_map_quality', q);
 
+// Per-session dashboard greeting (rolled on login). The greeting copy + rotation
+// live in utils/greeting.js; storage access stays here per the convention.
+export const getStoredGreeting = () => sessionStorage.getItem('imprint_greeting');
+export const setStoredGreeting = (g) => sessionStorage.setItem('imprint_greeting', g);
+
 export const getAdminToken = () => sessionStorage.getItem('admin_token');
 // Setting the token also marks the admin session active — the two always go
 // together, so callers never touch the raw 'admin_auth' flag themselves.

@@ -110,10 +110,17 @@ async function searchUsers(q) {
   return User.find({ username: { $regex: `^${clean}` } }, SEARCH_FIELDS).limit(8);
 }
 
-async function getUserByUsername(username) {
-  const user = await User.findOne({ username: normalizeUsername(username) }, PROFILE_FIELDS);
+// Normalizes the username and loads the user (optionally projected to `fields`),
+// throwing a 404 if none exists. Centralizes the lookup so callers can't forget
+// to normalize before querying (Mongoose only lowercases on save, not on query).
+async function findUserByUsername(username, fields) {
+  const user = await User.findOne({ username: normalizeUsername(username) }, fields);
   if (!user) throw httpError(404, 'User not found.');
   return user;
+}
+
+async function getUserByUsername(username) {
+  return findUserByUsername(username, PROFILE_FIELDS);
 }
 
 // Returns a profile shaped for a given viewer: date of birth is private, so it's
@@ -134,8 +141,7 @@ async function getProfileFor(username, { viewerId = null, isAdmin = false } = {}
 // admins bypass the cooldown and never write the stamps (so they don't affect a
 // user's own limit).
 async function updateUserByUsername(username, { firstName, lastName, username: newUsername }, { viewerId = null, isAdmin = false } = {}) {
-  const user = await User.findOne({ username: normalizeUsername(username) });
-  if (!user) throw httpError(404, 'User not found.');
+  const user = await findUserByUsername(username);
 
   // Users may only edit their own profile; admins may edit any.
   if (!isAdmin && user._id.toString() !== viewerId) throw httpError(403, 'Forbidden');

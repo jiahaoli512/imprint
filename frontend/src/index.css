@@ -879,17 +879,85 @@ footer {
 .modal-close-x:hover { color: var(--text); background: var(--border); }
 .modal-close-x:active { transform: scale(0.92); }
 
-/* Account-milestone badge animations (ported from account_milestone.html).
-   Earned badges breathe (grow then shrink); unearned ones are grayed + frozen. */
+/* Badge medallions (ported from the account-milestone bundles). Structural
+   styling lives here; only per-badge colors/animation-timing are inline, since
+   those are data (see features/badges). Earned badges breathe (grow then
+   shrink); unearned ones are grayed + frozen. */
+.badge-category + .badge-category { margin-top: 32px; }
+
+.badge-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.badge { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 8px; width: 150px; }
+
+.badge-medallion {
+  position: relative;
+  width: 138px;
+  height: 138px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .badge-earned { animation: badgeBreathe 3s ease-in-out infinite; }
 .badge-locked { filter: grayscale(1) brightness(0.7) opacity(0.45); }
 .badge-locked * { animation: none !important; }
+
+.badge-halo {
+  position: absolute;
+  inset: -16px;
+  border-radius: 50%;
+  animation: badgeHaloPulse 3.4s ease-in-out infinite;
+}
+.badge-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 3px;
+  -webkit-mask: radial-gradient(#000 0 0) content-box, radial-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.badge-disc {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, var(--surface2) 0%, #141821 72%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(244,239,230,0.06), inset 0 2px 14px rgba(0,0,0,0.5), 0 14px 38px rgba(0,0,0,0.5);
+}
+.badge-coin {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.28);
+}
+.badge-coin-value { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1; color: var(--bg); }
+.badge-coin-unit { font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(11,14,19,0.72); }
+.badge-sparkle { position: absolute; top: 4px; right: 10px; width: 11px; height: 11px; }
+.badge-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+
+.badge-text { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; }
+.badge-label { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--text); }
+.badge-label.is-locked { color: var(--muted); }
+.badge-caption { font-size: 12px; line-height: 1.45; color: var(--muted); max-width: 130px; }
 
 @keyframes badgeBreathe {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.09); }
 }
-
 @keyframes badgeHaloPulse {
   0%, 100% { opacity: 0.6; transform: scale(0.95); }
   50%      { opacity: 1;   transform: scale(1.05); }
@@ -901,6 +969,42 @@ footer {
   0%, 100% { opacity: 0.3; transform: scale(0.8); }
   50%      { opacity: 1;   transform: scale(1.2); }
 }
+
+/* User profile page — fixed top controls + card layout (extracted from inline
+   styles in UserProfile.jsx / ProfileToolbar.jsx). */
+.profile-page-admin { padding-top: calc(80px + env(safe-area-inset-top)); }
+.profile-admin-badge { position: fixed; top: calc(16px + env(safe-area-inset-top)); right: 20px; }
+.profile-toolbar {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 20px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 100px);
+}
+
+.profile-card { gap: 0; }
+.profile-header { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 8px 0 32px; width: 100%; }
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-name { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
+.profile-handle { margin: 0; font-size: 15px; color: var(--accent); font-weight: 600; }
+.profile-edit-btn { margin-top: 4px; }
+.profile-divider { height: 1px; background: var(--border); margin: 0 -40px; }
+.profile-info { padding-top: 28px; display: flex; flex-direction: column; gap: 16px; }
+.profile-info-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.profile-info-label { font-size: 13px; color: var(--muted); }
+.profile-info-value { font-size: 13px; font-weight: 600; }
+.profile-badges-btn { align-self: center; }
 
 .modal-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 8px; }
 .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }

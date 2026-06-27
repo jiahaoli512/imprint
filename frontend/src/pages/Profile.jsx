@@ -6,23 +6,31 @@ import { api, setUsername as saveUsername } from '../api/client';
 import { validateName, USERNAME_RE } from '../utils/validateName';
 import { useDebouncedCallback } from '../utils/useDebouncedCallback';
 import { refreshGreeting } from '../utils/greeting';
+import { useForm } from '../utils/useForm';
 
 const maxDob = new Date();
 maxDob.setFullYear(maxDob.getFullYear() - 18);
 const MAX_DOB = maxDob.toISOString().split('T')[0];
+
+// mirrors ageFromDob() in userService.js — keep in sync if the threshold changes
+function ageOk(dobStr) {
+  if (!dobStr) return false;
+  const today = new Date();
+  const birth = new Date(dobStr);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age >= 18;
+}
 
 export default function Profile() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const email = state?.email;
 
-  const [firstName, setFirstName]           = useState('');
-  const [lastName, setLastName]             = useState('');
-  const [username, setUsername]             = useState('');
+  // Live username availability is separate from the plain form fields: it's
+  // debounced and reflects a server check, so it stays outside useForm.
   const [usernameStatus, setUsernameStatus] = useState('idle'); // idle | checking | available | taken | invalid
-  const [dob, setDob]                       = useState('');
-  const [loading, setLoading]               = useState(false);
-  const [error, setError]                   = useState('');
 
   const debouncedCheck = useDebouncedCallback(async (clean) => {
     try {
@@ -33,6 +41,31 @@ export default function Profile() {
     }
   }, 500);
 
+  const { values, setValues, setField, error, setError, submitting, handleSubmit } = useForm(
+    { firstName: '', lastName: '', username: '', dob: '' },
+    {
+      validate: ({ firstName, lastName, username, dob }) => {
+        if (!firstName.trim()) return 'Please enter your first name.';
+        const nameError = validateName(firstName, lastName);
+        if (nameError) return nameError;
+        if (!USERNAME_RE.test(username)) return 'Username must be 3–20 characters: letters, numbers, underscores.';
+        if (usernameStatus === 'taken') return 'That username is already taken.';
+        if (usernameStatus === 'checking') return 'Still checking username — please wait a moment.';
+        if (!dob) return 'Please enter your date of birth.';
+        const dobYear = new Date(dob).getFullYear();
+        if (dobYear < 1000 || dobYear > 9999) return 'Please enter a valid 4-digit birth year.';
+        if (!ageOk(dob)) return 'You must be at least 18 years old to use Imprint.';
+        return '';
+      },
+      onSubmit: async ({ firstName, lastName, username, dob }) => {
+        const data = await api.setupProfile({ email, firstName, lastName, username, dateOfBirth: dob });
+        saveUsername(data.username);
+        refreshGreeting();
+        navigate(`/${data.username}/dashboard`);
+      },
+    }
+  );
+
   if (!email) {
     navigate('/login', { replace: true });
     return null;
@@ -40,7 +73,7 @@ export default function Profile() {
 
   function handleUsernameChange(val) {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, '');
-    setUsername(clean);
+    setValues(v => ({ ...v, username: clean }));
     setError('');
 
     if (!clean) { debouncedCheck.cancel(); setUsernameStatus('idle'); return; }
@@ -50,48 +83,10 @@ export default function Profile() {
     debouncedCheck(clean);
   }
 
-  // mirrors ageFromDob() in userService.js — keep in sync if the threshold changes
-  function ageOk(dobStr) {
-    if (!dobStr) return false;
-    const today = new Date();
-    const birth = new Date(dobStr);
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    return age >= 18;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!firstName.trim()) { setError('Please enter your first name.'); return; }
-    const nameError = validateName(firstName, lastName);
-    if (nameError) { setError(nameError); return; }
-    if (!USERNAME_RE.test(username)) { setError('Username must be 3–20 characters: letters, numbers, underscores.'); return; }
-    if (usernameStatus === 'taken') { setError('That username is already taken.'); return; }
-    if (usernameStatus === 'checking') { setError('Still checking username — please wait a moment.'); return; }
-    if (!dob) { setError('Please enter your date of birth.'); return; }
-    const dobYear = new Date(dob).getFullYear();
-    if (dobYear < 1000 || dobYear > 9999) { setError('Please enter a valid 4-digit birth year.'); return; }
-    if (!ageOk(dob)) { setError('You must be at least 18 years old to use Imprint.'); return; }
-
-    setLoading(true);
-    setError('');
-    try {
-      const data = await api.setupProfile({ email, firstName, lastName, username, dateOfBirth: dob });
-      saveUsername(data.username);
-      refreshGreeting();
-      navigate(`/${data.username}/dashboard`);
-    } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   const canSubmit =
-    firstName.trim() &&
+    values.firstName.trim() &&
     usernameStatus === 'available' &&
-    dob && ageOk(dob);
+    values.dob && ageOk(values.dob);
 
   return (
     <AuthShell>
@@ -103,18 +98,18 @@ export default function Profile() {
             type="text"
             className="auth-input"
             placeholder="First name"
-            value={firstName}
+            value={values.firstName}
             maxLength={50}
-            onChange={e => { setFirstName(e.target.value); setError(''); }}
+            onChange={setField('firstName')}
             autoComplete="given-name"
           />
           <input
             type="text"
             className="auth-input"
             placeholder="Last name (optional)"
-            value={lastName}
+            value={values.lastName}
             maxLength={50}
-            onChange={e => { setLastName(e.target.value); setError(''); }}
+            onChange={setField('lastName')}
             autoComplete="family-name"
           />
 
@@ -123,7 +118,7 @@ export default function Profile() {
               type="text"
               className="auth-input"
               placeholder="Username"
-              value={username}
+              value={values.username}
               onChange={e => handleUsernameChange(e.target.value)}
               autoComplete="username"
               style={{ paddingRight: '40px' }}
@@ -146,9 +141,9 @@ export default function Profile() {
             <input
               type="date"
               className="auth-input"
-              value={dob}
+              value={values.dob}
               max={MAX_DOB}
-              onChange={e => { setDob(e.target.value); setError(''); }}
+              onChange={setField('dob')}
             />
           </div>
 
@@ -157,9 +152,9 @@ export default function Profile() {
           <button
             type="submit"
             className="btn btn-primary auth-submit"
-            disabled={loading || !canSubmit}
+            disabled={submitting || !canSubmit}
           >
-            {loading ? 'Saving…' : 'Continue'}
+            {submitting ? 'Saving…' : 'Continue'}
           </button>
         </form>
     </AuthShell>
