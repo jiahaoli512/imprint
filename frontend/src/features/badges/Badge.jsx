@@ -35,6 +35,13 @@ export default function Badge({ badge }) {
   return (
     <div className="badge">
       <div className={`badge-medallion ${earned ? 'badge-earned' : 'badge-locked'}`}>
+        {/* Medal ribbon tails — rendered first so the disc paints over their
+            tops, making them appear to hang from behind the coin. Equal length
+            for every badge (fixed CSS size); colored to match the badge. */}
+        <div className="badge-ribbon">
+          <span className="badge-tail" style={{ background: badge.c1 }} />
+          <span className="badge-tail" style={{ background: badge.c2 }} />
+        </div>
         <div className="badge-halo" style={{ background: `radial-gradient(circle, ${badge.halo} 0%, transparent 65%)` }} />
         <div
           className="badge-ring"

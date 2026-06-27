@@ -902,8 +902,28 @@ footer {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 22px; /* room for the ribbon tails that overhang the bottom */
 }
 .badge-earned { animation: badgeBreathe 3s ease-in-out infinite; }
+
+/* Medal ribbon: two equal-length tails tucked behind the coin (the disc, painted
+   later, hides their tops). Fixed size → identical length on every badge; color
+   is set inline per badge. */
+.badge-ribbon {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+}
+.badge-tail {
+  width: 16px;
+  height: 48px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+.badge-tail:first-child { transform: rotate(-13deg); transform-origin: top center; margin-right: -3px; }
+.badge-tail:last-child  { transform: rotate(13deg);  transform-origin: top center; margin-left: -3px; }
 .badge-locked { filter: grayscale(1) brightness(0.7) opacity(0.45); }
 .badge-locked * { animation: none !important; }
 
