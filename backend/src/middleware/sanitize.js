@@ -3,6 +3,12 @@
 // from the request body. Express 5's default query parser does not parse
 // bracket notation into nested objects, and route params are always strings,
 // so the JSON body is the realistic injection surface.
+//
+// Also drops the prototype-pollution keys (__proto__/constructor/prototype) as
+// defense-in-depth — not exploitable today (JSON.parse yields own properties and
+// Mongoose casts to schema), but cheap insurance against a future sink.
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function scrub(value) {
   if (!value || typeof value !== 'object') return;
   if (Array.isArray(value)) {
@@ -10,7 +16,7 @@ function scrub(value) {
     return;
   }
   for (const key of Object.keys(value)) {
-    if (key.startsWith('$') || key.includes('.')) {
+    if (key.startsWith('$') || key.includes('.') || FORBIDDEN_KEYS.has(key)) {
       delete value[key];
     } else {
       scrub(value[key]);

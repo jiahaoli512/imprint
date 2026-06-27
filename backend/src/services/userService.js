@@ -59,7 +59,9 @@ async function loginUser(email, password) {
   if (typeof email !== 'string' || typeof password !== 'string')
     throw httpError(401, 'Invalid email or password.');
 
-  const user = await User.findOne({ email: normalizeEmail(email) });
+  // passwordHash is select:false, so opt it back in here (the only place that
+  // needs it).
+  const user = await User.findOne({ email: normalizeEmail(email) }).select('+passwordHash');
   // Always run a compare (real hash, or the dummy) so timing doesn't leak
   // account existence.
   const match = await bcrypt.compare(password, user ? user.passwordHash : DUMMY_HASH);

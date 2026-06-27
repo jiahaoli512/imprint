@@ -4,7 +4,10 @@ const { LIMITS } = require('../utils/validate');
 const userSchema = new Schema(
   {
     email:        { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: LIMITS.email },
-    passwordHash: { type: String, required: true },
+    // select:false so the hash is excluded from queries by default — a query
+    // that forgets an explicit projection can't accidentally leak it. The only
+    // reader (loginUser) opts back in with .select('+passwordHash').
+    passwordHash: { type: String, required: true, select: false },
     firstName:    { type: String, trim: true, default: '', maxlength: LIMITS.firstName },
     lastName:     { type: String, trim: true, default: '', maxlength: LIMITS.lastName },
     username:     { type: String, trim: true, lowercase: true, unique: true, sparse: true, maxlength: LIMITS.username },
