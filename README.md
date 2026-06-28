@@ -1,4 +1,4 @@
-# Imprint (v2.3) *Updated Jun 22, 2026*
+# Imprint (v2.4) *Updated Jun 27, 2026*
 
 How much of the world have you seen?
 
@@ -8,7 +8,7 @@ Imprint maps every place you've ever been - turning your travels into a living p
 
 ## Stack
 
-- **Frontend** — React + Vite, React Router, React‑Leaflet (maps), lucide‑react (icons)
+- **Frontend** — React + Vite, React Router, React‑Leaflet (maps), lucide‑react (icons), flag‑icons (country/state flags)
 - **Mobile** — iOS app via Capacitor 7 (wraps the web build); background location via `@capacitor-community/background-geolocation`
 - **Backend** — Node.js + Express 5, structured into routes → services → models
 - **Database** — MongoDB via Mongoose
@@ -27,6 +27,7 @@ Imprint maps every place you've ever been - turning your travels into a living p
 - **Locate me** — a one‑shot "where am I" control (web and mobile) that drops a blue location circle and flies to street‑level zoom
 - **Enlarge map** — a web‑only toggle that grows the map to fill the content area (header/footer untouched)
 - **Passive tracking (mobile)** — opt‑in background location that records a point roughly every 100 m of movement and passively builds your map; new places become markers, thinned to a sparse 100 m trail rather than a continuous tube. On the web a static notice explains it's mobile‑only.
+- **Badges** — an achievement gallery on every profile (opened from a "Badges" button), organised into swipeable categories with a slide animation, position dots, and a per‑category earned count + percentage. Categories: **Account milestones** (animated medallions awarded by account age — Account Created → One Year, computed client‑side from `createdAt`), **Passports** (a flag medallion per country, tinted by continent), and **Passports (United States)** (the 50 states + D.C. with a red/white/blue theme). Large categories get a name search; Passports adds a multi‑select continent filter; all categories share an Unlocked / Locked / All status filter. Earned badges animate (breathe, spinning ring, sparkle, ribbon tails); locked ones are grayed. Long names truncate, and a scroll‑to‑top button appears on long lists. Mobile compacts the grid to ~3 per row.
 - **Public profiles & search** — look up other users by username and view their profiles (signed‑in users only)
 - **Admin dashboard** — password‑protected (server‑side) panel to manage the waitlist and edit any user's map/profile
 - **Privacy Policy & Contact** — a `/privacy` policy page and a `/contact` form that emails the Imprint inbox, both linked from the footer
@@ -46,7 +47,7 @@ frontend/
   src/
     pages/         # route components (Home, Login, Signup, Profile, Dashboard,
                    #   AdminDashboard, Admin, UserProfile, PrivacyPolicy, Contact, ...)
-    components/    # shared UI (AuthShell, Modal, LogoMark, LogoutModal,
+    components/    # shared UI (AuthShell, Modal, LogoMark, FieldLabel, LogoutModal,
                    #   AdminLoginModal, ConfirmModal, Spinner, Footer, Nav, ...)
     auth/          # route guards
     features/map/      # Leaflet map (MapView, MapCard, useMarkers, mapUtils),
@@ -54,9 +55,14 @@ frontend/
                        #   render quality (mapQuality, MapQualityModal)
     features/location/ # geolocation + passive tracking (useGeolocation,
                        #   backgroundTracking, LocationTrackingPanel, WebTrackingNotice)
-    features/users/    # user search
+    features/users/    # user search, useUser/useProfileEdit, ProfileToolbar
+    features/badges/   # badges modal + carousel (BadgesModal, Badge) and a
+                       #   category registry (categories/: accountAge, countries,
+                       #   statesUS) — add a category = a new file + one line
     features/admin/    # waitlist + users tables and their hooks
-    utils/         # validateName, fullName, matchesQuery, formatDate, retry, hooks
+    utils/         # validateName, fullName, matchesQuery, formatDate, retry,
+                   #   useForm, hooks
+    assets/        # static assets (state-flags/ — US state/territory SVGs)
     api/client.js  # single API layer + session/token helpers
   ios/             # Capacitor iOS project
 ```
@@ -144,7 +150,8 @@ The backend enforces security server‑side (not just in the UI):
 - **CORS allowlist** — restricted to known origins (configurable via `ALLOWED_ORIGINS`), plus localhost (dev), `capacitor://localhost` (iOS), and this project's Vercel deploys (matched by project slug — not any `*.vercel.app`)
 - **Security headers** — Helmet, with JSON body-size caps (100 kb globally; a larger 4 MB limit only on the marker‑save routes, which carry the full points array)
 - **Input validation** — length limits, name character rules, email‑format checks, a 4‑digit DOB/18+ check, and a password policy (≥12 chars with mixed character classes) all enforced server‑side
-- **NoSQL injection hardening** — request bodies are scrubbed of Mongo operators (`$…`) and dotted keys; query values are normalized to strings
+- **NoSQL injection hardening** — request bodies are scrubbed of Mongo operators (`$…`), dotted keys, and prototype‑pollution keys (`__proto__`/`constructor`/`prototype`); query values are normalized to strings
+- **Credential exposure** — the bcrypt `passwordHash` is `select: false`, so it's excluded from queries by default and only the login path opts it in
 - **CSV‑injection‑safe export** — the waitlist CSV escapes quotes and neutralizes formula triggers (`= + - @`)
 - **Email‑enumeration hardening** — the public waitlist check collapses to `approved` / `unavailable`, and the join endpoint gives one indistinguishable response for already‑registered vs. already‑waitlisted, so neither reveals whether an email has an account; login timing is equalized for the same reason
 - **Privacy** — date of birth is returned only to the profile owner or an admin; secrets live in `backend/.env` (gitignored)
