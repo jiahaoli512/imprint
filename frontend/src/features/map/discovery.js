@@ -183,7 +183,12 @@ export async function fetchRegionGeometry(lat, lng, level) {
     return { name: continent, geometry: null, bbox: CONTINENT_BBOX[continent], areaM2: STATIC_AREA_KM2[continent] * 1e6 };
   }
 
-  const key = `${level}:${lat.toFixed(2)}:${lng.toFixed(2)}`;
+  // City boundaries are small, so a ~1.1km (2-decimal) cell straddles them and
+  // would reuse a neighbouring city's polygon across a border. Key city level to
+  // ~110m (3 decimals) so crossing into the next city refetches the right region;
+  // coarser levels keep the cheaper 2-decimal cell.
+  const prec = level === 'city' ? 3 : 2;
+  const key = `${level}:${lat.toFixed(prec)}:${lng.toFixed(prec)}`;
   if (geometryCache.has(key)) return geometryCache.get(key);
 
   const zoom = LEVEL_NOMINATIM_ZOOM[level];

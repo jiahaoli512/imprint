@@ -18,8 +18,10 @@ export default function DiscoveryPanel({ region, status, percent = 0, level }) {
   // Show "<0.1%" for positive-but-tiny coverage rather than a flat "0%".
   const pctLabel = percent > 0 && percent < 0.1 ? '<0.1%' : `${Math.round(percent * 10) / 10}%`;
   const dashoffset = C * (1 - Math.min(percent, 100) / 100);
-  // The place name mirrors the toolbar's region label (RegionDetector now names
-  // oceans/continents over water too), so the panel and the label always agree.
+  // `region` is the name of the region the percentage was computed for (the
+  // resolved discovery region; falls back to the toolbar label before the first
+  // settle), so the name and the % always describe the same place and update
+  // together rather than the label leading the number near a border.
   const name = region || (level === 'earth' ? 'Earth' : '—');
 
   return (

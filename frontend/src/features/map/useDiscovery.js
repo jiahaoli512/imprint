@@ -7,7 +7,7 @@ import { getLevel, fetchRegionGeometry, computeDiscovery } from './discovery';
 // region boundary and compute the discovered-cell percentage for `markers`.
 // Recomputes when the markers change (e.g. admin switches users / late load).
 export function useDiscovery(markers) {
-  const [state, setState] = useState({ status: 'idle', percent: 0, level: '', discoveredCells: 0 });
+  const [state, setState] = useState({ status: 'idle', percent: 0, level: '', name: '', discoveredCells: 0 });
   const lastSettle = useRef(null); // { lat, lng, zoom }
   const reqId = useRef(0);         // guards against out-of-order async results
   const markersRef = useRef(markers);
@@ -26,7 +26,9 @@ export function useDiscovery(markers) {
       if (id !== reqId.current) return; // a newer settle superseded this one
       // The region may override the zoom-derived level (e.g. open water → 'ocean').
       const resolvedLevel = region.level || level;
-      setState({ status: 'ready', percent, level: resolvedLevel, discoveredCells, regionAreaKm2 });
+      // Carry the resolved region name so the panel's label and % update together
+      // (and always describe the same region) rather than the label leading it.
+      setState({ status: 'ready', percent, level: resolvedLevel, name: region.name, discoveredCells, regionAreaKm2 });
     } catch {
       if (id !== reqId.current) return;
       setState((s) => ({ ...s, status: 'error' }));

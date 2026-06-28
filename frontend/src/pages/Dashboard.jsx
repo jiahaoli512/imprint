@@ -118,7 +118,7 @@ export default function Dashboard() {
             </div>
             {showDiscovery && (
               <DiscoveryPanel
-                region={region}
+                region={discovery.name || region}
                 status={discovery.status}
                 percent={discovery.percent}
                 level={discovery.level}
