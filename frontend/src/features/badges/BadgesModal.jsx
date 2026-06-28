@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import Modal from '../../components/Modal';
 import Badge from './Badge';
 import { BADGE_CATEGORIES } from './categories';
+import { useVisitedStates } from './useVisitedStates';
 
 const SWIPE_THRESHOLD = 50; // px of horizontal drag before a swipe registers
 const FILTERABLE_MIN = 12;  // show search + continent filter past this many badges
@@ -14,8 +15,7 @@ const isNative = Capacitor.isNativePlatform();
 // position. Each change slides the content in from the direction of travel. Large
 // categories (e.g. Passports) get a name search + continent filter. Generic over
 // the registry — adding a category is a new file + a line in ./categories.
-export default function BadgesModal({ user, onClose }) {
-  const ctx = { user };
+export default function BadgesModal({ user, markers, onClose }) {
   const count = BADGE_CATEGORIES.length;
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1); // 1 = forward (slide in from right), -1 = back
@@ -25,6 +25,12 @@ export default function BadgesModal({ user, onClose }) {
   const [showTop, setShowTop] = useState(false); // scroll-to-top affordance
   const touchX = useRef(null);
   const scrollRef = useRef(null);
+
+  const category = BADGE_CATEGORIES[index];
+  // Defer the (lazy, heavier) visited-state computation until the US-states
+  // category is open; the hook keeps the resolved set after you navigate away.
+  const visitedStates = useVisitedStates(markers, category.id === 'states-us');
+  const ctx = { user, markers, visitedStates };
 
   // Toggle the scroll-to-top button once the modal is scrolled past the header.
   useEffect(() => {
@@ -55,7 +61,6 @@ export default function BadgesModal({ user, onClose }) {
     touchX.current = null;
   };
 
-  const category = BADGE_CATEGORIES[index];
   const badges = category.getBadges(ctx);
   const earnedCount = badges.filter((b) => b.earned).length;
   const earnedPct = badges.length ? Math.round((earnedCount / badges.length) * 100) : 0;

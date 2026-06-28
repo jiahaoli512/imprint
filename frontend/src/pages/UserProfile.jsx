@@ -1,11 +1,12 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { User, Pencil, X, Check, Award } from 'lucide-react';
 import Modal from '../components/Modal';
 import Spinner from '../components/Spinner';
 import FieldLabel from '../components/FieldLabel';
-import { getUsername, profileApiFor } from '../api/client';
+import { getUsername, profileApiFor, markersApiFor } from '../api/client';
+import { retry } from '../utils/retry';
 import { formatDate } from '../utils/formatDate';
 import { fullName } from '../utils/fullName';
 import { useAdminView } from '../utils/useAdminView';
@@ -32,6 +33,18 @@ export default function UserProfile() {
   const edit = useProfileEdit({ user, setUser, username, isAdminView, updateUser });
 
   const [showBadges, setShowBadges] = useState(false);
+  // Lazily load this profile's markers the first time the badges modal opens —
+  // they drive the visited-state (US passports) unlocks.
+  const [badgeMarkers, setBadgeMarkers] = useState(null);
+  useEffect(() => {
+    if (!showBadges || badgeMarkers) return;
+    let alive = true;
+    const { load } = markersApiFor(isAdminView, username);
+    retry(() => Promise.resolve(load()))
+      .then((d) => { if (alive) setBadgeMarkers(Array.isArray(d) ? d : []); })
+      .catch(() => { if (alive) setBadgeMarkers([]); });
+    return () => { alive = false; };
+  }, [showBadges, badgeMarkers, isAdminView, username]);
 
   // Shrink an over-long name to fit one line — mobile app only.
   const nameRef = useRef(null);
@@ -158,7 +171,7 @@ export default function UserProfile() {
           </button>
         </div>
       </div>
-      {showBadges && <BadgesModal user={user} onClose={() => setShowBadges(false)} />}
+      {showBadges && <BadgesModal user={user} markers={badgeMarkers} onClose={() => setShowBadges(false)} />}
       {edit.pendingSave && (
         <Modal onClose={edit.closePending}>
           <h2 className="modal-title">Save these changes?</h2>

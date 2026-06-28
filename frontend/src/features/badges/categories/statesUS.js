@@ -68,7 +68,12 @@ export const statesUSCategory = {
   id: 'states-us',
   title: 'Passports (United States)',
   subtitle: "Stamps for the U.S. states you've visited.",
-  getBadges() {
-    return BADGES;
+  // A state unlocks when the viewer's markers include one inside its boundary —
+  // ctx.visitedStates is the resolved Set (see useVisitedStates). Null/absent
+  // (still loading, or no markers) → all locked.
+  getBadges(ctx) {
+    const visited = ctx?.visitedStates;
+    if (!visited) return BADGES;
+    return BADGES.map((b) => ({ ...b, earned: visited.has(b.label) }));
   },
 };
