@@ -42,7 +42,7 @@ export default function PrivacyPolicy() {
             Privacy Policy
           </h1>
         </div>
-        <p style={{ color: 'var(--muted)', fontSize: '14px', margin: '0 0 32px' }}>Last updated June 20, 2026</p>
+        <p style={{ color: 'var(--muted)', fontSize: '14px', margin: '0 0 32px' }}>Last updated June 29, 2026</p>
 
         <p style={s.body}>
           This Privacy Notice for Imprint ("we," "us," or "our") describes how and why we might access,
