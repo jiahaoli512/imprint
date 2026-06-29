@@ -121,7 +121,7 @@ async function sendApprovalEmail(to, name) {
 
         <!-- Footer -->
         <tr><td style="padding-top:32px;text-align:center;">
-          <p style="margin:0;font-size:12px;color:#3a4560;">© 2026 Imprint · <a href="#" style="color:#3a4560;text-decoration:none;">Privacy</a></p>
+          <p style="margin:0;font-size:12px;color:#3a4560;">© 2026 Imprint · <a href="${FRONTEND_URL}/privacy" style="color:#3a4560;text-decoration:underline;">Privacy</a> · <a href="${FRONTEND_URL}/contact" style="color:#3a4560;text-decoration:underline;">Contact</a></p>
         </td></tr>
 
       </table>
