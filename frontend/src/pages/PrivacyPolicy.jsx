@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import LogoMark from '../components/LogoMark';
 
-const EMAIL = 'donotreply.imprint@gmail.com';
 const DSAR = 'https://app.termly.io/dsar/5585c578-e9c1-4524-ad2d-dfb7e637a491';
 
 // Clean, dark-theme rendering of the Imprint privacy policy. The source policy
@@ -52,8 +51,8 @@ export default function PrivacyPolicy() {
         <p style={s.body}>
           <strong>Questions or concerns?</strong> Reading this Privacy Notice will help you understand your
           privacy rights and choices. If you do not agree with our policies and practices, please do not use
-          our Services. If you still have any questions or concerns, please contact us at{' '}
-          <a style={s.link} href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+          our Services. If you still have any questions or concerns, please contact us through{' '}
+          <Link style={s.link} to="/contact">our contact form</Link>.
         </p>
 
         <Section title="Summary of key points">
@@ -190,7 +189,7 @@ export default function PrivacyPolicy() {
             dependent's use of the Services. If we learn that personal information from users less than 18
             years of age has been collected, we will deactivate the account and take reasonable measures to
             promptly delete such data. If you become aware of any data we may have collected from children
-            under age 18, please contact us at <a style={s.link} href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+            under age 18, please contact us through <Link style={s.link} to="/contact">our contact form</Link>.
           </p>
         </Section>
 
@@ -223,7 +222,7 @@ export default function PrivacyPolicy() {
             consent. We have not sold or shared personal information to third parties for a business or
             commercial purpose, and will not do so in the future. To exercise these rights, you can submit a{' '}
             <a style={s.link} href={DSAR} target="_blank" rel="noreferrer">data subject access request</a>{' '}
-            or email us at <a style={s.link} href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+            or reach us through <Link style={s.link} to="/contact">our contact form</Link>.
           </p>
         </Section>
 
@@ -237,8 +236,8 @@ export default function PrivacyPolicy() {
 
         <Section title="13. How can you contact us about this notice?">
           <p style={s.body}>
-            If you have questions or comments about this notice, you may email us at{' '}
-            <a style={s.link} href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+            If you have questions or comments about this notice, you may reach us through{' '}
+            <Link style={s.link} to="/contact">our contact form</Link>.
           </p>
         </Section>
 
