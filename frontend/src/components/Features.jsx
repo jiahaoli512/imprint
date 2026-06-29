@@ -1,12 +1,15 @@
-import { Map, MapPin, Users, Trophy, Plane, Target } from 'lucide-react';
+import { Gauge, Footprints, Stamp, Flag, Trophy, Users } from 'lucide-react';
 
+// Features that reflect what's actually in the app today: the live discovery
+// gauge, native passive tracking, the country + U.S. state passport badges, the
+// milestone gallery, and exploring other travelers' profiles.
 const features = [
-  { icon: Map,    cls: 'icon-green',  title: 'Coverage Map',        desc: "See exactly what percentage of the world, each country, and each region you've explored — visualized as a heat map that grows with you." },
-  { icon: MapPin, cls: 'icon-blue',   title: 'Passive Tracking',     desc: 'Imprint quietly logs your location in the background. Just live your life — your map builds itself automatically.' },
-  { icon: Users,  cls: 'icon-purple', title: 'Friend Comparisons',   desc: "See how your coverage stacks up against friends. Discover places they've been that you haven't — and challenge them to catch up." },
-  { icon: Trophy, cls: 'icon-orange', title: 'Achievements',         desc: 'Unlock badges for hitting every continent, exploring all 50 US states, visiting UNESCO sites, and hundreds more.' },
-  { icon: Plane,  cls: 'icon-pink',   title: 'Trip Recaps',          desc: 'Every trip automatically becomes a shareable recap — a beautiful visual story of where you went and what you covered.' },
-  { icon: Target, cls: 'icon-yellow', title: 'Bucket List',          desc: 'Pin places you want to visit next. Imprint helps you plan the most efficient route to maximize coverage on your next adventure.' },
+  { icon: Gauge,      cls: 'icon-green',  title: 'Discovery Gauge',     desc: "A live gauge fills in as you move, showing the exact percentage you've uncovered." },
+  { icon: Footprints, cls: 'icon-blue',   title: 'Passive Tracking',    desc: 'On the mobile app, Imprint quietly logs your trail in the background. Just live your life — your map builds itself and marks your every journey; no check-ins needed.' },
+  { icon: Stamp,      cls: 'icon-orange', title: 'Country Passports',   desc: 'Collect a stamp for 195+ countries. Each flag unlocks automatically the moment your map first touches that country.' },
+  { icon: Flag,       cls: 'icon-pink',   title: 'State Flags',         desc: 'Earn a flag for every U.S. state and D.C. as you explore them — 51 in all, lit up the instant you set foot inside.' },
+  { icon: Trophy,     cls: 'icon-yellow', title: 'Milestones',          desc: 'Flex to your friends with growing badge gallery, scroll through the endless categories Imprint offers.' },
+  { icon: Users,      cls: 'icon-purple', title: 'Explore Travelers',   desc: 'Search for other explorers and visit their profiles and maps to see just how far they’ve roamed.' },
 ];
 
 export default function Features() {

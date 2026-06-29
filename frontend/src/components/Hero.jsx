@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
 import MapMockup from './MapMockup';
 
 export default function Hero({ waitlistCount }) {
@@ -9,8 +8,6 @@ export default function Hero({ waitlistCount }) {
     <section className="hero">
       <div className="hero-glow" />
       <div className="hero-glow2" />
-
-      <div className="badge"><Sparkles size={12} strokeWidth={2.5} /> Now in Beta</div>
 
       <h1>How much of the<br /><span>world have you seen?</span></h1>
 

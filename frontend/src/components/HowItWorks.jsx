@@ -1,8 +1,8 @@
 const steps = [
   { num: '01', title: 'Download Imprint',    desc: 'Available on iOS and Android. Sign up in seconds — no manual input needed to get started.' },
-  { num: '02', title: 'Explore the world',   desc: 'Imprint runs quietly in the background, logging every city, region, and country you visit as you live your life.' },
-  { num: '03', title: 'Watch your map grow', desc: 'Open the app to see your coverage expand in real time. Compare, compete, and get inspired to see more.' },
-  { num: '04', title: 'Share your imprint',  desc: 'Export your map or trip recap as a beautiful card to share with friends on any platform.' },
+  { num: '02', title: 'Explore the world',   desc: 'Imprint runs quietly in the background, logging every city, region, country, and continent you visit as you live your life.' },
+  { num: '03', title: 'Watch your map grow', desc: 'Open the app to see your coverage expand in real time. Compare, compete, and get inspired by friends to see more.' },
+  { num: '04', title: 'Share your imprint',  desc: 'Export your map, badges, and trip recap as a beautiful card to share with friends on any platform.' },
 ];
 
 export default function HowItWorks() {

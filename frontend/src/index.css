@@ -208,43 +208,26 @@ body {
 }
 
 .hero-glow {
-  position: absolute;
-  width: 800px;
-  height: 800px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(226,161,86,0.08) 0%, transparent 70%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+  display: none;
 }
 
 .hero-glow2 {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(52,201,174,0.06) 0%, transparent 70%);
-  top: 40%;
-  left: 60%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+  display: none;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(226,161,86,0.1);
-  border: 1px solid rgba(226,161,86,0.25);
+  background: none;
+  border: 1px solid rgba(226,161,86,0.3);
   color: var(--accent);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 14px;
   border-radius: 100px;
   margin-bottom: 28px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  letter-spacing: 0.2px;
 }
 
 .hero h1 {
@@ -489,10 +472,7 @@ body {
 .map-stat-val {
   font-size: 20px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
 }
 
 .map-stat-label {
@@ -518,7 +498,7 @@ body {
 .progress-fill {
   height: 100%;
   width: 23%;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  background: var(--accent);
   border-radius: 100px;
   animation: fill 1.5s ease-out forwards;
 }
@@ -574,10 +554,7 @@ body {
   font-size: clamp(36px, 5vw, 56px);
   font-weight: 900;
   letter-spacing: -2px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text);
   line-height: 1;
   margin-bottom: 8px;
 }
@@ -628,27 +605,14 @@ body {
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 32px;
-  transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-
-.feature-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(226,161,86,0.05), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.3s;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .feature-card:hover {
-  border-color: rgba(226,161,86,0.2);
-  transform: translateY(-4px);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  border-color: rgba(226,161,86,0.22);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.35);
 }
-
-.feature-card:hover::before { opacity: 1; }
 .feature-card:active { transform: scale(0.98); box-shadow: none; transition: transform 0.06s ease; }
 
 .feature-icon {
@@ -691,14 +655,13 @@ body {
 
 .step-num {
   font-size: 72px;
-  font-weight: 900;
-  letter-spacing: -4px;
+  font-weight: 800;
+  letter-spacing: -3px;
   line-height: 1;
-  background: linear-gradient(135deg, rgba(226,161,86,0.25), rgba(52,201,174,0.15));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
+  opacity: 0.35;
   margin-bottom: 16px;
+  font-family: var(--font-sans);
 }
 
 .step h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
@@ -713,14 +676,7 @@ body {
 }
 
 .cta-glow {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(226,161,86,0.07) 0%, transparent 70%);
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  pointer-events: none;
+  display: none;
 }
 
 .cta-section h2 {

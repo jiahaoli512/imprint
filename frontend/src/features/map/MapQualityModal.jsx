@@ -11,7 +11,7 @@ export default function MapQualityModal({ onClose }) {
     <Modal onClose={onClose} icon={false}>
       <h2 className="modal-title">Map Quality</h2>
       <p className="modal-sub">
-        Higher quality shows more of your points; lower quality stays smooth on large maps.
+        Higher quality shows more of your points; lower quality stays smooth on large maps. Higher quality may result in slower performance.
       </p>
 
       <div className="quality-seg">
