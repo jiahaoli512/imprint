@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ChevronUp } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import LogoMark from '../components/LogoMark';
+import ScrollToTopButton from '../components/ScrollToTopButton';
 
 const DSAR = 'https://app.termly.io/dsar/5585c578-e9c1-4524-ad2d-dfb7e637a491';
 
@@ -10,20 +11,9 @@ const DSAR = 'https://app.termly.io/dsar/5585c578-e9c1-4524-ad2d-dfb7e637a491';
 // content using the app's theme tokens so it's readable and on-brand.
 export default function PrivacyPolicy() {
   const navigate = useNavigate();
-  const [showTop, setShowTop] = useState(false); // scroll-to-top affordance
 
   // Land at the top of the policy regardless of prior scroll position.
   useEffect(() => { window.scrollTo(0, 0); }, []);
-
-  // Reveal the scroll-to-top button once the page is scrolled past the header
-  // (mirrors the badges modal's affordance, but over the window scroll).
-  useEffect(() => {
-    const onScroll = () => setShowTop(window.scrollY > 400);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
@@ -263,11 +253,7 @@ export default function PrivacyPolicy() {
         </Section>
       </div>
 
-      {showTop && (
-        <button className="icon-btn scrolltop-fab" onClick={scrollToTop} aria-label="Scroll to top">
-          <ChevronUp size={20} />
-        </button>
-      )}
+      <ScrollToTopButton />
     </div>
   );
 }

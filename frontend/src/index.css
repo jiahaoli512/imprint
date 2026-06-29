@@ -2019,6 +2019,17 @@ footer {
   .nav-cta { display: none; }
   .nav-hamburger { display: flex; }
 
+  /* Tall hero content (multi-line headline + copy + buttons) is taller than a
+     phone viewport, so centering it overflowed up behind the fixed nav. Flow it
+     from the top instead, clearing the nav + safe area, and use dvh so the
+     mobile browser chrome doesn't inflate the height. */
+  .hero {
+    min-height: 100dvh;
+    justify-content: flex-start;
+    padding-top: calc(112px + env(safe-area-inset-top));
+    padding-bottom: 64px;
+  }
+
   .section, .cta-section { padding: 64px 20px; }
   .how-section { padding: 64px 20px; }
   footer { padding: 32px 20px; flex-direction: column; text-align: center; }
