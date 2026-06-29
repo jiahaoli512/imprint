@@ -116,6 +116,33 @@ function checkNameChars(label, value, { allowSpaces = false } = {}) {
   }
 }
 
+// --- date of birth -----------------------------------------------------------
+const MIN_AGE = 18;
+
+// Whole years between `dob` and today.
+function ageFromDob(dob) {
+  const today = new Date();
+  const birth = new Date(dob);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+// Throws a 400 unless `dateOfBirth` parses to a real date with a 4-digit year
+// and an age of at least MIN_AGE. Keeps the signup age gate next to the other
+// validators rather than inline in the service.
+function validateDateOfBirth(dateOfBirth) {
+  const date = new Date(dateOfBirth);
+  if (Number.isNaN(date.getTime()))
+    throw httpError(400, 'Please enter a valid date of birth.');
+  const year = date.getFullYear();
+  if (year < 1000 || year > 9999)
+    throw httpError(400, 'Please enter a valid 4-digit birth year.');
+  if (ageFromDob(dateOfBirth) < MIN_AGE)
+    throw httpError(400, `You must be at least ${MIN_AGE} years old.`);
+}
+
 // --- geographic coordinate validation ---------------------------------------
 // Shared by the marker (saved [lat,lng] arrays) and location (tracked point
 // objects) write paths so coordinate sanity lives in one place.
@@ -171,5 +198,6 @@ module.exports = {
   LIMITS, checkLength, checkNoSpaces, checkNameChars, checkEmail, checkPassword,
   checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
   COOLDOWN_DAYS, daysUntil, NAME_RE, NAME_SPACES_RE, USERNAME_RE,
+  validateDateOfBirth,
   validatePoints, validateCoordPair, isValidLocationPoint, MAX_POINTS,
 };

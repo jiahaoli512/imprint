@@ -5,7 +5,7 @@ const Waitlist = require('../models/Waitlist');
 const {
   checkLength, checkPassword, checkRequired,
   normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
-  COOLDOWN_DAYS, daysUntil,
+  validateDateOfBirth, COOLDOWN_DAYS, daysUntil,
 } = require('../utils/validate');
 const httpError = require('../utils/httpError');
 
@@ -13,15 +13,6 @@ const httpError = require('../utils/httpError');
 const PROFILE_FIELDS = 'username firstName lastName dateOfBirth createdAt usernameChangedAt nameChangedAt';
 const SEARCH_FIELDS = 'username firstName lastName';
 const ADMIN_LIST_FIELDS = 'email username firstName lastName dateOfBirth createdAt';
-
-function ageFromDob(dob) {
-  const today = new Date();
-  const birth = new Date(dob);
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  return age;
-}
 
 function signToken(user) {
   return jwt.sign(
@@ -81,12 +72,7 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
   checkRequired('Date of birth', dateOfBirth);
   validateUsername(username);
   validateName({ firstName, lastName });
-
-  const year = new Date(dateOfBirth).getFullYear();
-  if (year < 1000 || year > 9999)
-    throw httpError(400, 'Please enter a valid 4-digit birth year.');
-  if (ageFromDob(dateOfBirth) < 18)
-    throw httpError(400, 'You must be at least 18 years old.');
+  validateDateOfBirth(dateOfBirth);
 
   email = normalizeEmail(email);
   username = normalizeUsername(username);

@@ -76,15 +76,22 @@ function thinPoints(points, spacing = MARKER_SPACING_M) {
   return kept;
 }
 
+// Resolves a username to its user id (the MapMarkers key), normalizing first and
+// 404ing if there's no such user. Centralizes the lookup the username-keyed
+// marker calls share. Returns the id as a string.
+async function userIdForUsername(username) {
+  const user = await User.findOne({ username: normalizeUsername(username) }, '_id');
+  if (!user) throw httpError(404, 'User not found');
+  return user._id.toString();
+}
+
 async function getAdminMarkers() {
   const doc = await MapMarkers.findById('singleton');
   return doc ? doc.points : [];
 }
 
 async function getUserMarkers(username) {
-  const user = await User.findOne({ username: normalizeUsername(username) });
-  if (!user) throw httpError(404, 'User not found');
-  const doc = await MapMarkers.findById(user._id.toString());
+  const doc = await MapMarkers.findById(await userIdForUsername(username));
   return doc ? doc.points : [];
 }
 
@@ -100,9 +107,7 @@ async function saveUserMarkers(userId, points) {
 
 // Admin path: save markers to a specific user's map, looked up by username.
 async function saveUserMarkersByUsername(username, points) {
-  const user = await User.findOne({ username: normalizeUsername(username) });
-  if (!user) throw httpError(404, 'User not found');
-  return saveUserMarkers(user._id.toString(), points);
+  return saveUserMarkers(await userIdForUsername(username), points);
 }
 
 // Adds tracked location points to a user's map as markers, skipping any that
