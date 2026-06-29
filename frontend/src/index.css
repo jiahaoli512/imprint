@@ -870,6 +870,18 @@ footer {
 .badge-top-anchor { position: sticky; top: 0; height: 0; z-index: 6; }
 .badge-scrolltop { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; }
 
+/* Same scroll-to-top affordance as the badges modal, pinned to the corner of a
+   full-page scroll (e.g. the privacy policy). */
+.scrolltop-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
 /* Search + continent filter for large badge categories (e.g. Passports). */
 .badge-filters { margin-bottom: 20px; }
 .badge-search {
