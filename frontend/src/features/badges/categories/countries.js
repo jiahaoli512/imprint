@@ -3,9 +3,9 @@ import { PASSPORT_COUNTRIES } from './passportCountries';
 // Countries badge category ("Passports") — one badge per country from the
 // provided list (passportCountries.js, derived from countries_continents.csv),
 // the flag shown in the coin. The ring/halo/tails are tinted by continent (the
-// flag carries the per-country identity). All badges are locked for now;
-// visited-country detection (markers → country) is a later feature that will flip
-// `earned` per country via ctx, with no change needed here, in Badge, or the modal.
+// flag carries the per-country identity). A country unlocks when the profile
+// owner has any marker inside its boundary — ctx.visitedCountries is the resolved
+// Set of ISO numeric codes (see useVisitedCountries/countryGeo).
 
 // Per-continent medallion colors: c1/c2 are the coin gradient behind the flag,
 // halo tints the glow. spin/delay only matter once a badge is earned (animated).
@@ -28,6 +28,7 @@ const BADGES = PASSPORT_COUNTRIES
   .map((c) => ({
     key: c.code,
     code: c.code,
+    num: c.num,
     coin: 'flag',
     label: c.name,
     caption: c.continent || 'Visited',
@@ -42,7 +43,12 @@ export const countriesCategory = {
   id: 'countries',
   title: 'Passports',
   subtitle: "Stamps for the countries you've visited.",
-  getBadges() {
-    return BADGES;
+  // A country unlocks when the viewer's markers include one inside its boundary —
+  // ctx.visitedCountries is the resolved Set of ISO numeric codes. Null/absent
+  // (still loading, or no markers) → all locked.
+  getBadges(ctx) {
+    const visited = ctx?.visitedCountries;
+    if (!visited) return BADGES;
+    return BADGES.map((b) => ({ ...b, earned: visited.has(b.num) }));
   },
 };

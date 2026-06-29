@@ -5,6 +5,7 @@ import Modal from '../../components/Modal';
 import Badge from './Badge';
 import { BADGE_CATEGORIES } from './categories';
 import { useVisitedStates } from './useVisitedStates';
+import { useVisitedCountries } from './useVisitedCountries';
 
 const SWIPE_THRESHOLD = 50; // px of horizontal drag before a swipe registers
 const FILTERABLE_MIN = 12;  // show search + continent filter past this many badges
@@ -30,7 +31,10 @@ export default function BadgesModal({ user, markers, onClose }) {
   // Defer the (lazy, heavier) visited-state computation until the US-states
   // category is open; the hook keeps the resolved set after you navigate away.
   const visitedStates = useVisitedStates(markers, category.id === 'states-us');
-  const ctx = { user, markers, visitedStates };
+  // Same lazy pattern for countries — the world-atlas chunk loads only when the
+  // Passports category is open; the hook keeps the resolved set afterward.
+  const visitedCountries = useVisitedCountries(markers, category.id === 'countries');
+  const ctx = { user, markers, visitedStates, visitedCountries };
 
   // Toggle the scroll-to-top button once the modal is scrolled past the header.
   useEffect(() => {
