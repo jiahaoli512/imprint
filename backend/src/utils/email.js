@@ -1,6 +1,13 @@
 const FROM_EMAIL = process.env.EMAIL_USER || 'donotreply.imprint@gmail.com';
 const CONTACT_INBOX = 'donotreply.imprint@gmail.com'; // where contact-form messages land
 
+// Email clients (Gmail especially) strip inline <svg>, so the logo must be a
+// hosted raster image referenced by absolute URL. Points at the deployed
+// frontend's apple-touch-icon (the fingerprint mark on its gradient tile);
+// override with FRONTEND_URL if the web app moves.
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://imprint-wheat.vercel.app').replace(/\/$/, '');
+const LOGO_URL = `${FRONTEND_URL}/apple-touch-icon.png`;
+
 if (!process.env.BREVO_API_KEY) {
   console.warn('[email] WARNING: BREVO_API_KEY is not set — emails will fail');
 }
@@ -53,12 +60,16 @@ async function sendApprovalEmail(to, name) {
 
         <!-- Logo -->
         <tr><td style="padding-bottom:32px;text-align:center;">
-          <span style="display:inline-flex;align-items:center;gap:10px;font-size:20px;font-weight:800;color:#f0f4ff;letter-spacing:-0.5px;">
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#4fffb0,#00c9ff);">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#080c14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 17h2"/><path d="M2 12h1"/><path d="M6.45 7.51 7 6"/><path d="M10 6a6 6 0 0 1 4 1.13"/><path d="M17.4 12.24a6 6 0 0 0-.1-1.24"/><path d="M22 12c0 .66-.04 1.3-.1 1.93"/><path d="M4.6 11.1A10 10 0 0 0 4 12v2"/></svg>
-            </span>
-            Imprint
-          </span>
+          <table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
+            <tr>
+              <td style="padding-right:10px;vertical-align:middle;">
+                <img src="${LOGO_URL}" width="32" height="32" alt="Imprint" style="display:block;width:32px;height:32px;border-radius:9px;border:0;outline:none;text-decoration:none;">
+              </td>
+              <td style="vertical-align:middle;font-size:20px;font-weight:800;color:#f0f4ff;letter-spacing:-0.5px;">
+                Imprint
+              </td>
+            </tr>
+          </table>
         </td></tr>
 
         <!-- Card -->
