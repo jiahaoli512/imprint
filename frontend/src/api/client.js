@@ -91,6 +91,8 @@ export const api = {
   // Users / Auth
   register:       (body)               => request.post('/api/users', body),
   login:          (body)               => request.post('/api/users/login', body),
+  requestCode:    (email)              => request.post('/api/users/request-code', { email }),
+  verifyCode:     (email, code)        => request.post('/api/users/verify-code', { email, code }),
   checkWaitlist:  (email)              => request(`/api/waitlist/check?email=${encodeURIComponent(email)}`),
   checkUsername:  (username)           => request(`/api/users/check-username?username=${encodeURIComponent(username)}`),
   setupProfile:   (body)               => request.patch('/api/users/profile', body),

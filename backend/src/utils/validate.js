@@ -143,6 +143,19 @@ function validateDateOfBirth(dateOfBirth) {
     throw httpError(400, `You must be at least ${MIN_AGE} years old.`);
 }
 
+// --- email verification code -------------------------------------------------
+// Mirrors the alphabet/length in utils/code.js. Kept as a literal here (rather
+// than importing code.js) so validate.js stays dependency-free. Accepts the code
+// after the caller has uppercased it.
+const VERIFICATION_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
+
+// Throws a 400 unless `code` is a well-formed 6-char verification code. The
+// service uppercases before calling, so input casing doesn't matter to the user.
+function validateVerificationCode(code) {
+  if (typeof code !== 'string' || !VERIFICATION_CODE_RE.test(code))
+    throw httpError(400, 'Enter the 6-character code from your email.');
+}
+
 // --- geographic coordinate validation ---------------------------------------
 // Shared by the marker (saved [lat,lng] arrays) and location (tracked point
 // objects) write paths so coordinate sanity lives in one place.
@@ -198,6 +211,6 @@ module.exports = {
   LIMITS, checkLength, checkNoSpaces, checkNameChars, checkEmail, checkPassword,
   checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
   COOLDOWN_DAYS, daysUntil, NAME_RE, NAME_SPACES_RE, USERNAME_RE,
-  validateDateOfBirth,
+  validateDateOfBirth, validateVerificationCode,
   validatePoints, validateCoordPair, isValidLocationPoint, MAX_POINTS,
 };

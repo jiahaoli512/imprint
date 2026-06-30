@@ -20,6 +20,8 @@ const PW_RULES = [
     test: p => p.length >= 3 && SPECIAL_RE.test(p.slice(1, -1)) },
 ];
 
+const RESEND_COOLDOWN = 60; // seconds; mirrors the server-side resend cooldown
+
 export default function Signup() {
   const navigate = useNavigate();
   const [step, setStep] = useState('email');
@@ -32,6 +34,11 @@ export default function Signup() {
   const [registerError, setRegisterError] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmCreate, setConfirmCreate] = useState(false);
+  // Verification step
+  const [code, setCode] = useState('');
+  const [codeError, setCodeError] = useState('');
+  const [codeNotice, setCodeNotice] = useState('');
+  const [resendIn, setResendIn] = useState(0); // seconds left on the resend cooldown
 
   useEffect(() => {
     if (step === 'done') {
@@ -39,6 +46,41 @@ export default function Signup() {
       return () => clearTimeout(t);
     }
   }, [step]);
+
+  // Tick down the resend cooldown once per second while it's active.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setInterval(() => setResendIn((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [resendIn]);
+
+  // Issues (or re-issues) a code, then shows the verify step. Used by both the
+  // initial email approval and the Resend button.
+  async function sendCode() {
+    setCodeError('');
+    try {
+      await api.requestCode(email);
+      setResendIn(RESEND_COOLDOWN);
+      setCodeNotice('We sent a 6-character code to your email.');
+    } catch (err) {
+      // A 429 (cooldown / cap) is the one case worth surfacing; keep it generic.
+      setCodeError(err.message || 'Could not send a code. Please try again shortly.');
+    }
+  }
+
+  async function handleVerify(e) {
+    e.preventDefault();
+    setCodeError('');
+    setLoading(true);
+    try {
+      await api.verifyCode(email, code);
+      setStep('password');
+    } catch (err) {
+      setCodeError(err.message || 'Invalid or expired code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const checks = PW_RULES.map(r => ({ ...r, passed: r.test(password) }));
   const allPassed = checks.every(c => c.passed);
@@ -71,7 +113,12 @@ export default function Signup() {
       const data = await api.checkWaitlist(trimmed);
       if (data.status === 'approved') {
         setStep('success');
-        setTimeout(() => setStep('password'), 2000);
+        // Send the verification code, then advance to the verify step.
+        setCode('');
+        setCodeError('');
+        setCodeNotice('');
+        sendCode();
+        setTimeout(() => setStep('verify'), 2000);
       } else {
         setStep('not_found');
       }
@@ -130,6 +177,53 @@ export default function Signup() {
             <div className="auth-spinner" />
             <p>Success! Your email is approved.</p>
           </div>
+        )}
+
+        {/* ── Verification step ── */}
+        {step === 'verify' && (
+          <>
+            <h1 className="auth-title">Verify Your Email</h1>
+            <p className="auth-sub">
+              Enter the 6-character code we sent to <strong>{email}</strong>. It expires in 30 minutes.
+            </p>
+            <form onSubmit={handleVerify} className="auth-form" noValidate>
+              <input
+                type="text"
+                className="auth-input auth-code-input"
+                placeholder="------"
+                value={code}
+                onChange={(e) => {
+                  // Keep only alphabet chars, uppercase, max 6.
+                  const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+                  setCode(v);
+                  setCodeError('');
+                }}
+                autoComplete="one-time-code"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="text"
+                maxLength={6}
+                style={{ fontSize: '16px' }}
+              />
+              {codeNotice && !codeError && <p className="auth-sub" style={{ margin: 0 }}>{codeNotice}</p>}
+              {codeError && <p className="auth-error">{codeError}</p>}
+              <button type="submit" className="btn btn-primary auth-submit" disabled={loading || code.length !== 6}>
+                {loading ? 'Verifying…' : 'Verify'}
+              </button>
+            </form>
+            <p className="auth-switch">
+              Didn't get it?{' '}
+              <button
+                type="button"
+                className="auth-link-btn"
+                onClick={sendCode}
+                disabled={resendIn > 0}
+              >
+                {resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend code'}
+              </button>
+            </p>
+          </>
         )}
 
         {/* ── Password step ── */}

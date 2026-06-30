@@ -8,6 +8,7 @@ const {
   validateDateOfBirth, COOLDOWN_DAYS, daysUntil,
 } = require('../utils/validate');
 const httpError = require('../utils/httpError');
+const { assertEmailVerified, consumeVerification } = require('./verificationService');
 
 // Field projections — define what each query exposes in one place.
 const PROFILE_FIELDS = 'username firstName lastName dateOfBirth createdAt usernameChangedAt nameChangedAt';
@@ -36,9 +37,16 @@ async function registerUser(email, password) {
   const existing = await User.findOne({ email });
   if (existing) throw httpError(409, 'An account with this email already exists');
 
+  // Proof-of-inbox: the email must have completed code verification. This is the
+  // non-bypassable enforcement point — skipping the verify UI still fails here.
+  await assertEmailVerified(email);
+
   const passwordHash = await bcrypt.hash(password, 12);
   await User.create({ email, passwordHash });
-  await Waitlist.deleteOne({ email });
+  await Promise.all([
+    Waitlist.deleteOne({ email }),
+    consumeVerification(email),
+  ]);
 }
 
 // A bcrypt hash of a throwaway value, compared against when the email isn't

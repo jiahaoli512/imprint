@@ -1262,6 +1262,17 @@ footer {
 .auth-input:disabled { opacity: 0.35; cursor: not-allowed; }
 .auth-input-match { border-color: var(--accent) !important; }
 
+/* Verification-code field: centered, widely-spaced monospace for an easy read. */
+.auth-code-input {
+  text-align: center;
+  letter-spacing: 10px;
+  font-weight: 700;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  text-transform: uppercase;
+  padding-left: 26px; /* offset the trailing letter-spacing so text stays centered */
+}
+.auth-code-input::placeholder { letter-spacing: 8px; }
+
 .auth-submit {
   width: 100%;
   padding: 14px;

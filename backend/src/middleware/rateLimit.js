@@ -31,4 +31,17 @@ const contactLimiter = rateLimit({
   message: { error: 'Too many messages sent. Please try again later.' },
 });
 
-module.exports = { apiLimiter, authLimiter, contactLimiter };
+// Limiter for the signup verification-code request endpoint. Like contactLimiter
+// it counts *successful* requests too, because a success sends an email — the
+// abusable action. Per-email cooldown/cap in verificationService is the finer
+// guard; this caps total sends from one IP across emails. Generous enough for a
+// real signup (a couple of resends) but not for inbox flooding.
+const codeRequestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many verification codes requested. Please try again later.' },
+});
+
+module.exports = { apiLimiter, authLimiter, contactLimiter, codeRequestLimiter };

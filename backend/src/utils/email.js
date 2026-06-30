@@ -132,6 +132,72 @@ async function sendApprovalEmail(to, name) {
   });
 }
 
+// Sends the 6-character signup verification code. The code is generated and
+// hashed by verificationService; this only delivers the plaintext to the inbox.
+async function sendVerificationEmail(to, code) {
+  // `code` is from a fixed [A-Z2-9] alphabet (not user input), but escape defensively.
+  const safeCode = escapeHtml(code);
+
+  await sendEmail({
+    to: [{ email: to, name: to.split('@')[0] }],
+    subject: `${code} is your Imprint verification code`,
+    htmlContent: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#080c14;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#080c14;padding:48px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+        <!-- Logo -->
+        <tr><td style="padding-bottom:32px;text-align:center;">
+          <table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
+            <tr>
+              <td style="padding-right:10px;vertical-align:middle;">
+                <img src="${LOGO_URL}" width="32" height="32" alt="Imprint" style="display:block;width:32px;height:32px;border-radius:9px;border:0;outline:none;text-decoration:none;">
+              </td>
+              <td style="vertical-align:middle;font-size:20px;font-weight:800;color:#f0f4ff;letter-spacing:-0.5px;">
+                Imprint
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <!-- Card -->
+        <tr><td style="background:#0f1623;border:1px solid rgba(255,255,255,0.07);border-radius:24px;padding:48px 40px;">
+
+          <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4fffb0;">Verify your email</p>
+          <h1 style="margin:0 0 16px;font-size:32px;font-weight:900;letter-spacing:-1px;color:#f0f4ff;line-height:1.1;">Confirm it's you</h1>
+          <p style="margin:0 0 32px;font-size:16px;color:#6b7a99;line-height:1.7;">
+            Enter this code on the account-creation screen to continue. It works only for this email address.
+          </p>
+
+          <!-- Code box -->
+          <div style="background:#161f30;border:1px solid rgba(79,255,176,0.2);border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+            <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4fffb0;">Your verification code</p>
+            <p style="margin:0;font-size:34px;font-weight:800;letter-spacing:8px;color:#f0f4ff;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;">${safeCode}</p>
+          </div>
+
+          <p style="margin:0;font-size:13px;color:#6b7a99;line-height:1.6;">
+            This code expires in <strong style="color:#f0f4ff;">30 minutes</strong>. If you didn't try to create an Imprint account, you can safely ignore this email.
+          </p>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding-top:32px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#3a4560;">© 2026 Imprint · <a href="${FRONTEND_URL}/privacy" style="color:#3a4560;text-decoration:underline;">Privacy</a> · <a href="${FRONTEND_URL}/contact" style="color:#3a4560;text-decoration:underline;">Contact</a></p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+}
+
 // Delivers a contact-form submission to the Imprint inbox. The visitor's email
 // is set as replyTo so we can respond directly from the received message.
 async function sendContactEmail({ firstName, lastName, email, feedback }) {
@@ -156,4 +222,4 @@ async function sendContactEmail({ firstName, lastName, email, feedback }) {
   });
 }
 
-module.exports = { sendApprovalEmail, sendContactEmail };
+module.exports = { sendApprovalEmail, sendVerificationEmail, sendContactEmail };
