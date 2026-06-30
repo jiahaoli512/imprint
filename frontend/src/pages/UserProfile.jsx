@@ -121,7 +121,7 @@ export default function UserProfile() {
                   <FieldLabel variant="display">Date of birth</FieldLabel>
                   <input
                     className="auth-input"
-                    value={formatDate(user.dateOfBirth, { long: true })}
+                    value={formatDate(user.dateOfBirth, { long: true, utc: true })}
                     disabled
                     readOnly
                     style={{ opacity: 0.55, cursor: 'not-allowed' }}

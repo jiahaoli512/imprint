@@ -58,7 +58,7 @@ export default function UsersTable({ users, loading = false, error = '' }) {
                     <td className="muted col-hide-mobile">
                       {fullName(u, '—')}
                     </td>
-                    <td className="muted col-hide-mobile">{u.dateOfBirth ? formatDate(u.dateOfBirth) : '—'}</td>
+                    <td className="muted col-hide-mobile">{u.dateOfBirth ? formatDate(u.dateOfBirth, { utc: true }) : '—'}</td>
                     <td className="muted col-hide-mobile">{formatDate(u.createdAt)}</td>
                     <td className="col-actions">
                       {u.username ? (
