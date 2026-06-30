@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import ConfirmModal from '../components/ConfirmModal';
-import { api } from '../api/client';
+import { api, getCodeCooldown, setCodeCooldown, clearCodeCooldown } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
 const SPECIAL_RE = /[~`!@#$%^&*()\-_+=[\]{}|\\;:"<>,./?]/;
 
@@ -54,12 +54,13 @@ export default function Signup() {
     return () => clearInterval(t);
   }, [resendIn]);
 
-  // Issues (or re-issues) a code, then shows the verify step. Used by both the
-  // initial email approval and the Resend button.
-  async function sendCode() {
+  // Issues (or re-issues) a code. Used by both the initial email approval and the
+  // Resend button. Persists the resend cooldown so it survives exiting the flow.
+  async function sendCode(targetEmail = email) {
     setCodeError('');
     try {
-      await api.requestCode(email);
+      await api.requestCode(targetEmail);
+      setCodeCooldown(targetEmail, RESEND_COOLDOWN);
       setResendIn(RESEND_COOLDOWN);
       setCodeNotice('We sent a 6-character code to your email.');
     } catch (err) {
@@ -91,6 +92,7 @@ export default function Signup() {
     setRegisterError('');
     try {
       await api.register({ email, password });
+      clearCodeCooldown();
       setStep('done');
     } catch (err) {
       setRegisterError(err.message || 'Something went wrong. Please try again.');
@@ -112,12 +114,21 @@ export default function Signup() {
     try {
       const data = await api.checkWaitlist(trimmed);
       if (data.status === 'approved') {
+        setEmail(trimmed);
         setStep('success');
-        // Send the verification code, then advance to the verify step.
         setCode('');
         setCodeError('');
         setCodeNotice('');
-        sendCode();
+        // If a code was sent to this email within the cooldown, that code is
+        // still valid — resume the countdown instead of requesting (and being
+        // rate-limited for) a fresh one. Otherwise send a new code.
+        const remaining = getCodeCooldown(trimmed);
+        if (remaining > 0) {
+          setResendIn(remaining);
+          setCodeNotice('Enter the code we already sent to your email.');
+        } else {
+          sendCode(trimmed);
+        }
         setTimeout(() => setStep('verify'), 2000);
       } else {
         setStep('not_found');

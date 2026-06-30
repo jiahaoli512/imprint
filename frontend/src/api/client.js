@@ -20,6 +20,23 @@ export const setStoredMapQuality = (q) => localStorage.setItem('imprint_map_qual
 export const getStoredGreeting = () => sessionStorage.getItem('imprint_greeting');
 export const setStoredGreeting = (g) => sessionStorage.setItem('imprint_greeting', g);
 
+// Signup verification-code resend cooldown, persisted so exiting and re-entering
+// the signup flow resumes the countdown instead of letting the UI offer an
+// immediate resend (the backend enforces the 60s window regardless; this just
+// keeps the client honest). Stored as { email, until } and self-expires by time.
+const CODE_CD_KEY = 'imprint_code_cooldown';
+export const getCodeCooldown = (email) => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CODE_CD_KEY) || 'null');
+    if (raw && raw.email === email && raw.until > Date.now())
+      return Math.ceil((raw.until - Date.now()) / 1000);
+  } catch { /* ignore malformed */ }
+  return 0;
+};
+export const setCodeCooldown = (email, seconds) =>
+  localStorage.setItem(CODE_CD_KEY, JSON.stringify({ email, until: Date.now() + seconds * 1000 }));
+export const clearCodeCooldown = () => localStorage.removeItem(CODE_CD_KEY);
+
 export const getAdminToken = () => sessionStorage.getItem('admin_token');
 // Setting the token also marks the admin session active — the two always go
 // together, so callers never touch the raw 'admin_auth' flag themselves.
