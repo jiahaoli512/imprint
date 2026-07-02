@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import { api, setUsername, setToken, clearAdminSession } from '../api/client';
-import { isValidEmail } from '../utils/validateName';
+import { isValidEmail, normalizeEmail } from '../utils/validateName';
 import { refreshGreeting } from '../utils/greeting';
 import { useForm } from '../utils/useForm';
 
@@ -16,7 +16,7 @@ export default function Login() {
     {
       validate: ({ email }) => (isValidEmail(email) ? '' : 'Enter a valid email address.'),
       onSubmit: async ({ email, password }) => {
-        const normalized = email.trim().toLowerCase();
+        const normalized = normalizeEmail(email);
         const data = await api.login({ email: normalized, password });
         clearAdminSession(); // a user session is mutually exclusive with admin
         refreshGreeting();   // new random dashboard greeting per login

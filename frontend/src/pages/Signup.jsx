@@ -5,7 +5,7 @@ import AuthShell from '../components/AuthShell';
 import ConfirmModal from '../components/ConfirmModal';
 import CodeVerifyStep from '../components/CodeVerifyStep';
 import { api, clearCodeCooldown } from '../api/client';
-import { isValidEmail } from '../utils/validateName';
+import { isValidEmail, normalizeEmail } from '../utils/validateName';
 import { PW_RULES } from '../utils/passwordRules';
 
 export default function Signup() {
@@ -49,7 +49,7 @@ export default function Signup() {
 
   async function handleEmailSubmit(e) {
     e.preventDefault();
-    const trimmed = email.trim().toLowerCase();
+    const trimmed = normalizeEmail(email);
     if (!isValidEmail(trimmed)) {
       setEmailError('Enter a valid email address.');
       return;

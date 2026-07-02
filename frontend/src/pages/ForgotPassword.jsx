@@ -7,7 +7,7 @@ import {
   api, clearCodeCooldown,
   setToken, setUsername, clearAdminSession,
 } from '../api/client';
-import { isValidEmail } from '../utils/validateName';
+import { isValidEmail, normalizeEmail } from '../utils/validateName';
 import { refreshGreeting } from '../utils/greeting';
 import { PW_RULES } from '../utils/passwordRules';
 
@@ -45,7 +45,7 @@ export default function ForgotPassword() {
 
   function handleEmailSubmit(e) {
     e.preventDefault();
-    const trimmed = email.trim().toLowerCase();
+    const trimmed = normalizeEmail(email);
     if (!isValidEmail(trimmed)) { setEmailError('Enter a valid email address.'); return; }
     setEmailError('');
     setEmail(trimmed);

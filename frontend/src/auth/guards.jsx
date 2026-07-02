@@ -33,23 +33,17 @@ export function RequireAuthOrAdmin({ children }) {
   return children;
 }
 
-export function SmartHome() {
+// Public-only pages (home, login, profile setup): a signed-in user is bounced to
+// their dashboard, otherwise the page renders. One redirect rule, so each page is
+// a one-liner and a new public page can't drift from the policy.
+function redirectIfAuthed() {
   const username = getUsername();
-  if (username) return <Navigate to={`/${username}/dashboard`} replace />;
-  return <Home />;
+  return username ? <Navigate to={`/${username}/dashboard`} replace /> : null;
 }
 
-export function SmartLogin() {
-  const username = getUsername();
-  if (username) return <Navigate to={`/${username}/dashboard`} replace />;
-  return <Login />;
-}
-
-export function SmartLoginProfile() {
-  const username = getUsername();
-  if (username) return <Navigate to={`/${username}/dashboard`} replace />;
-  return <Profile />;
-}
+export const SmartHome = () => redirectIfAuthed() ?? <Home />;
+export const SmartLogin = () => redirectIfAuthed() ?? <Login />;
+export const SmartLoginProfile = () => redirectIfAuthed() ?? <Profile />;
 
 export function OwnDashboardOnly({ children }) {
   const { username } = useParams();

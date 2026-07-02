@@ -10,6 +10,12 @@ export function isValidEmail(email) {
   return EMAIL_RE.test((email || '').trim());
 }
 
+// Canonical email form for lookups/submission (mirrors normalizeEmail on the
+// backend). Kept in one place so the auth flows don't each inline trim/lowercase.
+export function normalizeEmail(email) {
+  return (email || '').trim().toLowerCase();
+}
+
 // Validates first/last name format. The caller is responsible for the "first
 // name required" check (its wording differs per form); this covers the shared
 // length/character rules. Returns an error message, or '' if valid.
