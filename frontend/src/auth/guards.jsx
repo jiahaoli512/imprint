@@ -45,6 +45,14 @@ export const SmartHome = () => redirectIfAuthed() ?? <Home />;
 export const SmartLogin = () => redirectIfAuthed() ?? <Login />;
 export const SmartLoginProfile = () => redirectIfAuthed() ?? <Profile />;
 
+// Send a viewer to another user's profile if that user exists, else to the
+// not-found page. Shared by the guards that land on a `/:username` they don't own.
+function resolveUserRoute(name, navigate) {
+  api.getUser(name)
+    .then(() => navigate(`/${name}/profile`, { replace: true }))
+    .catch(() => navigate('/user-not-found', { replace: true }));
+}
+
 export function OwnDashboardOnly({ children }) {
   const { username } = useParams();
   const navigate = useNavigate();
@@ -52,9 +60,7 @@ export function OwnDashboardOnly({ children }) {
 
   useEffect(() => {
     if (me === username) return;
-    api.getUser(username)
-      .then(() => navigate(`/${username}/profile`, { replace: true }))
-      .catch(() => navigate('/user-not-found', { replace: true }));
+    resolveUserRoute(username, navigate);
   }, [username]);
 
   if (me !== username) return <Spinner />;
@@ -74,9 +80,7 @@ export function CatchAll() {
 
     if (me === segment) { navigate(`/${segment}/dashboard`, { replace: true }); return; }
 
-    api.getUser(segment)
-      .then(() => navigate(`/${segment}/profile`, { replace: true }))
-      .catch(() => navigate('/user-not-found', { replace: true }));
+    resolveUserRoute(segment, navigate);
   }, [pathname]);
 
   return <Spinner />;
