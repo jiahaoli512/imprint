@@ -1,5 +1,30 @@
 import { pointInGeometry } from '../map/discovery';
 
+// Overall [minLng, minLat, maxLng, maxLat] bbox of a feature's geometry, memoized
+// on the feature. A single-rectangle reject: cheaper than pointInGeometry's
+// per-polygon-part bbox scan for far-away markers (a multi-island country can
+// have dozens of parts). Features come from a memoized loader, so this is
+// computed once and reused across recomputes.
+function featureBBox(f) {
+  if (f.__bbox) return f.__bbox;
+  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+  const scan = (rings) => {
+    for (const ring of rings) {
+      for (const [lng, lat] of ring) {
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+      }
+    }
+  };
+  const g = f.geometry;
+  if (g.type === 'Polygon') scan(g.coordinates);
+  else if (g.type === 'MultiPolygon') g.coordinates.forEach(scan);
+  f.__bbox = [minLng, minLat, maxLng, maxLat];
+  return f.__bbox;
+}
+
 // Shared "which regions contain a marker?" resolver, used by every passport
 // category (US states, countries, …). Given a marker list and a set of features
 // shaped `[{ key, geometry }]`, returns a Set of the keys that contain at least
@@ -24,6 +49,9 @@ export async function computeVisitedKeys(markers, loadFeatures) {
 
     for (const f of features) {
       if (visited.has(f.key)) continue;
+      // Cheap whole-feature bbox reject before the per-part polygon test.
+      const [minLng, minLat, maxLng, maxLat] = featureBBox(f);
+      if (lng < minLng || lng > maxLng || lat < minLat || lat > maxLat) continue;
       if (pointInGeometry(lat, lng, f.geometry)) { visited.add(f.key); break; }
     }
     if (visited.size === features.length) break;
