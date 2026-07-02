@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
+import CodeVerifyStep from '../components/CodeVerifyStep';
 import {
-  api, getCodeCooldown, setCodeCooldown, clearCodeCooldown,
+  api, clearCodeCooldown,
   setToken, setUsername, clearAdminSession,
 } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
 import { refreshGreeting } from '../utils/greeting';
 import { PW_RULES } from '../utils/passwordRules';
-
-const RESEND_COOLDOWN = 60; // seconds; mirrors the server-side resend cooldown
 
 // Forgot-password flow: email → code → choice (change password / skip & log in)
 // → optional new password → dashboard. Reuses the same 6-char email-code
@@ -23,12 +22,6 @@ export default function ForgotPassword() {
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Verification
-  const [code, setCode] = useState('');
-  const [codeError, setCodeError] = useState('');
-  const [codeNotice, setCodeNotice] = useState('');
-  const [resendIn, setResendIn] = useState(0);
-
   // Logged-in identity resolved by a successful verify
   const [username, setUsernameState] = useState(null);
 
@@ -38,13 +31,6 @@ export default function ForgotPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [resetError, setResetError] = useState('');
-
-  // Tick down the resend cooldown once per second while it's active.
-  useEffect(() => {
-    if (resendIn <= 0) return;
-    const t = setInterval(() => setResendIn((s) => Math.max(0, s - 1)), 1000);
-    return () => clearInterval(t);
-  }, [resendIn]);
 
   const checks = PW_RULES.map((r) => ({ ...r, passed: r.test(password) }));
   const allPassed = checks.every((c) => c.passed);
@@ -57,60 +43,25 @@ export default function ForgotPassword() {
     else navigate('/login/profile', { state: { email } });
   }
 
-  // Sends (or re-sends) a reset code and persists the cooldown so it survives
-  // exiting the flow. Generic result — never reveals whether the account exists.
-  async function sendCode(targetEmail = email) {
-    setCodeError('');
-    try {
-      await api.requestPasswordReset(targetEmail);
-      setCodeCooldown(targetEmail, RESEND_COOLDOWN);
-      setResendIn(RESEND_COOLDOWN);
-      setCodeNotice('If an account exists for that email, a 6-character code is on its way.');
-    } catch (err) {
-      setCodeError(err.message || 'Could not send a code. Please try again shortly.');
-    }
-  }
-
-  async function handleEmailSubmit(e) {
+  function handleEmailSubmit(e) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
     if (!isValidEmail(trimmed)) { setEmailError('Enter a valid email address.'); return; }
     setEmailError('');
     setEmail(trimmed);
-    setCode('');
-    setCodeError('');
-    setCodeNotice('');
-    // Resume an active cooldown (the earlier code is still valid) instead of
-    // requesting a fresh one; otherwise send.
-    const remaining = getCodeCooldown(trimmed);
-    if (remaining > 0) {
-      setResendIn(remaining);
-      setCodeNotice('Enter the code we already sent to your email.');
-    } else {
-      sendCode(trimmed);
-    }
+    // CodeVerifyStep issues the reset code when it mounts (respecting the cooldown).
     setStep('verify');
   }
 
-  async function handleVerify(e) {
-    e.preventDefault();
-    setCodeError('');
-    setLoading(true);
-    try {
-      const data = await api.verifyPasswordReset(email, code);
-      // Verifying the code logs the user in.
-      if (data.token) setToken(data.token);
-      if (data.username) setUsername(data.username);
-      setUsernameState(data.username || null);
-      clearAdminSession();
-      refreshGreeting();
-      clearCodeCooldown();
-      setStep('choice');
-    } catch (err) {
-      setCodeError(err.message || 'Invalid or expired code. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  // A successful code verification logs the user in (the response carries a token).
+  function handleVerified(data) {
+    if (data.token) setToken(data.token);
+    if (data.username) setUsername(data.username);
+    setUsernameState(data.username || null);
+    clearAdminSession();
+    refreshGreeting();
+    clearCodeCooldown();
+    setStep('choice');
   }
 
   async function handleSkip() {
@@ -162,43 +113,15 @@ export default function ForgotPassword() {
 
       {/* ── Verification step ── */}
       {step === 'verify' && (
-        <>
-          <h1 className="auth-title">Enter Code</h1>
-          <p className="auth-sub">
-            Enter the 6-character code sent to <strong>{email}</strong>. It expires in 30 minutes.
-          </p>
-          <form onSubmit={handleVerify} className="auth-form" noValidate>
-            <input
-              type="text"
-              className="auth-input auth-code-input"
-              placeholder="------"
-              value={code}
-              onChange={(e) => {
-                const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
-                setCode(v);
-                setCodeError('');
-              }}
-              autoComplete="one-time-code"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              inputMode="text"
-              maxLength={6}
-              style={{ fontSize: '16px' }}
-            />
-            {codeNotice && !codeError && <p className="auth-sub" style={{ margin: 0 }}>{codeNotice}</p>}
-            {codeError && <p className="auth-error">{codeError}</p>}
-            <button type="submit" className="btn btn-primary auth-submit" disabled={loading || code.length !== 6}>
-              {loading ? 'Verifying…' : 'Verify'}
-            </button>
-          </form>
-          <p className="auth-switch">
-            Didn't get it?{' '}
-            <button type="button" className="auth-link-btn" onClick={() => sendCode()} disabled={resendIn > 0}>
-              {resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend code'}
-            </button>
-          </p>
-        </>
+        <CodeVerifyStep
+          email={email}
+          title="Enter Code"
+          subtitle={<>Enter the 6-character code sent to <strong>{email}</strong>. It expires in 30 minutes.</>}
+          sentNotice="If an account exists for that email, a 6-character code is on its way."
+          requestCode={api.requestPasswordReset}
+          verifyCode={api.verifyPasswordReset}
+          onVerified={handleVerified}
+        />
       )}
 
       {/* ── Choice step ── */}
