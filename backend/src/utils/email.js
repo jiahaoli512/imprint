@@ -132,8 +132,9 @@ async function sendApprovalEmail(to, name) {
   });
 }
 
-// Sends the 6-character signup verification code. The code is generated and
-// hashed by verificationService; this only delivers the plaintext to the inbox.
+// Sends the 6-character email-verification code, used by both signup and
+// password reset (the copy is purpose-neutral). The code is generated and hashed
+// by verificationService; this only delivers the plaintext to the inbox.
 async function sendVerificationEmail(to, code) {
   // `code` is from a fixed [A-Z2-9] alphabet (not user input), but escape defensively.
   const safeCode = escapeHtml(code);
@@ -170,7 +171,7 @@ async function sendVerificationEmail(to, code) {
           <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4fffb0;">Verify your email</p>
           <h1 style="margin:0 0 16px;font-size:32px;font-weight:900;letter-spacing:-1px;color:#f0f4ff;line-height:1.1;">Confirm it's you</h1>
           <p style="margin:0 0 32px;font-size:16px;color:#6b7a99;line-height:1.7;">
-            Enter this code on the account-creation screen to continue. It works only for this email address.
+            Enter this code back in Imprint to continue. It works only for this email address.
           </p>
 
           <!-- Code box -->
@@ -180,7 +181,7 @@ async function sendVerificationEmail(to, code) {
           </div>
 
           <p style="margin:0;font-size:13px;color:#6b7a99;line-height:1.6;">
-            This code expires in <strong style="color:#f0f4ff;">30 minutes</strong>. If you didn't try to create an Imprint account, you can safely ignore this email.
+            This code expires in <strong style="color:#f0f4ff;">30 minutes</strong>. If you didn't request it, you can safely ignore this email.
           </p>
 
         </td></tr>
