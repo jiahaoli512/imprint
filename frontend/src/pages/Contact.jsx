@@ -5,8 +5,20 @@ import { api } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
 import { useForm } from '../utils/useForm';
 
-// Public contact form — collects name, email, and feedback, then sends it to
-// the Imprint inbox via the backend (/api/contact → Brevo).
+// Contact-form categories — kept byte-for-byte identical to the server-side
+// allowlist (CONTACT_CATEGORIES in backend/src/services/contactService.js).
+const CONTACT_CATEGORIES = [
+  'General Inquiry',
+  'Account & Login',
+  'Bug / Technical Issue',
+  'Feature Request',
+  'Feedback / Suggestion',
+  'Privacy / Data Request',
+  'Other',
+];
+
+// Public contact form — collects name, email, a category, and feedback, then
+// sends it to the Imprint inbox via the backend (/api/contact → Brevo).
 export default function Contact() {
   const navigate = useNavigate();
   const [sent, setSent] = useState(false);
@@ -14,11 +26,12 @@ export default function Contact() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const { values, setField, error, submitting, handleSubmit } = useForm(
-    { firstName: '', lastName: '', email: '', feedback: '' },
+    { firstName: '', lastName: '', email: '', category: '', feedback: '' },
     {
-      validate: ({ firstName, lastName, email, feedback }) => {
+      validate: ({ firstName, lastName, email, category, feedback }) => {
         if (!firstName.trim() || !lastName.trim()) return 'Please enter your first and last name.';
         if (!isValidEmail(email)) return 'Please enter a valid email address.';
+        if (!category) return 'Please select a category.';
         if (!feedback.trim()) return 'Please enter your feedback.';
         return '';
       },
@@ -66,6 +79,17 @@ export default function Contact() {
                 onChange={setField('email')}
                 disabled={submitting}
               />
+              <select
+                className={`auth-input auth-select${values.category ? '' : ' auth-select-placeholder'}`}
+                value={values.category}
+                onChange={setField('category')}
+                disabled={submitting}
+              >
+                <option value="" disabled>What can we help with?</option>
+                {CONTACT_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
               <textarea
                 className="auth-input"
                 placeholder="Your feedback"
