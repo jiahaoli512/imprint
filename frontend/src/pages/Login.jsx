@@ -59,6 +59,11 @@ export default function Login() {
                 </button>
               </div>
               {error && <p className="auth-error">{error}</p>}
+              <div style={{ textAlign: 'right', marginTop: '-4px' }}>
+                <button type="button" className="auth-link-btn" onClick={() => navigate('/forgot')}>
+                  Forgot password?
+                </button>
+              </div>
               <button
                 type="submit"
                 className="btn btn-primary auth-submit"

@@ -17,25 +17,31 @@ const BCRYPT_ROUNDS = 10;               // codes are short-lived + attempt-cappe
 // / too many attempts) so the endpoint can't be used as an oracle.
 const INVALID_CODE = () => httpError(400, 'Invalid or expired code. Please request a new one.');
 
-// True only when the email may register right now: an approved waitlist entry
-// exists and no account has been created yet. Mirrors the gate in
-// waitlistService.checkWaitlist so a code is never issued to an ineligible email.
-async function eligibleForCode(email) {
+// --- eligibility predicates (per purpose) -----------------------------------
+// Signup: an approved waitlist entry exists AND no account yet (mirrors
+// waitlistService.checkWaitlist so a code is never issued to an ineligible email).
+async function eligibleForSignup(email) {
   const entry = await Waitlist.findOne({ email }, 'approved');
   if (!entry || !entry.approved) return false;
   const existingUser = await User.findOne({ email }, '_id');
   return !existingUser;
 }
+// Reset: an account with this email exists.
+async function eligibleForReset(email) {
+  return !!(await User.findOne({ email }, '_id'));
+}
 
-// Issues (or re-issues) a verification code for an eligible email and emails it.
-// Returns the same generic result whether or not the email is eligible, so this
-// endpoint reveals nothing beyond what checkWaitlist already does. Resends are
-// throttled per-email (cooldown + total-send cap) to prevent inbox flooding.
-async function requestCode(email) {
+// --- generic code-challenge core (shared by signup + reset) ------------------
+
+// Issues (or re-issues) a code for `email` under `purpose` and emails it, but
+// only when `eligible(email)` — otherwise returns the same generic result so the
+// endpoint reveals nothing about who has an account. Resends are throttled
+// per-email (cooldown + total-send cap) to prevent inbox flooding.
+async function requestCode(email, purpose, eligible) {
   checkRequired('Email', email);
   email = normalizeEmail(email);
 
-  if (!(await eligibleForCode(email))) return { ok: true }; // no send, no disclosure
+  if (!(await eligible(email))) return { ok: true }; // no send, no disclosure
 
   const existing = await EmailVerification.findOne({ email });
   const now = Date.now();
@@ -51,7 +57,7 @@ async function requestCode(email) {
   await EmailVerification.findOneAndUpdate(
     { email },
     {
-      $set: { codeHash, expiresAt: new Date(now + CODE_TTL_MS), lastSentAt: new Date(now), attempts: 0, verifiedAt: null },
+      $set: { purpose, codeHash, expiresAt: new Date(now + CODE_TTL_MS), lastSentAt: new Date(now), attempts: 0, verifiedAt: null },
       $inc: { sendCount: 1 },
     },
     { upsert: true, new: true }
@@ -61,16 +67,16 @@ async function requestCode(email) {
   return { ok: true };
 }
 
-// Checks a submitted code. On success, marks the challenge verified and refreshes
-// the window so the user has time to finish the password step. Every failure
-// returns the same opaque error.
-async function verifyCode(email, code) {
+// Checks a submitted code for `purpose`. On success, marks the challenge verified
+// and refreshes the window so the user has time to finish the follow-up step.
+// Every failure returns the same opaque error.
+async function verifyCode(email, code, purpose) {
   checkRequired('Email', email);
   code = String(code || '').trim().toUpperCase();
   validateVerificationCode(code);
   email = normalizeEmail(email);
 
-  const record = await EmailVerification.findOne({ email });
+  const record = await EmailVerification.findOne({ email, purpose });
   if (!record || record.expiresAt.getTime() <= Date.now()) throw INVALID_CODE();
 
   // Atomically claim an attempt slot; if the code is already at the cap this
@@ -91,18 +97,43 @@ async function verifyCode(email, code) {
   return { ok: true };
 }
 
-// Registration guard: the email must have a verified, unexpired challenge. Throws
-// 403 otherwise. Called inside registerUser so the verify step can't be skipped
-// by hitting the register endpoint directly.
-async function assertEmailVerified(email) {
-  const record = await EmailVerification.findOne({ email });
+// The email must have a verified, unexpired challenge for `purpose`. Throws 403
+// otherwise. Called by the consumer (registerUser / resetPassword) so the verify
+// step can't be skipped by hitting the follow-up endpoint directly.
+async function assertVerified(email, purpose, message) {
+  const record = await EmailVerification.findOne({ email: normalizeEmail(email), purpose });
   if (!record || !record.verifiedAt || record.expiresAt.getTime() <= Date.now())
-    throw httpError(403, 'Please verify your email before creating your account.');
+    throw httpError(403, message);
 }
 
-// Clears the challenge once the account is created (single-use).
-async function consumeVerification(email) {
-  await EmailVerification.deleteOne({ email });
+// Clears the challenge (single-use) once the follow-up action completes.
+async function consume(email) {
+  await EmailVerification.deleteOne({ email: normalizeEmail(email) });
 }
 
-module.exports = { requestCode, verifyCode, assertEmailVerified, consumeVerification };
+// --- signup-purpose public API (behaviour unchanged) ------------------------
+const requestSignupCode = (email) => requestCode(email, 'signup', eligibleForSignup);
+const verifySignupCode = (email, code) => verifyCode(email, code, 'signup');
+const assertEmailVerified = (email) =>
+  assertVerified(email, 'signup', 'Please verify your email before creating your account.');
+const consumeVerification = (email) => consume(email);
+
+// --- reset-purpose public API ------------------------------------------------
+const requestResetCode = (email) => requestCode(email, 'reset', eligibleForReset);
+const verifyResetCode = (email, code) => verifyCode(email, code, 'reset');
+const assertResetVerified = (email) =>
+  assertVerified(email, 'reset', 'Please verify your email before changing your password.');
+const consumeReset = (email) => consume(email);
+
+module.exports = {
+  // signup (names preserved for existing callers)
+  requestCode: requestSignupCode,
+  verifyCode: verifySignupCode,
+  assertEmailVerified,
+  consumeVerification,
+  // reset
+  requestResetCode,
+  verifyResetCode,
+  assertResetVerified,
+  consumeReset,
+};

@@ -5,7 +5,7 @@ const requireAdminAuth = require('../middleware/adminAuth');
 const requireUserOrAdmin = require('../middleware/userOrAdmin');
 const optionalAuth = require('../middleware/optionalAuth');
 const { authLimiter, codeRequestLimiter } = require('../middleware/rateLimit');
-const { registerUser, loginUser, checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers } = require('../services/userService');
+const { registerUser, loginUser, checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers, requestPasswordReset, verifyPasswordReset, resetPassword, finishReset } = require('../services/userService');
 const { requestCode, verifyCode } = require('../services/verificationService');
 
 router.post('/', authLimiter, handle(async (req, res) => {
@@ -23,6 +23,29 @@ router.post('/request-code', codeRequestLimiter, handle(async (req, res) => {
 
 router.post('/verify-code', authLimiter, handle(async (req, res) => {
   res.json(await verifyCode(req.body.email, req.body.code));
+}));
+
+// Password reset (forgot-password flow). Same code challenge as signup:
+// request-code emails a 6-char code to an existing account; verify-code checks it
+// and returns a login token (verifying proves inbox control). reset/password and
+// reset/finish require that token (requireAuth); reset/password is additionally
+// gated by a verified reset challenge in the service.
+router.post('/reset/request-code', codeRequestLimiter, handle(async (req, res) => {
+  res.json(await requestPasswordReset(req.body.email));
+}));
+
+router.post('/reset/verify-code', authLimiter, handle(async (req, res) => {
+  res.json(await verifyPasswordReset(req.body.email, req.body.code));
+}));
+
+router.post('/reset/password', requireAuth, handle(async (req, res) => {
+  await resetPassword(req.user.email, req.body.password);
+  res.json({ ok: true });
+}));
+
+router.post('/reset/finish', requireAuth, handle(async (req, res) => {
+  await finishReset(req.user.email);
+  res.json({ ok: true });
 }));
 
 router.post('/login', authLimiter, handle(async (req, res) => {

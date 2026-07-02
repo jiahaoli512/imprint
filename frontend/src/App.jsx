@@ -3,6 +3,7 @@ import './index.css';
 import Admin from './pages/Admin';
 import AdminDashboard from './pages/AdminDashboard';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import UserRouter from './pages/UserRouter';
 import UserProfile from './pages/UserProfile';
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/home" element={<SmartHome />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<SmartLogin />} />
+        <Route path="/forgot" element={<ForgotPassword />} />
         <Route path="/login/profile" element={<SmartLoginProfile />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/contact" element={<Contact />} />

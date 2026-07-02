@@ -110,6 +110,12 @@ export const api = {
   login:          (body)               => request.post('/api/users/login', body),
   requestCode:    (email)              => request.post('/api/users/request-code', { email }),
   verifyCode:     (email, code)        => request.post('/api/users/verify-code', { email, code }),
+  // Password reset (forgot-password flow). verifyPasswordReset returns a login
+  // token; resetPassword/finishReset then run under that token.
+  requestPasswordReset: (email)        => request.post('/api/users/reset/request-code', { email }),
+  verifyPasswordReset:  (email, code)  => request.post('/api/users/reset/verify-code', { email, code }),
+  resetPassword:        (password)     => request.post('/api/users/reset/password', { password }),
+  finishReset:          ()             => request.post('/api/users/reset/finish', {}),
   checkWaitlist:  (email)              => request(`/api/waitlist/check?email=${encodeURIComponent(email)}`),
   checkUsername:  (username)           => request(`/api/users/check-username?username=${encodeURIComponent(username)}`),
   setupProfile:   (body)               => request.patch('/api/users/profile', body),
