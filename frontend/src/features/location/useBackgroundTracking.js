@@ -31,6 +31,9 @@ export function useBackgroundTracking() {
   }, []);
 
   useEffect(() => {
+    // refreshAuth is async; its setState runs after the await, not synchronously
+    // — the lint rule can't see through the function boundary.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshAuth();
     const onVisible = () => { if (document.visibilityState === 'visible') refreshAuth(); };
     document.addEventListener('visibilitychange', onVisible);
