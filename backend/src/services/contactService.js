@@ -36,4 +36,6 @@ async function submitContact({ firstName, lastName, email, feedback, category } 
   await sendContactEmail({ firstName, lastName, email, feedback, category });
 }
 
-module.exports = { submitContact, CONTACT_CATEGORIES };
+// CONTACT_CATEGORIES stays module-private — only submitContact needs it (the
+// frontend keeps its own copy across the package boundary).
+module.exports = { submitContact };

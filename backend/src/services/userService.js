@@ -15,7 +15,7 @@ const {
 
 // Field projections — define what each query exposes in one place.
 const PROFILE_FIELDS = 'username firstName lastName dateOfBirth createdAt usernameChangedAt nameChangedAt';
-const SEARCH_FIELDS = 'username firstName lastName';
+const SEARCH_FIELDS = 'username firstName lastName -_id'; // client keys by username; _id stays internal
 const ADMIN_LIST_FIELDS = 'email username firstName lastName dateOfBirth createdAt';
 
 function signToken(user) {
@@ -162,15 +162,32 @@ async function getUserByUsername(username) {
   return findUserByUsername(username, PROFILE_FIELDS);
 }
 
-// Returns a profile shaped for a given viewer: date of birth is private, so it's
-// stripped unless the viewer is the owner or an admin. Keeps the privacy rule
-// next to the data rather than in the HTTP layer.
+// Shapes a User document into the public profile representation for a given
+// viewer. The raw Mongoose document never crosses this boundary: the internal
+// _id (and anything else on the doc) is dropped, and the owner-only fields —
+// date of birth and the cooldown stamps the edit screen needs — are included
+// only for the owner or an admin. Keeping the whole visibility policy here means
+// callers just get "the profile this viewer may see," with no field-level rules
+// leaking into the HTTP layer.
+function toProfileView(user, { isOwner = false, isAdmin = false } = {}) {
+  const view = {
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    createdAt: user.createdAt,
+  };
+  if (isOwner || isAdmin) {
+    view.dateOfBirth = user.dateOfBirth;
+    view.usernameChangedAt = user.usernameChangedAt;
+    view.nameChangedAt = user.nameChangedAt;
+  }
+  return view;
+}
+
 async function getProfileFor(username, { viewerId = null, isAdmin = false } = {}) {
   const user = await getUserByUsername(username);
-  const profile = user.toObject();
-  const isOwner = viewerId && viewerId === user._id.toString();
-  if (!isOwner && !isAdmin) delete profile.dateOfBirth;
-  return profile;
+  const isOwner = !!viewerId && viewerId === user._id.toString();
+  return toProfileView(user, { isOwner, isAdmin });
 }
 
 // Edits a profile's name and/or username. Each field group is applied only when
@@ -224,7 +241,10 @@ async function updateUserByUsername(username, { firstName, lastName, username: n
   if (!changed) throw httpError(400, 'Make a change before saving.');
 
   await user.save();
-  return User.findById(user._id, PROFILE_FIELDS);
+  // Only the owner or an admin reaches here, so return the private view (the
+  // owner's edit screen needs the refreshed cooldown stamps). Shaped through the
+  // same serializer so the response never carries the raw doc / _id.
+  return toProfileView(user, { isOwner: user._id.toString() === viewerId, isAdmin });
 }
 
 async function listUsers() {
@@ -233,6 +253,6 @@ async function listUsers() {
 
 module.exports = {
   registerUser, loginUser, checkUsername, setupProfile, searchUsers,
-  getUserByUsername, getProfileFor, updateUserByUsername, listUsers,
+  getProfileFor, updateUserByUsername, listUsers,
   requestPasswordReset, verifyPasswordReset, resetPassword, finishReset,
 };
