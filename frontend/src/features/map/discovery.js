@@ -292,21 +292,31 @@ export function computeDiscovery(markers, region, level, regionName) {
     return true;
   };
 
-  const cells = new Set();
+  // Bucket markers into grid cells first (cheap floor + Map), then run the
+  // expensive point-in-region polygon test once per *unique cell* instead of
+  // once per marker. `markers` is the full un-thinned set (can be thousands),
+  // while unique cells are bounded (~TARGET_CELLS), so this cuts the polygon
+  // ray-casts from O(markers) to O(unique cells). Cells are near marker-spacing
+  // small, so a cell's first marker is a faithful representative for membership.
+  const cellRep = new Map(); // cellKey -> representative [lat, lng]
   for (const [lat, lng] of markers) {
     if (typeof lat !== 'number' || typeof lng !== 'number') continue;
-    if (!inRegion(lat, lng)) continue;
-    cells.add(`${Math.floor(lat / cellDegLat)}:${Math.floor(lng / cellDegLng)}`);
+    const key = `${Math.floor(lat / cellDegLat)}:${Math.floor(lng / cellDegLng)}`;
+    if (!cellRep.has(key)) cellRep.set(key, [lat, lng]);
+  }
+  let discoveredCells = 0;
+  for (const [lat, lng] of cellRep.values()) {
+    if (inRegion(lat, lng)) discoveredCells++;
   }
 
-  const discoveredAreaM2 = cells.size * cellAreaM2;
+  const discoveredAreaM2 = discoveredCells * cellAreaM2;
   const percent = regionAreaM2 > 0
     ? Math.min(100, Math.max(0, (discoveredAreaM2 / regionAreaM2) * 100))
     : 0;
 
   return {
     percent,
-    discoveredCells: cells.size,
+    discoveredCells,
     discoveredAreaKm2: discoveredAreaM2 / 1e6,
     regionAreaKm2: regionAreaM2 / 1e6,
   };
