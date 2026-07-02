@@ -41,7 +41,13 @@ async function requestCode(email, purpose, eligible) {
   checkRequired('Email', email);
   email = normalizeEmail(email);
 
-  if (!(await eligible(email))) return { ok: true }; // no send, no disclosure
+  if (!(await eligible(email))) {
+    // Spend the same bcrypt time the eligible path does so response latency
+    // doesn't leak whether the email is eligible (timing enumeration). Result
+    // discarded.
+    await bcrypt.hash('imprint-timing-equalizer', BCRYPT_ROUNDS);
+    return { ok: true }; // no send, no disclosure
+  }
 
   const existing = await EmailVerification.findOne({ email });
   const now = Date.now();
@@ -63,7 +69,11 @@ async function requestCode(email, purpose, eligible) {
     { upsert: true, new: true }
   );
 
-  await sendVerificationEmail(email, code);
+  // Fire-and-forget: awaiting the provider's network call would make an eligible
+  // request measurably slower than an ineligible one (a timing oracle). Log
+  // failures like sendApprovalEmail does; the user can resend if it doesn't arrive.
+  sendVerificationEmail(email, code).catch((err) =>
+    console.error('[email] Failed to send verification code:', err.message));
   return { ok: true };
 }
 
