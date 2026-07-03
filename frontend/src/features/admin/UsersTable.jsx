@@ -1,15 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, Map, UserCircle } from 'lucide-react';
+import { UserCheck, Map, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate } from '../../utils/formatDate';
 import { fullName } from '../../utils/fullName';
 import { matchesQuery } from '../../utils/matchesQuery';
 
+const PAGE_SIZE = 25;
+
 export default function UsersTable({ users, loading = false, error = '' }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
 
   const filtered = users.filter((u) => matchesQuery(search, u.email, fullName(u)));
+
+  // Paginate at PAGE_SIZE; clamp the page so removing rows can't strand an empty view.
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount - 1);
+  const start = current * PAGE_SIZE;
+  const visible = filtered.slice(start, start + PAGE_SIZE);
 
   return (
     <div className="admin-section">
@@ -34,7 +43,7 @@ export default function UsersTable({ users, loading = false, error = '' }) {
             className="admin-search"
             placeholder="Search by email or name…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
           />
           <div className="admin-table-wrap">
             <table className="admin-table">
@@ -51,9 +60,9 @@ export default function UsersTable({ users, loading = false, error = '' }) {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr><td colSpan={6} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
-                ) : filtered.map((u, i) => (
+                ) : visible.map((u, i) => (
                   <tr key={u._id}>
-                    <td className="muted col-num col-hide-mobile">{i + 1}</td>
+                    <td className="muted col-num col-hide-mobile">{start + i + 1}</td>
                     <td>{u.email}</td>
                     <td className="muted col-hide-mobile">
                       {fullName(u, '—')}
@@ -79,6 +88,30 @@ export default function UsersTable({ users, loading = false, error = '' }) {
               </tbody>
             </table>
           </div>
+
+          {filtered.length > PAGE_SIZE && (
+            <div className="admin-pagination">
+              <button
+                className="icon-btn"
+                onClick={() => setPage(current - 1)}
+                disabled={current === 0}
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="admin-page-label">
+                {start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <button
+                className="icon-btn"
+                onClick={() => setPage(current + 1)}
+                disabled={current >= pageCount - 1}
+                aria-label="Next page"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
         </>
       ))}
     </div>
