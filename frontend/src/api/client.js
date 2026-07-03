@@ -122,6 +122,7 @@ export const api = {
   getUser:        (username)           => request(`/api/users/by-username/${encodeURIComponent(username)}`),
   updateUser:     (username, body)     => request.patch(`/api/users/by-username/${encodeURIComponent(username)}`, body),
   searchUsers:    (q)                  => request(`/api/users/search?q=${encodeURIComponent(q)}`),
+  adminSearchUsers: (q)                => adminRequest(`/api/users/search?q=${encodeURIComponent(q)}`),
 
   // Markers
   getMarkers:      (username) => request(`/api/markers/user/${encodeURIComponent(username)}`),

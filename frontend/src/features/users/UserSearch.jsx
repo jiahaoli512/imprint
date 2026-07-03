@@ -17,9 +17,11 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
   const [showResults, setShowResults] = useState(false);
   const containerRef = useRef(null);
 
+  // Admin view carries an admin token (no user session), so search must go
+  // through the admin request; a regular user uses the user request.
   const debouncedSearch = useDebouncedCallback(async (q) => {
     try {
-      const data = await api.searchUsers(q);
+      const data = await (isAdminView ? api.adminSearchUsers : api.searchUsers)(q);
       setResults(data);
       setShowResults(true);
     } catch { setResults([]); }

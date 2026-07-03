@@ -65,8 +65,10 @@ router.patch('/profile', requireAuth, handle(async (req, res) => {
 }));
 
 // Auth-gated: user search (returns usernames + real names) is a signed-in
-// feature, so anonymous callers can't harvest the userbase + PII.
-router.get('/search', requireAuth, handle(async (req, res) => {
+// feature, so anonymous callers can't harvest the userbase + PII. Accepts a user
+// OR admin token — admins searching users (e.g. from an admin-viewed dashboard)
+// carry an admin token, not a user one.
+router.get('/search', requireUserOrAdmin, handle(async (req, res) => {
   res.json(await searchUsers(req.query.q || ''));
 }));
 
