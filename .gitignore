@@ -3,3 +3,6 @@ dist/
 .env
 .DS_Store
 *.log
+
+# Local-only dev seeding (contains a shared dev password; not for the repo)
+backend/scripts/seedUsers.js
