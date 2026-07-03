@@ -24,6 +24,17 @@ function ageOk(dobStr) {
   return age >= 18;
 }
 
+// True if `s` ("YYYY-MM-DD") is a real calendar date — rejects impossible ones
+// like 2/30 or 6/31 that new Date() would silently roll into the next month.
+// Mirrors isRealCalendarDate in backend/src/utils/validate.js.
+function isRealDate(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+  if (!m) return false;
+  const y = +m[1], mo = +m[2], d = +m[3];
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -53,7 +64,8 @@ export default function Profile() {
         if (usernameStatus === 'taken') return 'That username is already taken.';
         if (usernameStatus === 'checking') return 'Still checking username — please wait a moment.';
         if (!dob) return 'Please enter your date of birth.';
-        const dobYear = new Date(dob).getFullYear();
+        if (!isRealDate(dob)) return 'Please enter a valid date of birth.';
+        const dobYear = +dob.slice(0, 4);
         if (dobYear < 1000 || dobYear > 9999) return 'Please enter a valid 4-digit birth year.';
         if (!ageOk(dob)) return 'You must be at least 18 years old to use Imprint.';
         return '';
@@ -90,7 +102,7 @@ export default function Profile() {
   const canSubmit =
     values.firstName.trim() &&
     usernameStatus === 'available' &&
-    values.dob && ageOk(values.dob);
+    values.dob && isRealDate(values.dob) && ageOk(values.dob);
 
   return (
     <AuthShell>
