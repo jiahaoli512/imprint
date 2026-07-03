@@ -1,19 +1,31 @@
 import { useState } from 'react';
-import { Users, Download, Trash2, GripVertical, CheckCircle, Clock } from 'lucide-react';
+import { Users, Download, Trash2, GripVertical, CheckCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDragReorder } from './useDragReorder';
 import { formatDate } from '../../utils/formatDate';
 import { matchesQuery } from '../../utils/matchesQuery';
 
+const PAGE_SIZE = 25;
+
 export default function WaitlistTable({ entries, loading, error, approvingId, onApprove, onDelete, onReorder, onExport }) {
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
   const { getRowProps } = useDragReorder(onReorder);
 
   const approvedCount = entries.filter((e) => e.approved).length;
   const filtered = entries.filter((e) => matchesQuery(search, e.email, e.name));
 
+  // Paginate at PAGE_SIZE. `current` is clamped so deleting rows off the last
+  // page (which shrinks pageCount) can't strand us on an empty page.
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount - 1);
+  const start = current * PAGE_SIZE;
+  const visible = filtered.slice(start, start + PAGE_SIZE);
+
   // Drag-reorder only when unfiltered: while searching, the visible row index no
   // longer matches the full-list position, so dragging would reorder the wrong
-  // rows. (Reordering a filtered subset is ambiguous anyway.)
+  // rows. (Reordering a filtered subset is ambiguous anyway.) When unfiltered the
+  // row's absolute index (start + i) is its position in `entries`, so drag stays
+  // correct across pages.
   const dragEnabled = search.trim() === '';
 
   return (
@@ -35,7 +47,7 @@ export default function WaitlistTable({ entries, loading, error, approvingId, on
           className="admin-search"
           placeholder="Search by name or email…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
         />
       )}
 
@@ -66,14 +78,16 @@ export default function WaitlistTable({ entries, loading, error, approvingId, on
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={7} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
-              ) : filtered.map((e, i) => (
-                <tr key={e._id} {...(dragEnabled ? getRowProps(i) : {})}>
+              ) : visible.map((e, i) => {
+                const absIndex = start + i; // position in the full (filtered) list
+                return (
+                <tr key={e._id} {...(dragEnabled ? getRowProps(absIndex) : {})}>
                   <td className="col-grip">
                     <GripVertical size={14} className="grip-icon"
                       style={dragEnabled ? undefined : { opacity: 0.25 }}
                       aria-label={dragEnabled ? undefined : 'Clear search to reorder'} />
                   </td>
-                  <td className="muted col-num col-hide-mobile">{i + 1}</td>
+                  <td className="muted col-num col-hide-mobile">{absIndex + 1}</td>
                   <td>{e.email}</td>
                   <td className="muted col-hide-mobile">{e.name || '—'}</td>
                   <td className="muted col-hide-mobile">{formatDate(e.createdAt)}</td>
@@ -105,9 +119,34 @@ export default function WaitlistTable({ entries, loading, error, approvingId, on
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && filtered.length > PAGE_SIZE && (
+        <div className="admin-pagination">
+          <button
+            className="icon-btn"
+            onClick={() => setPage(current - 1)}
+            disabled={current === 0}
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <span className="admin-page-label">
+            {start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length}
+          </span>
+          <button
+            className="icon-btn"
+            onClick={() => setPage(current + 1)}
+            disabled={current >= pageCount - 1}
+            aria-label="Next page"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
       )}
     </>

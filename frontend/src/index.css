@@ -1841,6 +1841,17 @@ footer {
 .admin-state { color: var(--muted); font-size: 14px; margin-top: 48px; text-align: center; }
 .admin-state.error { color: var(--error); }
 
+/* Waitlist pagination bar (prev / range / next). */
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+.admin-page-label { font-size: 13px; color: var(--muted); min-width: 120px; text-align: center; }
+.admin-pagination .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
 .admin-empty {
   display: flex;
   flex-direction: column;
