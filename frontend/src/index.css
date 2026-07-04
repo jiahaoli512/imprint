@@ -1114,13 +1114,13 @@ footer {
 .profile-name { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
 .profile-handle { margin: 0; font-size: 15px; color: var(--accent); font-weight: 600; }
 .profile-edit-btn { margin-top: 4px; }
-/* Edit form shows ~2 fields at a time; the rest scroll into view. Save/Cancel and
-   any error sit outside this container so they stay visible. */
+/* Edit form shows ~3–3.5 fields at a time; the rest scroll into view. Save/Cancel
+   and any error sit outside this container so they stay visible. */
 .profile-edit-fields {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  max-height: 180px;
+  max-height: 290px;
   overflow-y: auto;
   padding-right: 8px;
 }
