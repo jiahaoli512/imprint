@@ -109,6 +109,12 @@ app.use((err, req, res, next) => {
   if (err.code === 11000) {
     return res.status(409).json({ error: 'User already on the waitlist!' });
   }
+  // A malformed id in a route param (e.g. a non-ObjectId) surfaces as a Mongoose
+  // CastError — that's bad client input, not a server fault, so answer 400
+  // instead of leaking a 500.
+  if (err.name === 'CastError') {
+    return res.status(400).json({ error: 'Invalid identifier.' });
+  }
   console.error(err.stack);
   // Only surface messages for intentional (status-tagged) errors; never leak
   // internal error details on unexpected 500s.

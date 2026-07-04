@@ -23,6 +23,12 @@ function edgeBetween(a, b) {
 // Whether an edge (possibly null) represents an established friendship.
 const isAccepted = (edge) => !!edge && edge.status === EDGE.ACCEPTED;
 
+// Whether two users (by id) are currently friends. Exposed for other services
+// that gate access on friendship (e.g. marker visibility).
+async function areFriends(aId, bId) {
+  return isAccepted(await edgeBetween(aId, bId));
+}
+
 // Query matching every accepted friendship a user is part of (either side).
 const acceptedFriendshipsOf = (userId) => ({
   status: EDGE.ACCEPTED,
@@ -178,5 +184,5 @@ async function friendSummaryFor(ownerId, { viewerId = null, isOwner = false } = 
 
 module.exports = {
   sendFriendRequest, listIncomingRequests, friendAcceptedActivity, respondToRequest,
-  removeFriend, listFriends, friendSummaryFor,
+  removeFriend, listFriends, friendSummaryFor, areFriends,
 };

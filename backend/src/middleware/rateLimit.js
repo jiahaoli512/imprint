@@ -44,4 +44,17 @@ const codeRequestLimiter = rateLimit({
   message: { error: 'Too many verification codes requested. Please try again later.' },
 });
 
-module.exports = { apiLimiter, authLimiter, contactLimiter, codeRequestLimiter };
+// Limiter for sending friend requests. Counts *successful* requests too, because
+// each accepted send emails the recipient — the abusable action (spamming other
+// users' inboxes / Brevo quota). The one-pending-request-per-pair unique index
+// already prevents re-spamming a single person; this caps fan-out to many
+// recipients from one IP. Generous for real use (adding a batch of friends).
+const friendRequestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many friend requests. Please try again later.' },
+});
+
+module.exports = { apiLimiter, authLimiter, contactLimiter, codeRequestLimiter, friendRequestLimiter };

@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
+const { friendRequestLimiter } = require('../middleware/rateLimit');
 const { sendFriendRequest, listIncomingRequests, respondToRequest, removeFriend, listFriends } = require('../services/friendService');
 
 // Friend requests are a user-only feature (they need a user identity), so every
@@ -8,7 +9,7 @@ const { sendFriendRequest, listIncomingRequests, respondToRequest, removeFriend,
 // viewer↔owner relationship ride along on the existing profile GET, so there's
 // no read endpoint here beyond the incoming-request list for the bell.
 
-router.post('/request', requireAuth, handle(async (req, res) => {
+router.post('/request', requireAuth, friendRequestLimiter, handle(async (req, res) => {
   res.json(await sendFriendRequest(req.user.id, req.body.username));
 }));
 
