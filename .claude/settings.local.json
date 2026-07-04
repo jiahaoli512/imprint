@@ -4,7 +4,8 @@
       "Bash(sed -i '' \"s/localStorage\\\\.getItem\\('imprint_username'\\)/getUsername\\(\\)/g\" /Users/jiahaoli/imprint/frontend/src/pages/UserRouter.jsx /Users/jiahaoli/imprint/frontend/src/pages/UserProfile.jsx)",
       "Bash(sed -i '' \"s/localStorage\\\\.setItem\\('imprint_username', data\\\\.username\\)/setUsername\\(data.username\\)/g\" /Users/jiahaoli/imprint/frontend/src/pages/Login.jsx /Users/jiahaoli/imprint/frontend/src/pages/Profile.jsx)",
       "Bash(sed -i '' \"s/localStorage\\\\.removeItem\\('imprint_username'\\)/clearSession\\(\\)/g\" /Users/jiahaoli/imprint/frontend/src/pages/Dashboard.jsx)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(python3 *)"
     ]
   }
 }
