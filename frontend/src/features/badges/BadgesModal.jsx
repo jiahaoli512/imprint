@@ -113,13 +113,6 @@ export default function BadgesModal({ user, markers, onClose }) {
 
   return (
     <Modal onClose={onClose} icon={false} closable className="modal-badges">
-      <div className="badge-top-anchor">
-        {showTop && (
-          <button className="icon-btn badge-scrolltop" onClick={scrollToTop} aria-label="Scroll to top">
-            <ChevronUp size={20} />
-          </button>
-        )}
-      </div>
       <div className="badge-nav">
         {count > 1 && (
           <button className="icon-btn badge-nav-arrow" onClick={() => go(-1)} aria-label="Previous category">
@@ -206,6 +199,11 @@ export default function BadgesModal({ user, markers, onClose }) {
             )}
           </div>
         </div>
+        {showTop && (
+          <button className="icon-btn badge-scrolltop" onClick={scrollToTop} aria-label="Scroll to top">
+            <ChevronUp size={20} />
+          </button>
+        )}
         <div className={`badge-scroll-hint${showHint ? '' : ' badge-scroll-hint-hidden'}`} aria-hidden="true">
           <ChevronDown size={20} />
         </div>

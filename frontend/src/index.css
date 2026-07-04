@@ -821,8 +821,7 @@ footer {
 /* Fixed rows around the scrolling grid. */
 .modal-badges > .badge-nav,
 .modal-badges > .badge-filters,
-.modal-badges > .badge-dots,
-.modal-badges > .badge-top-anchor { flex: 0 0 auto; }
+.modal-badges > .badge-dots { flex: 0 0 auto; }
 
 /* Round icon button: a circular surface2 button with a muted glyph (shared by
    the modal close X and the badge carousel arrows). Position/size live on the
@@ -875,8 +874,9 @@ footer {
 
 /* Scroll-to-top: a zero-height sticky anchor keeps the button pinned to the top
    of the scrolling badges modal without taking layout space. */
-.badge-top-anchor { position: sticky; top: 0; height: 0; z-index: 6; }
-.badge-scrolltop { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; }
+/* Scroll-to-top FAB floats at the top-right of the scrolling grid (below the
+   carousel nav), so it never collides with the nav arrows or the close X. */
+.badge-scrolltop { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; z-index: 7; }
 
 /* The badge grid scrolls internally at ~2 rows (rather than scrolling the whole
    modal). A bottom fade + nudging chevron overlays the *peeking* next row — so the
@@ -950,7 +950,7 @@ footer {
   overflow-y: auto;
   /* Hard cap at ~2 rows + a thin peek that the fade fully masks. Tune this if the
      fade sits over the 2nd row (lower it) or too much of row 3 shows (also lower). */
-  max-height: 480px;
+  max-height: 400px;
   scrollbar-width: thin;
   scrollbar-color: var(--muted) transparent;
 }
