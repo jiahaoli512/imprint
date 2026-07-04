@@ -66,6 +66,7 @@ export default function Dashboard() {
         center={!isNative && !isAdminView && <UserSearch isAdminView={isAdminView} variant="header" />}
         right={
           <>
+            {!isAdminView && <NotificationBell align="right" />}
             {isAdminView
               ? <AdminViewingBadge username={username} />
               : <span style={{ fontSize: '13px', color: 'var(--muted)' }}>@{username}</span>}
@@ -129,13 +130,6 @@ export default function Dashboard() {
 
           {!isAdminView && !isNative && !expanded && <WebTrackingNotice />}
         </div>
-
-        {!isAdminView && (
-          <div className="dashboard-notif">
-            <NotificationBell />
-            <span className="dashboard-notif-label">Notifications</span>
-          </div>
-        )}
       </div>
 
       <SaveMapPrompt {...savePrompt} />

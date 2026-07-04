@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
-import Modal from '../../components/Modal';
 import { api } from '../../api/client';
 
 // A multipurpose notification bell (own profile + own dashboard, never admin
-// view). The count badge sums all notifications; opening it shows a two-section
-// panel: LEFT = incoming friend requests (accept/reject), RIGHT = everything
-// else (badge achievements, etc. — not implemented yet, so a placeholder).
-// Point-in-time: fetched once on mount, no realtime infra.
-export default function NotificationBell() {
+// view). The count badge sums all notifications; clicking drops down a panel
+// anchored to the button with two sections: LEFT = incoming friend requests
+// (accept/reject), RIGHT = everything else (badge achievements, etc. — not
+// implemented yet, so a placeholder). `align` sets which edge the dropdown pins
+// to so it opens toward the screen interior ('right' in the header's right
+// cluster, 'left' in the profile toolbar). Point-in-time: fetched once on mount.
+export default function NotificationBell({ align = 'left' }) {
   const [requests, setRequests] = useState([]);
   const [open, setOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const wrapRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
@@ -20,6 +22,16 @@ export default function NotificationBell() {
       .catch(() => { /* leave empty on failure */ });
     return () => { alive = false; };
   }, []);
+
+  // Close on outside click / Escape (matches UserSearch's dismissal pattern).
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); }
+    function onKey(e) { if (e.key === 'Escape') setOpen(false); }
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [open]);
 
   async function respond(id, action) {
     setBusyId(id);
@@ -38,19 +50,19 @@ export default function NotificationBell() {
   const count = requests.length + otherCount;
 
   return (
-    <>
+    <div className="notif-wrap" ref={wrapRef}>
       <button
         className="btn btn-ghost notif-bell"
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((o) => !o)}
         aria-label={`Notifications${count ? ` (${count})` : ''}`}
+        aria-expanded={open}
       >
         <Bell size={16} />
         {count > 0 && <span className="notif-badge">{count > 9 ? '9+' : count}</span>}
       </button>
 
       {open && (
-        <Modal onClose={() => setOpen(false)} icon={false} closable className="notif-modal">
-          <h2 className="modal-title">Notifications</h2>
+        <div className={`notif-dropdown notif-dropdown-${align}`} role="menu">
           <div className="notif-sections">
             {/* Left: friend requests */}
             <section className="notif-section">
@@ -85,8 +97,8 @@ export default function NotificationBell() {
               <p className="notif-empty">No new activity yet.</p>
             </section>
           </div>
-        </Modal>
+        </div>
       )}
-    </>
+    </div>
   );
 }

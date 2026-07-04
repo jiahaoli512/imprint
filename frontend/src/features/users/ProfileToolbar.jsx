@@ -30,7 +30,7 @@ export default function ProfileToolbar({ username, isAdminView, isMe }) {
             {isAdminView ? `@${username}'s dashboard` : isMe ? 'Dashboard' : 'Back'}
           </span>
         </button>
-        {isMe && !isAdminView && <NotificationBell />}
+        {isMe && !isAdminView && <NotificationBell align="left" />}
         {isAdminView && (
           <>
             <button className="btn btn-ghost" onClick={() => navigate('/admin/waitlist')}>

@@ -1145,23 +1145,25 @@ footer {
   text-align: center;
 }
 
-/* Dashboard notification bell, sitting near the footer */
-.dashboard-notif {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 24px 0 8px;
+/* Multipurpose notification bell + dropdown panel: friend requests | activity */
+.notif-wrap { position: relative; display: inline-flex; }
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  width: min(520px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  padding: 16px;
+  z-index: 1200;
 }
-.dashboard-notif-label { font-size: 13px; color: var(--muted); font-weight: 600; }
-
-/* Multipurpose notification panel: friend requests | activity */
-.notif-modal { max-width: 640px; width: 100%; }
+.notif-dropdown-left { left: 0; }
+.notif-dropdown-right { right: 0; }
 .notif-sections {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  margin-top: 16px;
   text-align: left;
 }
 .notif-section { min-width: 0; }
