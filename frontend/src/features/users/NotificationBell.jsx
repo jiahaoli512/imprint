@@ -2,7 +2,37 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api, getActivitySeen, setActivitySeen } from '../../api/client';
+import { useDismiss } from '../../utils/useDismiss';
 import { timeAgo } from '../../utils/timeAgo';
+
+// One incoming friend-request row: name + time, with Accept / Reject.
+function FriendRequestItem({ request, busy, onRespond }) {
+  return (
+    <div className="friend-request-row">
+      <div className="friend-request-info">
+        <div className="friend-request-head">
+          <span className="friend-request-username">@{request.username}</span>
+          {request.at && <span className="notif-time">{timeAgo(request.at)}</span>}
+        </div>
+        {request.name && <span className="friend-request-name">{request.name}</span>}
+      </div>
+      <div className="friend-request-actions">
+        <button className="btn btn-primary" onClick={() => onRespond(request.id, 'accept')} disabled={busy}>Accept</button>
+        <button className="btn btn-ghost" onClick={() => onRespond(request.id, 'reject')} disabled={busy}>Reject</button>
+      </div>
+    </div>
+  );
+}
+
+// One activity row: "<name> accepted your friend request", linking to them.
+function ActivityItem({ item, onOpen }) {
+  return (
+    <button className="notif-activity-row" onClick={() => onOpen(item.username)}>
+      <span><strong>{item.name || `@${item.username}`}</strong> accepted your friend request.</span>
+      {item.at && <span className="notif-time notif-activity-time">{timeAgo(item.at)}</span>}
+    </button>
+  );
+}
 
 // A multipurpose notification bell (own profile + own dashboard, never admin
 // view). The count badge sums pending friend requests + unseen activity;
@@ -22,24 +52,13 @@ export default function NotificationBell({ align = 'left' }) {
 
   useEffect(() => {
     let alive = true;
-    api.getFriendRequests()
-      .then((d) => { if (alive) setRequests(Array.isArray(d) ? d : []); })
-      .catch(() => { /* leave empty on failure */ });
-    api.getFriendActivity()
-      .then((d) => { if (alive) setActivity(Array.isArray(d) ? d : []); })
-      .catch(() => { /* leave empty on failure */ });
+    const load = (fn, set) => fn().then((d) => { if (alive) set(Array.isArray(d) ? d : []); }).catch(() => {});
+    load(api.getFriendRequests, setRequests);
+    load(api.getFriendActivity, setActivity);
     return () => { alive = false; };
   }, []);
 
-  // Close on outside click / Escape (matches UserSearch's dismissal pattern).
-  useEffect(() => {
-    if (!open) return;
-    function onDown(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); }
-    function onKey(e) { if (e.key === 'Escape') setOpen(false); }
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
-  }, [open]);
+  useDismiss(wrapRef, () => setOpen(false), { active: open, escape: true });
 
   // Opening the panel marks all current activity as seen.
   function toggle() {
@@ -65,6 +84,11 @@ export default function NotificationBell({ align = 'left' }) {
     }
   }
 
+  function openProfile(username) {
+    setOpen(false);
+    navigate(`/${username}/profile`);
+  }
+
   const unseenActivity = activity.filter((a) => !seenAt || (a.at && a.at > seenAt)).length;
   const count = requests.length + unseenActivity;
 
@@ -83,7 +107,6 @@ export default function NotificationBell({ align = 'left' }) {
       {open && (
         <div className={`notif-dropdown notif-dropdown-${align}`} role="menu">
           <div className="notif-sections">
-            {/* Left: friend requests */}
             <section className="notif-section">
               <h3 className="notif-section-title">Friend requests</h3>
               {requests.length === 0 ? (
@@ -91,29 +114,12 @@ export default function NotificationBell({ align = 'left' }) {
               ) : (
                 <div className="notif-list">
                   {requests.map((r) => (
-                    <div key={r.id} className="friend-request-row">
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
-                          <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{r.username}</span>
-                          {r.at && <span className="notif-time">{timeAgo(r.at)}</span>}
-                        </div>
-                        {r.name && <span style={{ display: 'block', fontSize: '12px', color: 'var(--muted)' }}>{r.name}</span>}
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                        <button className="btn btn-primary" onClick={() => respond(r.id, 'accept')} disabled={busyId === r.id}>
-                          Accept
-                        </button>
-                        <button className="btn btn-ghost" onClick={() => respond(r.id, 'reject')} disabled={busyId === r.id}>
-                          Reject
-                        </button>
-                      </div>
-                    </div>
+                    <FriendRequestItem key={r.id} request={r} busy={busyId === r.id} onRespond={respond} />
                   ))}
                 </div>
               )}
             </section>
 
-            {/* Right: activity feed (friend-request accepts today; badge unlocks later) */}
             <section className="notif-section">
               <h3 className="notif-section-title">Activity</h3>
               {activity.length === 0 ? (
@@ -121,16 +127,7 @@ export default function NotificationBell({ align = 'left' }) {
               ) : (
                 <div className="notif-list">
                   {activity.map((a) => (
-                    <button
-                      key={`${a.username}-${a.at}`}
-                      className="notif-activity-row"
-                      onClick={() => { setOpen(false); navigate(`/${a.username}/profile`); }}
-                    >
-                      <span>
-                        <strong>{a.name || `@${a.username}`}</strong> accepted your friend request.
-                      </span>
-                      {a.at && <span className="notif-time" style={{ display: 'block', marginTop: '4px' }}>{timeAgo(a.at)}</span>}
-                    </button>
+                    <ActivityItem key={`${a.username}-${a.at}`} item={a} onOpen={openProfile} />
                   ))}
                 </div>
               )}

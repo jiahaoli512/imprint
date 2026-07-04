@@ -1258,6 +1258,13 @@ footer {
 }
 
 /* A pending-request row in the bell modal */
+.friend-request-info { min-width: 0; }
+.friend-request-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.friend-request-username { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-request-name { display: block; font-size: 12px; color: var(--muted); }
+.friend-request-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.notif-activity-time { display: block; margin-top: 4px; }
+
 /* Stacked so the name and the Accept/Reject buttons never collide in the narrow
    notification-section column. */
 .friend-request-row {

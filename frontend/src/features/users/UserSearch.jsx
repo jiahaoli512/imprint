@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { api } from '../../api/client';
 import { fullName } from '../../utils/fullName';
 import { useDebouncedCallback } from '../../utils/useDebouncedCallback';
+import { useDismiss } from '../../utils/useDismiss';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -27,15 +28,7 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
     } catch { setResults([]); }
   }, 250);
 
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setShowResults(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  useDismiss(containerRef, () => setShowResults(false));
 
   function handleChange(e) {
     const val = e.target.value;

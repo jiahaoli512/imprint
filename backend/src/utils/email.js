@@ -1,3 +1,5 @@
+const { fullName } = require('./names');
+
 const FROM_EMAIL = process.env.EMAIL_USER || 'donotreply.imprint@gmail.com';
 const CONTACT_INBOX = 'donotreply.imprint@gmail.com'; // where contact-form messages land
 
@@ -179,13 +181,13 @@ async function sendVerificationEmail(to, code) {
 // Delivers a contact-form submission to the Imprint inbox. The visitor's email
 // is set as replyTo so we can respond directly from the received message.
 async function sendContactEmail({ firstName, lastName, email, feedback, category }) {
-  const fullName = `${firstName} ${lastName}`.trim();
+  const name = fullName({ firstName, lastName });
   const cat = category || 'Uncategorized';
 
   await sendEmail({
     to: [{ email: CONTACT_INBOX, name: 'Imprint' }],
-    replyTo: { email, name: fullName || email },
-    subject: `[${cat}] New contact form submission from ${fullName || email}`,
+    replyTo: { email, name: name || email },
+    subject: `[${cat}] New contact form submission from ${name || email}`,
     htmlContent: `
 <!DOCTYPE html>
 <html>
@@ -193,7 +195,7 @@ async function sendContactEmail({ firstName, lastName, email, feedback, category
 <body style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#0f1623;">
   <h2 style="margin:0 0 16px;">New contact form submission</h2>
   <p style="margin:0 0 8px;"><strong>Category:</strong> ${escapeHtml(cat)}</p>
-  <p style="margin:0 0 8px;"><strong>Name:</strong> ${escapeHtml(fullName) || '—'}</p>
+  <p style="margin:0 0 8px;"><strong>Name:</strong> ${escapeHtml(name) || '—'}</p>
   <p style="margin:0 0 8px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
   <p style="margin:16px 0 4px;"><strong>Feedback:</strong></p>
   <p style="margin:0;white-space:pre-wrap;">${escapeHtml(feedback)}</p>

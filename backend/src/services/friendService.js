@@ -2,18 +2,13 @@ const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const httpError = require('../utils/httpError');
 const { normalizeUsername } = require('../utils/validate');
+const { fullName, firstName } = require('../utils/names');
 const { sendFriendRequestEmail, sendFriendAcceptedEmail } = require('../utils/email');
 
-// A user's display name from first/last (empty string when neither is set).
-function fullName(user) {
-  return `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
-}
-
-// A user's first name for email greetings, falling back to their username so we
-// never address them as "" (empty string) — callers add a final generic fallback.
-function firstNameOf(user) {
-  return (user?.firstName || '').trim() || user?.username || '';
-}
+// Projection for a user rendered publicly (never exposes _id/email). The
+// serializer below turns such a doc into the shape the client receives.
+const PUBLIC_USER_FIELDS = 'username firstName lastName';
+const toPublicUser = (user) => ({ username: user.username, name: fullName(user) });
 
 // Loads a user by username (normalized — Mongoose only lowercases on save, not
 // on query), throwing a 404 if none. Kept local rather than importing
@@ -33,6 +28,18 @@ function edgeBetween(a, b) {
       { requester: b, recipient: a },
     ],
   });
+}
+
+// Query matching every accepted friendship a user is part of (either side).
+const acceptedFriendshipsOf = (userId) => ({
+  status: 'accepted',
+  $or: [{ requester: userId }, { recipient: userId }],
+});
+
+// Sends a notification email without blocking the caller: failures are logged,
+// not thrown, so a mail hiccup never fails the friend action that triggered it.
+function emailInBackground(label, promise) {
+  promise.catch((err) => console.error(`[email] Failed to send ${label}:`, err.message));
 }
 
 // Creates a pending request from `requesterId` to the user named
@@ -57,13 +64,11 @@ async function sendFriendRequest(requesterId, recipientUsername) {
     throw err;
   }
 
-  // Notify the recipient by email. Fire-and-forget: a mail hiccup shouldn't fail
-  // the request (matches the accepted-email pattern).
+  // Notify the recipient by email (non-blocking).
   if (recipient.email) {
     const requester = await User.findById(requesterId, 'firstName username');
-    const requesterName = firstNameOf(requester) || 'Someone';
-    sendFriendRequestEmail(recipient.email, requesterName)
-      .catch((err) => console.error('[email] Failed to send friend-request email:', err.message));
+    const requesterName = firstName(requester) || 'Someone';
+    emailInBackground('friend-request email', sendFriendRequestEmail(recipient.email, requesterName));
   }
   return { status: 'outgoing' };
 }
@@ -73,15 +78,10 @@ async function sendFriendRequest(requesterId, recipientUsername) {
 async function listIncomingRequests(userId) {
   const reqs = await FriendRequest.find({ recipient: userId, status: 'pending' })
     .sort({ createdAt: -1 })
-    .populate('requester', 'username firstName lastName');
+    .populate('requester', PUBLIC_USER_FIELDS);
   return reqs
     .filter((r) => r.requester) // guard against a requester deleted since
-    .map((r) => ({
-      id: r._id.toString(),
-      username: r.requester.username,
-      name: fullName(r.requester),
-      at: r.createdAt,
-    }));
+    .map((r) => ({ id: r._id.toString(), ...toPublicUser(r.requester), at: r.createdAt }));
 }
 
 // Activity feed for the notification panel's "Activity" side. Derived from
@@ -91,15 +91,10 @@ async function listActivity(userId) {
   const accepted = await FriendRequest.find({ requester: userId, status: 'accepted' })
     .sort({ acceptedAt: -1 })
     .limit(30)
-    .populate('recipient', 'username firstName lastName');
+    .populate('recipient', PUBLIC_USER_FIELDS);
   return accepted
     .filter((r) => r.recipient) // guard against a recipient deleted since
-    .map((r) => ({
-      type: 'friend_accepted',
-      username: r.recipient.username,
-      name: fullName(r.recipient),
-      at: r.acceptedAt || r.updatedAt,
-    }));
+    .map((r) => ({ type: 'friend_accepted', ...toPublicUser(r.recipient), at: r.acceptedAt || r.updatedAt }));
 }
 
 // Accept or reject a pending request. Only the recipient may respond. Accept
@@ -127,8 +122,10 @@ async function respondToRequest(userId, requestId, action) {
   const requester = request.requester;
   if (requester?.email) {
     const accepter = await User.findById(userId, 'firstName username');
-    sendFriendAcceptedEmail(requester.email, firstNameOf(requester) || 'there', firstNameOf(accepter) || 'someone')
-      .catch((err) => console.error('[email] Failed to send friend-accepted email:', err.message));
+    emailInBackground(
+      'friend-accepted email',
+      sendFriendAcceptedEmail(requester.email, firstName(requester) || 'there', firstName(accepter) || 'someone'),
+    );
   }
   return { status: 'accepted' };
 }
@@ -157,26 +154,20 @@ async function listFriends(viewerId, ownerUsername) {
     if (!edge || edge.status !== 'accepted') throw httpError(403, 'Only friends can view this list.');
   }
 
-  const edges = await FriendRequest.find({
-    status: 'accepted',
-    $or: [{ requester: ownerId }, { recipient: ownerId }],
-  })
-    .populate('requester', 'username firstName lastName')
-    .populate('recipient', 'username firstName lastName');
+  const edges = await FriendRequest.find(acceptedFriendshipsOf(ownerId))
+    .populate('requester', PUBLIC_USER_FIELDS)
+    .populate('recipient', PUBLIC_USER_FIELDS);
 
   return edges
     .map((e) => (e.requester?._id?.toString() === ownerId.toString() ? e.recipient : e.requester))
     .filter(Boolean)
-    .map((u) => ({ username: u.username, name: fullName(u) }))
+    .map(toPublicUser)
     .sort((a, b) => a.username.localeCompare(b.username));
 }
 
 // Count of accepted friendships a user is part of (either side of the edge).
 function getFriendCount(userId) {
-  return FriendRequest.countDocuments({
-    status: 'accepted',
-    $or: [{ requester: userId }, { recipient: userId }],
-  });
+  return FriendRequest.countDocuments(acceptedFriendshipsOf(userId));
 }
 
 // The viewer's relationship to a profile owner, for the profile's friend button:
