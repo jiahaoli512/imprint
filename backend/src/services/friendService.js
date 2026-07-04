@@ -83,6 +83,24 @@ async function listIncomingRequests(userId) {
     }));
 }
 
+// Activity feed for the notification panel's "Activity" side. Derived from
+// existing data: an accepted request the user *sent* means the recipient
+// accepted them, i.e. "@x accepted your friend request." Newest first, capped.
+async function listActivity(userId) {
+  const accepted = await FriendRequest.find({ requester: userId, status: 'accepted' })
+    .sort({ acceptedAt: -1 })
+    .limit(30)
+    .populate('recipient', 'username firstName lastName');
+  return accepted
+    .filter((r) => r.recipient) // guard against a recipient deleted since
+    .map((r) => ({
+      type: 'friend_accepted',
+      username: r.recipient.username,
+      name: fullName(r.recipient),
+      at: r.acceptedAt || r.updatedAt,
+    }));
+}
+
 // Accept or reject a pending request. Only the recipient may respond. Accept
 // flips the doc to `accepted` and emails the original requester; reject deletes
 // the doc (which resets the sender's button and lets them re-request later).
@@ -177,6 +195,6 @@ async function getRelationship(viewerId, ownerId) {
 }
 
 module.exports = {
-  sendFriendRequest, listIncomingRequests, respondToRequest,
+  sendFriendRequest, listIncomingRequests, listActivity, respondToRequest,
   removeFriend, listFriends, getFriendCount, getRelationship,
 };

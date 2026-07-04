@@ -1216,6 +1216,23 @@ footer {
   padding-right: 4px;
 }
 .notif-empty { font-size: 13px; color: var(--muted); margin: 0; }
+.notif-activity-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.notif-activity-row:hover { background: var(--surface); }
+.notif-activity-row strong { color: var(--text); font-weight: 600; }
 
 @media (max-width: 560px) {
   .notif-sections { grid-template-columns: 1fr; }

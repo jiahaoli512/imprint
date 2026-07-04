@@ -37,6 +37,13 @@ export const setCodeCooldown = (email, seconds) =>
   localStorage.setItem(CODE_CD_KEY, JSON.stringify({ email, until: Date.now() + seconds * 1000 }));
 export const clearCodeCooldown = () => localStorage.removeItem(CODE_CD_KEY);
 
+// Timestamp (ISO) the user last opened the notification panel, so the Activity
+// side can mark items newer than this as unseen and drive the bell's badge.
+// Stored client-side (activity is derived, not a server-tracked read state).
+const ACTIVITY_SEEN_KEY = 'imprint_activity_seen';
+export const getActivitySeen = () => localStorage.getItem(ACTIVITY_SEEN_KEY) || '';
+export const setActivitySeen = (iso) => localStorage.setItem(ACTIVITY_SEEN_KEY, iso);
+
 export const getAdminToken = () => sessionStorage.getItem('admin_token');
 // Setting the token also marks the admin session active — the two always go
 // together, so callers never touch the raw 'admin_auth' flag themselves.
@@ -127,6 +134,7 @@ export const api = {
   // Friends
   sendFriendRequest:    (username)   => request.post('/api/friends/request', { username }),
   getFriendRequests:    ()           => request('/api/friends/requests'),
+  getFriendActivity:    ()           => request('/api/friends/activity'),
   respondFriendRequest: (id, action) => request.post(`/api/friends/requests/${encodeURIComponent(id)}/respond`, { action }),
   getFriendsOf:         (username)   => request(`/api/friends/of/${encodeURIComponent(username)}`),
   removeFriend:         (username)   => request.del(`/api/friends/${encodeURIComponent(username)}`),
