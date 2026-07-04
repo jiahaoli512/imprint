@@ -112,7 +112,7 @@ export default function BadgesModal({ user, markers, onClose }) {
   };
 
   return (
-    <Modal onClose={onClose} icon={false} closable className="modal-badges" containerRef={scrollRef}>
+    <Modal onClose={onClose} icon={false} closable className="modal-badges">
       <div className="badge-top-anchor">
         {showTop && (
           <button className="icon-btn badge-scrolltop" onClick={scrollToTop} aria-label="Scroll to top">
@@ -190,19 +190,24 @@ export default function BadgesModal({ user, markers, onClose }) {
         </div>
       )}
 
-      <div className="badge-slide-viewport" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        {/* key=index remounts on change so the slide animation re-runs; the
-            direction class picks which side it enters from. */}
-        <div key={index} className={`badge-slide ${dir < 0 ? 'badge-slide-prev' : 'badge-slide-next'}`}>
-          {badges.length === 0 ? (
-            <div className="badge-empty">No badges in this category yet — coming soon.</div>
-          ) : visible.length > 0 ? (
-            <div className="badge-grid">
-              {visible.map((b) => <Badge key={b.key} badge={b} />)}
-            </div>
-          ) : (
-            <div className="badge-empty">No matches.</div>
-          )}
+      <div className="badge-scroll-region">
+        <div className="badge-slide-viewport" ref={scrollRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          {/* key=index remounts on change so the slide animation re-runs; the
+              direction class picks which side it enters from. */}
+          <div key={index} className={`badge-slide ${dir < 0 ? 'badge-slide-prev' : 'badge-slide-next'}`}>
+            {badges.length === 0 ? (
+              <div className="badge-empty">No badges in this category yet — coming soon.</div>
+            ) : visible.length > 0 ? (
+              <div className="badge-grid">
+                {visible.map((b) => <Badge key={b.key} badge={b} />)}
+              </div>
+            ) : (
+              <div className="badge-empty">No matches.</div>
+            )}
+          </div>
+        </div>
+        <div className={`badge-scroll-hint${showHint ? '' : ' badge-scroll-hint-hidden'}`} aria-hidden="true">
+          <ChevronDown size={20} />
         </div>
       </div>
 
@@ -218,12 +223,6 @@ export default function BadgesModal({ user, markers, onClose }) {
           ))}
         </div>
       )}
-
-      <div className="badge-scroll-anchor" aria-hidden="true">
-        <div className={`badge-scroll-hint${showHint ? '' : ' badge-scroll-hint-hidden'}`}>
-          <ChevronDown size={20} />
-        </div>
-      </div>
     </Modal>
   );
 }
