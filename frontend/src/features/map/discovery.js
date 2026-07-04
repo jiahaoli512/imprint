@@ -4,7 +4,6 @@
 // cells sized by zoom level, a cell counts once any marker falls in it, and the
 // percentage is the discovered cell area over the region's true area.
 import { continentContaining, oceanAt, CONTINENT_BBOX, inBBox } from './geo';
-import { getLevel } from './region';
 
 const EARTH_RADIUS_M = 6371000;
 const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
@@ -322,5 +321,3 @@ export function computeDiscovery(markers, region, level, regionName) {
     regionAreaKm2: regionAreaM2 / 1e6,
   };
 }
-
-export { getLevel };
