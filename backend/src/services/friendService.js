@@ -30,6 +30,9 @@ function edgeBetween(a, b) {
   });
 }
 
+// Whether an edge (possibly null) represents an established friendship.
+const isAccepted = (edge) => !!edge && edge.status === 'accepted';
+
 // Query matching every accepted friendship a user is part of (either side).
 const acceptedFriendshipsOf = (userId) => ({
   status: 'accepted',
@@ -46,13 +49,13 @@ function emailInBackground(label, promise) {
 // `recipientUsername`. Rejects self-adds and any pre-existing relationship
 // (pending in either direction, or already friends).
 async function sendFriendRequest(requesterId, recipientUsername) {
-  const recipient = await findUserByUsername(recipientUsername, 'email firstName lastName');
+  const recipient = await findUserByUsername(recipientUsername, 'email');
   if (recipient._id.toString() === requesterId)
     throw httpError(400, "You can't add yourself as a friend.");
 
   const existing = await edgeBetween(requesterId, recipient._id);
   if (existing) {
-    if (existing.status === 'accepted') throw httpError(409, "You're already friends.");
+    if (isAccepted(existing)) throw httpError(409, "You're already friends.");
     throw httpError(409, 'A friend request is already pending.');
   }
 
@@ -104,7 +107,7 @@ async function respondToRequest(userId, requestId, action) {
   if (action !== 'accept' && action !== 'reject')
     throw httpError(400, 'Invalid action.');
 
-  const request = await FriendRequest.findById(requestId).populate('requester', 'email firstName lastName');
+  const request = await FriendRequest.findById(requestId).populate('requester', 'email firstName username');
   if (!request || request.status !== 'pending') throw httpError(404, 'Friend request not found.');
   if (request.recipient.toString() !== userId) throw httpError(403, 'Forbidden');
 
@@ -136,7 +139,7 @@ async function respondToRequest(userId, requestId, action) {
 async function removeFriend(userId, friendUsername) {
   const other = await findUserByUsername(friendUsername, '_id');
   const edge = await edgeBetween(userId, other._id);
-  if (!edge || edge.status !== 'accepted') throw httpError(404, "You aren't friends with this user.");
+  if (!isAccepted(edge)) throw httpError(404, "You aren't friends with this user.");
   await edge.deleteOne();
   return { status: 'none' };
 }
@@ -151,7 +154,7 @@ async function listFriends(viewerId, ownerUsername) {
 
   if (!isOwner) {
     const edge = await edgeBetween(viewerId, ownerId);
-    if (!edge || edge.status !== 'accepted') throw httpError(403, 'Only friends can view this list.');
+    if (!isAccepted(edge)) throw httpError(403, 'Only friends can view this list.');
   }
 
   const edges = await FriendRequest.find(acceptedFriendshipsOf(ownerId))
@@ -180,7 +183,7 @@ async function getRelationship(viewerId, ownerId) {
 
   const edge = await edgeBetween(viewerId, ownerId);
   if (!edge) return { status: 'none' };
-  if (edge.status === 'accepted') return { status: 'friends' };
+  if (isAccepted(edge)) return { status: 'friends' };
   // Pending: outgoing if the viewer sent it, incoming if they received it.
   if (edge.requester.toString() === viewerId) return { status: 'outgoing' };
   return { status: 'incoming', requestId: edge._id.toString() };

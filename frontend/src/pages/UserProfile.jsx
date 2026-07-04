@@ -13,6 +13,7 @@ import { useAdminView } from '../utils/useAdminView';
 import { useFitText } from '../utils/useFitText';
 import { useUser } from '../features/users/useUser';
 import { useProfileEdit } from '../features/users/useProfileEdit';
+import { useProfileFriends } from '../features/users/useProfileFriends';
 import ProfileToolbar from '../features/users/ProfileToolbar';
 import FriendButton from '../features/users/FriendButton';
 import FriendsListModal from '../features/users/FriendsListModal';
@@ -35,21 +36,8 @@ export default function UserProfile() {
   const edit = useProfileEdit({ user, setUser, username, isAdminView, updateUser });
 
   const [showBadges, setShowBadges] = useState(false);
-  const [showFriends, setShowFriends] = useState(false);
+  const friends = useProfileFriends(user, setUser, { isMe });
 
-  // Keep the owner's friend count + the viewer's relationship in sync after a
-  // friend action, so the count and the list-clickability update without a reload.
-  function handleFriendChange(next) {
-    setUser((u) => {
-      if (!u) return u;
-      const delta = next === 'friends' ? 1 : next === 'none' ? -1 : 0;
-      return {
-        ...u,
-        friendCount: Math.max(0, (u.friendCount ?? 0) + delta),
-        viewerRelationship: { ...(u.viewerRelationship || {}), status: next },
-      };
-    });
-  }
   // Lazily load this profile's markers the first time the badges modal opens —
   // they drive the visited-state (US passports) unlocks.
   const [badgeMarkers, setBadgeMarkers] = useState(null);
@@ -73,11 +61,7 @@ export default function UserProfile() {
   const joined = formatDate(user.createdAt, { long: true });
   const displayName = fullName(user);
   const { nameWait, usernameWait } = edit;
-
-  const friendCount = user.friendCount ?? 0;
-  const friendsLabel = `${friendCount} ${friendCount === 1 ? 'friend' : 'friends'}`;
-  // Friend list is visible to the owner and to the owner's friends only.
-  const canSeeFriends = isMe || user.viewerRelationship?.status === 'friends';
+  const { friendsLabel, canSeeFriends } = friends;
 
   return (
     <div className={`auth-page${isAdminView ? ' profile-page-admin' : ''}`}>
@@ -173,7 +157,7 @@ export default function UserProfile() {
               )}
               <p className="profile-handle">@{user.username}</p>
               {canSeeFriends ? (
-                <button className="profile-friends profile-friends-link" onClick={() => setShowFriends(true)}>
+                <button className="profile-friends profile-friends-link" onClick={friends.openFriends}>
                   {friendsLabel}
                 </button>
               ) : (
@@ -184,7 +168,7 @@ export default function UserProfile() {
                   key={user.username}
                   username={user.username}
                   relationship={user.viewerRelationship}
-                  onChange={handleFriendChange}
+                  onChange={friends.onFriendChange}
                 />
               )}
               {isMe && (
@@ -209,7 +193,7 @@ export default function UserProfile() {
         </div>
       </div>
       {showBadges && <BadgesModal user={user} markers={badgeMarkers} onClose={() => setShowBadges(false)} />}
-      {showFriends && <FriendsListModal username={user.username} isMe={isMe} onClose={() => setShowFriends(false)} />}
+      {friends.showFriends && <FriendsListModal username={user.username} isMe={isMe} onClose={friends.closeFriends} />}
       {edit.pendingSave && (
         <Modal onClose={edit.closePending}>
           <h2 className="modal-title">Save these changes?</h2>
