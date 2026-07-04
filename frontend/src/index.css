@@ -1123,6 +1123,37 @@ footer {
   max-height: 290px;
   overflow-y: auto;
   padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+.profile-edit-fields::-webkit-scrollbar { width: 8px; }
+.profile-edit-fields::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.profile-edit-fields::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* "More below" affordance for a scrollable area (ScrollHint): a bottom fade with
+   a nudging chevron that fades out once you reach the end. */
+.scroll-hint-wrap { position: relative; width: 100%; }
+.scroll-hint {
+  position: absolute;
+  left: 0;
+  right: 8px; /* clear the scrollbar */
+  bottom: 0;
+  height: 46px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  color: var(--accent);
+  background: linear-gradient(transparent, var(--bg) 85%);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+.scroll-hint-hidden { opacity: 0; }
+.scroll-hint svg { animation: scrollNudge 1.5s ease-in-out infinite; }
+@keyframes scrollNudge {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(4px); }
 }
 .profile-divider { height: 1px; background: var(--border); margin: 0 -40px; }
 .profile-info { padding-top: 28px; display: flex; flex-direction: column; gap: 16px; }

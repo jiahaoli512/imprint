@@ -14,6 +14,7 @@ import { useFitText } from '../utils/useFitText';
 import { useUser } from '../features/users/useUser';
 import { useProfileEdit } from '../features/users/useProfileEdit';
 import { useProfileFriends } from '../features/users/useProfileFriends';
+import ScrollHint from '../components/ScrollHint';
 import ProfileToolbar from '../features/users/ProfileToolbar';
 import FriendButton from '../features/users/FriendButton';
 import FriendsListModal from '../features/users/FriendsListModal';
@@ -75,7 +76,7 @@ export default function UserProfile() {
 
           {edit.editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
-              <div className="profile-edit-fields">
+              <ScrollHint className="profile-edit-fields">
               <div>
                 <FieldLabel variant="display" required>First Name</FieldLabel>
                 <input
@@ -141,7 +142,7 @@ export default function UserProfile() {
                   </p>
                 </div>
               )}
-              </div>
+              </ScrollHint>
               {edit.error && <p className="auth-error">{edit.error}</p>}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button className="btn btn-primary" style={{ flex: 1 }} onClick={edit.requestSave} disabled={edit.saving}>
