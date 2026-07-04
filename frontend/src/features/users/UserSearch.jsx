@@ -5,6 +5,7 @@ import { api } from '../../api/client';
 import { fullName } from '../../utils/fullName';
 import { useDebouncedCallback } from '../../utils/useDebouncedCallback';
 import { useDismiss } from '../../utils/useDismiss';
+import UserIdentity from './UserIdentity';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -95,26 +96,8 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         }}>
           {results.map(u => (
-            <div
-              key={u.username}
-              onClick={() => selectUser(u)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '10px 14px',
-                cursor: 'pointer',
-                borderBottom: '1px solid var(--border)',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              <span style={{ fontSize: '13px', fontWeight: '600' }}>@{u.username}</span>
-              {(u.firstName || u.lastName) && (
-                <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                  {fullName(u)}
-                </span>
-              )}
+            <div key={u.username} className="user-search-result" onClick={() => selectUser(u)}>
+              <UserIdentity username={u.username} name={(u.firstName || u.lastName) ? fullName(u) : ''} />
             </div>
           ))}
         </div>

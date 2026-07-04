@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal';
 import LogoMark from '../../components/LogoMark';
+import UserIdentity from './UserIdentity';
 import { api } from '../../api/client';
 import { useAsync } from '../../utils/useAsync';
 
@@ -33,8 +34,7 @@ export default function FriendsListModal({ username, isMe, onClose }) {
         <div className="friends-list">
           {friends.map((f) => (
             <button key={f.username} className="friends-list-row" onClick={() => go(f.username)}>
-              <span style={{ fontWeight: 600 }}>@{f.username}</span>
-              {f.name && <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{f.name}</span>}
+              <UserIdentity username={f.username} name={f.name} />
             </button>
           ))}
         </div>
