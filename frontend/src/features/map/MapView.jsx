@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  pinIcon, pinIconEdit, InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker,
-  LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_COLOR, MARKER_EDIT_COLOR,
-} from './mapUtils';
+  pinIcon, pinIconEdit, LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_COLOR, MARKER_EDIT_COLOR,
+} from './mapStyle';
+import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker } from './mapComponents';
 import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
 
 // Most DOM pins we'll ever mount at once — a safety ceiling on top of the

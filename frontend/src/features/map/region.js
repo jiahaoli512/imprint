@@ -1,0 +1,34 @@
+import { CONTINENT } from './geo';
+
+// Zoom → place-naming concern: maps a zoom level to a place granularity, picks
+// the right name field from a reverse-geocode result, and calls Nominatim. Split
+// out of the old mapUtils grab-bag (network + naming, distinct from pure geo).
+
+export function getLevel(zoom) {
+  // <=3 covers the hemispheric, multi-continent view → treat as Earth.
+  // 'continent' kicks in only once you're zoomed to roughly a single continent.
+  if (zoom <= 3)  return 'earth';
+  if (zoom <= 4)  return 'continent';
+  if (zoom <= 6)  return 'country';
+  if (zoom <= 9)  return 'state';
+  if (zoom <= 12) return 'county';
+  return 'city';
+}
+
+export function pickName(addr, level) {
+  if (level === 'earth')     return 'Earth';
+  if (level === 'continent') return CONTINENT[addr.country_code?.toUpperCase()] || addr.country || '';
+  if (level === 'country')   return addr.country || '';
+  if (level === 'state')     return addr.state || addr.country || '';
+  if (level === 'county')    return addr.county || addr.municipality || addr.state || '';
+  return addr.city || addr.town || addr.village || addr.hamlet || addr.county || '';
+}
+
+export async function reverseGeocode(lat, lng) {
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&addressdetails=1`
+  );
+  const data = await res.json();
+  if (data.error) return null;
+  return data.address || null;
+}

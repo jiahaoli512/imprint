@@ -1,13 +1,7 @@
-import { useEffect } from 'react';
-import { useMap, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-
-// Map geometry + palette, shared by MapView and MapCard.
-export const MARKER_RADIUS_M = 15.24;   // mirrors MARKER_RADIUS_M in backend markerService
-export const LOCATION_RADIUS_M = 80;   // accuracy circle around the user's location
-export const MARKER_COLOR = '#e2a156';      // saved markers (and accent)
-export const MARKER_EDIT_COLOR = '#e2685a'; // markers/errors while editing
-export const LOCATE_BLUE = '#5aa9e6';       // the "locate me" dot/highlight
+// Pure coordinate → continent / ocean geography (no network, no Leaflet). Shared
+// by RegionDetector (toolbar label), discovery.js (marker membership + region
+// resolution), and region.js (place naming), so they all name water/coast the
+// same way. Split out of the old mapUtils grab-bag.
 
 export const CONTINENT = {
   AF:'Asia',AM:'Asia',AZ:'Asia',BH:'Asia',BD:'Asia',BT:'Asia',BN:'Asia',KH:'Asia',CN:'Asia',
@@ -49,12 +43,9 @@ export const CONTINENT = {
   AQ:'Antarctica',
 };
 
-// --- coordinate → continent / ocean naming (no network) ----------------------
 // Approximate continent bounding boxes [minLng, minLat, maxLng, maxLat]. Boxes
 // are generous (coast-inclusive) and overlap at the Eurasia seam; a box whose
 // minLng > maxLng wraps the antimeridian (matches lng >= minLng OR lng <= maxLng).
-// Shared by RegionDetector (toolbar label) and discovery.js (marker membership +
-// region resolution), so both name water/coast the same way.
 export const CONTINENT_BBOX = {
   'North America': [-170, 7, -50, 84],
   'South America': [-82, -56, -34, 13],
@@ -110,145 +101,4 @@ export function oceanAt(lat, lng) {
     if (d < bestDist) { bestDist = d; best = name; }
   }
   return best;
-}
-
-export function getLevel(zoom) {
-  // <=3 covers the hemispheric, multi-continent view → treat as Earth.
-  // 'continent' kicks in only once you're zoomed to roughly a single continent.
-  if (zoom <= 3)  return 'earth';
-  if (zoom <= 4)  return 'continent';
-  if (zoom <= 6)  return 'country';
-  if (zoom <= 9)  return 'state';
-  if (zoom <= 12) return 'county';
-  return 'city';
-}
-
-export function pickName(addr, level) {
-  if (level === 'earth')     return 'Earth';
-  if (level === 'continent') return CONTINENT[addr.country_code?.toUpperCase()] || addr.country || '';
-  if (level === 'country')   return addr.country || '';
-  if (level === 'state')     return addr.state || addr.country || '';
-  if (level === 'county')    return addr.county || addr.municipality || addr.state || '';
-  return addr.city || addr.town || addr.village || addr.hamlet || addr.county || '';
-}
-
-export async function reverseGeocode(lat, lng) {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&addressdetails=1`
-  );
-  const data = await res.json();
-  if (data.error) return null;
-  return data.address || null;
-}
-
-export const pinIcon = L.divIcon({
-  className: '',
-  html: `<div style="width:10px;height:10px;background:#e2a156;border:2px solid #0b0e13;border-radius:50%;box-shadow:0 0 4px rgba(226,161,86,0.25)"></div>`,
-  iconSize: [10, 10],
-  iconAnchor: [5, 5],
-});
-
-export const pinIconEdit = L.divIcon({
-  className: '',
-  html: `<div style="width:10px;height:10px;background:#e2685a;border:2px solid #0b0e13;border-radius:50%;box-shadow:0 0 4px rgba(226,104,90,0.25);cursor:pointer"></div>`,
-  iconSize: [10, 10],
-  iconAnchor: [5, 5],
-});
-
-export function InvalidateOnMount() {
-  const map = useMap();
-  useEffect(() => { setTimeout(() => map.invalidateSize(), 100); }, [map]);
-  return null;
-}
-
-export function MapClickHandler({ editing, onAdd }) {
-  useMapEvents({
-    click(e) { if (editing) onAdd([e.latlng.lat, e.latlng.lng]); },
-  });
-  return null;
-}
-
-// Reports map activity for the discovery gauge: `onBusy` fires the moment the
-// map starts moving/zooming, and `onSettle({lat,lng,zoom})` fires once the map
-// has been completely still for SETTLE_MS. Separate from RegionDetector (which
-// stays snappy at 700ms) so the gauge can deliberately wait ~2s before
-// recomputing the expensive percentage.
-const SETTLE_MS = 2000;
-
-export function DiscoverySettleTracker({ onBusy, onSettle }) {
-  const map = useMap();
-
-  useEffect(() => {
-    let timer;
-
-    const settle = () => {
-      const { lat, lng } = map.getCenter();
-      onSettle({ lat, lng, zoom: map.getZoom() });
-    };
-    const queueSettle = () => { clearTimeout(timer); timer = setTimeout(settle, SETTLE_MS); };
-    const markBusy = () => { clearTimeout(timer); onBusy(); };
-
-    map.on('movestart', markBusy);
-    map.on('zoomstart', markBusy);
-    map.on('moveend', queueSettle);
-    map.on('zoomend', queueSettle);
-    queueSettle(); // initial compute after the map mounts
-
-    return () => {
-      map.off('movestart', markBusy);
-      map.off('zoomstart', markBusy);
-      map.off('moveend', queueSettle);
-      map.off('zoomend', queueSettle);
-      clearTimeout(timer);
-    };
-  }, [map, onBusy, onSettle]);
-
-  return null;
-}
-
-export function RegionDetector({ onRegion }) {
-  const map = useMap();
-
-  useEffect(() => {
-    let timer;
-
-    async function detect() {
-      const zoom = map.getZoom();
-      const level = getLevel(zoom);
-
-      if (level === 'earth') { onRegion('Earth'); return; }
-
-      const { lat, lng } = map.getCenter();
-      // Open ocean (outside every continent box) → name the sea; no network.
-      if (!continentContaining(lat, lng)) { onRegion(oceanAt(lat, lng)); return; }
-
-      const addr = await reverseGeocode(lat, lng);
-      let name = addr ? pickName(addr, level) : '';
-
-      if (level === 'city' && !name) {
-        const city = addr?.city || addr?.town || addr?.village || addr?.hamlet;
-        name = city ? `Near ${city}` : (addr?.county || '');
-      }
-
-      // Coastal water (inside a continent box but no land under the centre) →
-      // the nearest continent, matching the discovery panel rather than "—".
-      if (!name) name = continentContaining(lat, lng);
-
-      onRegion(name);
-    }
-
-    const debounced = () => { clearTimeout(timer); timer = setTimeout(detect, 700); };
-
-    map.on('moveend', debounced);
-    map.on('zoomend', debounced);
-    detect();
-
-    return () => {
-      map.off('moveend', debounced);
-      map.off('zoomend', debounced);
-      clearTimeout(timer);
-    };
-  }, [map, onRegion]);
-
-  return null;
 }
