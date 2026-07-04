@@ -9,6 +9,12 @@ function fullName(user) {
   return `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
 }
 
+// A user's first name for email greetings, falling back to their username so we
+// never address them as "" (empty string) — callers add a final generic fallback.
+function firstNameOf(user) {
+  return (user?.firstName || '').trim() || user?.username || '';
+}
+
 // Loads a user by username (normalized — Mongoose only lowercases on save, not
 // on query), throwing a 404 if none. Kept local rather than importing
 // userService's helper so friendService depends only on the User model (no
@@ -54,8 +60,8 @@ async function sendFriendRequest(requesterId, recipientUsername) {
   // Notify the recipient by email. Fire-and-forget: a mail hiccup shouldn't fail
   // the request (matches the accepted-email pattern).
   if (recipient.email) {
-    const requester = await User.findById(requesterId, 'firstName lastName username');
-    const requesterName = fullName(requester) || requester?.username || 'Someone';
+    const requester = await User.findById(requesterId, 'firstName username');
+    const requesterName = firstNameOf(requester) || 'Someone';
     sendFriendRequestEmail(recipient.email, requesterName)
       .catch((err) => console.error('[email] Failed to send friend-request email:', err.message));
   }
@@ -101,8 +107,8 @@ async function respondToRequest(userId, requestId, action) {
   // hiccup shouldn't fail the accept (matches the send pattern elsewhere).
   const requester = request.requester;
   if (requester?.email) {
-    const accepter = await User.findById(userId, 'firstName lastName username');
-    sendFriendAcceptedEmail(requester.email, fullName(requester) || 'there', fullName(accepter) || accepter?.username || 'someone')
+    const accepter = await User.findById(userId, 'firstName username');
+    sendFriendAcceptedEmail(requester.email, firstNameOf(requester) || 'there', firstNameOf(accepter) || 'someone')
       .catch((err) => console.error('[email] Failed to send friend-accepted email:', err.message));
   }
   return { status: 'accepted' };
