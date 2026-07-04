@@ -1194,6 +1194,7 @@ footer {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   text-align: left;
+  align-items: start; /* don't stretch the Activity column to the request list's height */
 }
 .notif-section { min-width: 0; }
 .notif-section + .notif-section { border-left: 1px solid var(--border); padding-left: 20px; }
@@ -1204,7 +1205,16 @@ footer {
   color: var(--muted);
   margin: 0 0 12px;
 }
-.notif-list { display: flex; flex-direction: column; gap: 10px; }
+/* Show ~one request at a time; scroll for the rest so the panel can't grow tall
+   and overlap the map. */
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 124px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
 .notif-empty { font-size: 13px; color: var(--muted); margin: 0; }
 
 @media (max-width: 560px) {
