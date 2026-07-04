@@ -1,24 +1,14 @@
 const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const httpError = require('../utils/httpError');
-const { normalizeUsername } = require('../utils/validate');
 const { fullName, firstName } = require('../utils/names');
 const { sendFriendRequestEmail, sendFriendAcceptedEmail } = require('../utils/email');
+const { findUserByUsername } = require('./userLookup');
 
 // Projection for a user rendered publicly (never exposes _id/email). The
 // serializer below turns such a doc into the shape the client receives.
 const PUBLIC_USER_FIELDS = 'username firstName lastName';
 const toPublicUser = (user) => ({ username: user.username, name: fullName(user) });
-
-// Loads a user by username (normalized — Mongoose only lowercases on save, not
-// on query), throwing a 404 if none. Kept local rather than importing
-// userService's helper so friendService depends only on the User model (no
-// service↔service cycle, since userService imports this file).
-async function findUserByUsername(username, fields) {
-  const user = await User.findOne({ username: normalizeUsername(username) }, fields);
-  if (!user) throw httpError(404, 'User not found.');
-  return user;
-}
 
 // The single doc (if any) between two users, in either direction.
 function edgeBetween(a, b) {

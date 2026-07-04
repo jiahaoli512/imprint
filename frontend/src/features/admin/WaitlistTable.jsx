@@ -1,25 +1,20 @@
 import { useState } from 'react';
-import { Users, Download, Trash2, GripVertical, CheckCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Download, Trash2, GripVertical, CheckCircle, Clock } from 'lucide-react';
 import { useDragReorder } from './useDragReorder';
 import { formatDate } from '../../utils/formatDate';
 import { matchesQuery } from '../../utils/matchesQuery';
+import { usePagination } from '../../utils/usePagination';
+import Pagination from './Pagination';
 
 const PAGE_SIZE = 25;
 
 export default function WaitlistTable({ entries, loading, error, approvingId, onApprove, onDelete, onReorder, onExport }) {
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
   const { getRowProps } = useDragReorder(onReorder);
 
   const approvedCount = entries.filter((e) => e.approved).length;
   const filtered = entries.filter((e) => matchesQuery(search, e.email, e.name));
-
-  // Paginate at PAGE_SIZE. `current` is clamped so deleting rows off the last
-  // page (which shrinks pageCount) can't strand us on an empty page.
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const current = Math.min(page, pageCount - 1);
-  const start = current * PAGE_SIZE;
-  const visible = filtered.slice(start, start + PAGE_SIZE);
+  const { page, setPage, pageCount, start, visible } = usePagination(filtered, PAGE_SIZE);
 
   // Drag-reorder only when unfiltered: while searching, the visible row index no
   // longer matches the full-list position, so dragging would reorder the wrong
@@ -126,28 +121,8 @@ export default function WaitlistTable({ entries, loading, error, approvingId, on
         </div>
       )}
 
-      {!loading && filtered.length > PAGE_SIZE && (
-        <div className="admin-pagination">
-          <button
-            className="icon-btn"
-            onClick={() => setPage(current - 1)}
-            disabled={current === 0}
-            aria-label="Previous page"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <span className="admin-page-label">
-            {start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length}
-          </span>
-          <button
-            className="icon-btn"
-            onClick={() => setPage(current + 1)}
-            disabled={current >= pageCount - 1}
-            aria-label="Next page"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
+      {!loading && (
+        <Pagination page={page} pageCount={pageCount} start={start} pageSize={PAGE_SIZE} total={filtered.length} onPage={setPage} />
       )}
     </>
   );

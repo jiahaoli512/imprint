@@ -13,6 +13,7 @@ const {
   requestResetCode, verifyResetCode, assertResetVerified, consumeReset,
 } = require('./verificationService');
 const { friendSummaryFor } = require('./friendService');
+const { findUserByUsername } = require('./userLookup');
 
 // Field projections — define what each query exposes in one place.
 const PROFILE_FIELDS = 'username firstName lastName dateOfBirth createdAt usernameChangedAt nameChangedAt';
@@ -148,15 +149,6 @@ async function searchUsers(q) {
   // can serve, instead of an unanchored `$regex` that forces a full collection
   // scan. usernames are stored lowercase, so no case-insensitive flag is needed.
   return User.find({ username: { $regex: `^${clean}` } }, SEARCH_FIELDS).limit(8);
-}
-
-// Normalizes the username and loads the user (optionally projected to `fields`),
-// throwing a 404 if none exists. Centralizes the lookup so callers can't forget
-// to normalize before querying (Mongoose only lowercases on save, not on query).
-async function findUserByUsername(username, fields) {
-  const user = await User.findOne({ username: normalizeUsername(username) }, fields);
-  if (!user) throw httpError(404, 'User not found.');
-  return user;
 }
 
 async function getUserByUsername(username) {

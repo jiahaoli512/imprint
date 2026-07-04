@@ -1,24 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, Map, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UserCheck, Map, UserCircle } from 'lucide-react';
 import { formatDate } from '../../utils/formatDate';
 import { fullName } from '../../utils/fullName';
 import { matchesQuery } from '../../utils/matchesQuery';
+import { usePagination } from '../../utils/usePagination';
+import Pagination from './Pagination';
 
 const PAGE_SIZE = 25;
 
 export default function UsersTable({ users, loading = false, error = '' }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
 
   const filtered = users.filter((u) => matchesQuery(search, u.email, fullName(u)));
-
-  // Paginate at PAGE_SIZE; clamp the page so removing rows can't strand an empty view.
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const current = Math.min(page, pageCount - 1);
-  const start = current * PAGE_SIZE;
-  const visible = filtered.slice(start, start + PAGE_SIZE);
+  const { page, setPage, pageCount, start, visible } = usePagination(filtered, PAGE_SIZE);
 
   return (
     <div className="admin-section">
@@ -89,29 +85,7 @@ export default function UsersTable({ users, loading = false, error = '' }) {
             </table>
           </div>
 
-          {filtered.length > PAGE_SIZE && (
-            <div className="admin-pagination">
-              <button
-                className="icon-btn"
-                onClick={() => setPage(current - 1)}
-                disabled={current === 0}
-                aria-label="Previous page"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <span className="admin-page-label">
-                {start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length}
-              </span>
-              <button
-                className="icon-btn"
-                onClick={() => setPage(current + 1)}
-                disabled={current >= pageCount - 1}
-                aria-label="Next page"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          )}
+          <Pagination page={page} pageCount={pageCount} start={start} pageSize={PAGE_SIZE} total={filtered.length} onPage={setPage} />
         </>
       ))}
     </div>
