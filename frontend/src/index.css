@@ -887,13 +887,15 @@ footer {
   left: 0;
   right: 8px; /* clear the scrollbar */
   bottom: 0;
-  height: 56px;
+  height: 64px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 6px;
   color: var(--accent);
-  background: linear-gradient(transparent, var(--surface) 82%);
+  /* Reach fully-solid surface partway down so the peeking row dissolves cleanly
+     into the background instead of showing as a dimmed, low-contrast ghost. */
+  background: linear-gradient(to bottom, transparent, var(--surface) 45%);
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
