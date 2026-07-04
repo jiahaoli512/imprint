@@ -6,3 +6,10 @@ dist/
 
 # Local-only dev seeding (contains a shared dev password; not for the repo)
 backend/scripts/seedUsers.js
+
+# Local tooling / generated artifacts — not part of the app
+graphify-out/
+.claude/skills/
+account_milestone.html
+account_created_milestone.html
+/package-lock.json
