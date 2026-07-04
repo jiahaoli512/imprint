@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import Modal from '../../components/Modal';
 import Badge from './Badge';
@@ -24,6 +24,7 @@ export default function BadgesModal({ user, markers, onClose }) {
   const [selected, setSelected] = useState([]); // selected continents; [] = All
   const [status, setStatus] = useState('all');  // all | unlocked | locked
   const [showTop, setShowTop] = useState(false); // scroll-to-top affordance
+  const [showHint, setShowHint] = useState(false); // "more below" scroll hint
   const touchX = useRef(null);
   const scrollRef = useRef(null);
 
@@ -36,14 +37,32 @@ export default function BadgesModal({ user, markers, onClose }) {
   const visitedCountries = useVisitedCountries(markers, category.id === 'countries');
   const ctx = { user, markers, visitedStates, visitedCountries };
 
-  // Toggle the scroll-to-top button once the modal is scrolled past the header.
+  // Scroll affordances: a scroll-to-top button past the header, and a "more below"
+  // fade + chevron that hides once you reach the end (or when nothing scrolls).
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    const update = () => {
+      setShowTop(el.scrollTop > 240);
+      const canScroll = el.scrollHeight - el.clientHeight > 4;
+      const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+      setShowHint(canScroll && !atEnd);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
+  }, []);
+
+  // Re-evaluate the hint when the visible content changes height (category switch
+  // or filter change) without firing a scroll event.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const onScroll = () => setShowTop(el.scrollTop > 240);
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, []);
+    const canScroll = el.scrollHeight - el.clientHeight > 4;
+    setShowHint(canScroll && el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+  }, [index, query, status, selected]);
 
   const scrollToTop = () => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -199,6 +218,12 @@ export default function BadgesModal({ user, markers, onClose }) {
           ))}
         </div>
       )}
+
+      <div className="badge-scroll-anchor" aria-hidden="true">
+        <div className={`badge-scroll-hint${showHint ? '' : ' badge-scroll-hint-hidden'}`}>
+          <ChevronDown size={20} />
+        </div>
+      </div>
     </Modal>
   );
 }

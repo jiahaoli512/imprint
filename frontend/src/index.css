@@ -870,6 +870,33 @@ footer {
 .badge-top-anchor { position: sticky; top: 0; height: 0; z-index: 6; }
 .badge-scrolltop { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; }
 
+/* "More below" affordance for the badges modal: a sticky bottom fade + nudging
+   chevron that hides once you reach the end (mirrors the profile edit form). */
+.badge-scroll-anchor { position: sticky; bottom: 0; height: 0; z-index: 6; }
+.badge-scroll-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 54px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  color: var(--accent);
+  background: linear-gradient(transparent, var(--surface) 80%);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.badge-scroll-hint-hidden { opacity: 0; }
+.badge-scroll-hint svg { animation: scrollNudge 1.5s ease-in-out infinite; }
+
+/* Visible thin scrollbar on the badges modal's scroll container. */
+.modal-badges { scrollbar-width: thin; scrollbar-color: var(--muted) transparent; }
+.modal-badges::-webkit-scrollbar { width: 8px; }
+.modal-badges::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.modal-badges::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
 /* Same scroll-to-top affordance as the badges modal, pinned to the corner of a
    full-page scroll (e.g. the privacy policy). */
 .scrolltop-fab {
