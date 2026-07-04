@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
-const { sendFriendRequest, listIncomingRequests, listActivity, respondToRequest, removeFriend, listFriends } = require('../services/friendService');
+const { sendFriendRequest, listIncomingRequests, respondToRequest, removeFriend, listFriends } = require('../services/friendService');
 
 // Friend requests are a user-only feature (they need a user identity), so every
 // route is requireAuth — admin tokens have no user id. The friend count and the
@@ -14,10 +14,6 @@ router.post('/request', requireAuth, handle(async (req, res) => {
 
 router.get('/requests', requireAuth, handle(async (req, res) => {
   res.json(await listIncomingRequests(req.user.id));
-}));
-
-router.get('/activity', requireAuth, handle(async (req, res) => {
-  res.json(await listActivity(req.user.id));
 }));
 
 router.post('/requests/:id/respond', requireAuth, handle(async (req, res) => {

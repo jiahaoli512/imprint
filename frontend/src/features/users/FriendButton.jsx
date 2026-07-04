@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { UserPlus, Check, Clock, UserMinus } from 'lucide-react';
 import { api } from '../../api/client';
+import { RELATIONSHIP } from './friendship';
 
 // The friend action shown on another user's profile. Driven by the viewer's
 // relationship to the owner (from the profile payload). State is point-in-time:
@@ -34,13 +35,13 @@ export default function FriendButton({ username, relationship, onChange }) {
 
   // One entry per relationship state — adding a state is a new row, not new JSX.
   const view = {
-    none:     { className: 'friend-btn', Icon: UserPlus, label: 'Add Friend', busyLabel: 'Sending…',
-      onClick: () => run(() => api.sendFriendRequest(username), 'outgoing', 'Could not send request.') },
-    outgoing: { className: 'friend-btn friend-btn-sent', Icon: Clock, label: 'Friend Request Sent', disabled: true },
-    incoming: { className: 'friend-btn btn-primary', Icon: Check, label: 'Accept Friend Request', busyLabel: 'Accepting…',
-      onClick: () => requestId && run(() => api.respondFriendRequest(requestId, 'accept'), 'friends', 'Could not accept request.') },
-    friends:  { className: 'friend-btn friend-btn-remove', Icon: UserMinus, label: 'Remove Friend', busyLabel: 'Removing…',
-      onClick: () => run(() => api.removeFriend(username), 'none', 'Could not remove friend.') },
+    [RELATIONSHIP.NONE]:     { className: 'friend-btn', Icon: UserPlus, label: 'Add Friend', busyLabel: 'Sending…',
+      onClick: () => run(() => api.sendFriendRequest(username), RELATIONSHIP.OUTGOING, 'Could not send request.') },
+    [RELATIONSHIP.OUTGOING]: { className: 'friend-btn friend-btn-sent', Icon: Clock, label: 'Friend Request Sent', disabled: true },
+    [RELATIONSHIP.INCOMING]: { className: 'friend-btn btn-primary', Icon: Check, label: 'Accept Friend Request', busyLabel: 'Accepting…',
+      onClick: () => requestId && run(() => api.respondFriendRequest(requestId, 'accept'), RELATIONSHIP.FRIENDS, 'Could not accept request.') },
+    [RELATIONSHIP.FRIENDS]:  { className: 'friend-btn friend-btn-remove', Icon: UserMinus, label: 'Remove Friend', busyLabel: 'Removing…',
+      onClick: () => run(() => api.removeFriend(username), RELATIONSHIP.NONE, 'Could not remove friend.') },
   }[status];
 
   if (!view) return null; // 'self' / unknown — no action to show

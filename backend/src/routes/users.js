@@ -5,7 +5,9 @@ const requireAdminAuth = require('../middleware/adminAuth');
 const requireUserOrAdmin = require('../middleware/userOrAdmin');
 const optionalAuth = require('../middleware/optionalAuth');
 const { authLimiter, codeRequestLimiter } = require('../middleware/rateLimit');
-const { registerUser, loginUser, checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers, requestPasswordReset, verifyPasswordReset, resetPassword, finishReset } = require('../services/userService');
+const { registerUser, loginUser } = require('../services/authService');
+const { requestPasswordReset, verifyPasswordReset, resetPassword, finishReset } = require('../services/passwordResetService');
+const { checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers } = require('../services/profileService');
 const { requestCode, verifyCode } = require('../services/verificationService');
 
 router.post('/', authLimiter, handle(async (req, res) => {

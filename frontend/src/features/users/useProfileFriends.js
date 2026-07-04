@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RELATIONSHIP } from './friendship';
 
 // Owns the profile's friend concern (mirrors useProfileEdit): the friends-list
 // modal toggle, the derived count/label/visibility, and the optimistic sync of
@@ -11,7 +12,7 @@ export function useProfileFriends(user, setUser, { isMe }) {
   function onFriendChange(next) {
     setUser((u) => {
       if (!u) return u;
-      const delta = next === 'friends' ? 1 : next === 'none' ? -1 : 0;
+      const delta = next === RELATIONSHIP.FRIENDS ? 1 : next === RELATIONSHIP.NONE ? -1 : 0;
       return {
         ...u,
         friendCount: Math.max(0, (u.friendCount ?? 0) + delta),
@@ -30,6 +31,6 @@ export function useProfileFriends(user, setUser, { isMe }) {
     friendCount,
     friendsLabel: `${friendCount} ${friendCount === 1 ? 'friend' : 'friends'}`,
     // Friend list is visible to the owner and to the owner's friends only.
-    canSeeFriends: isMe || user?.viewerRelationship?.status === 'friends',
+    canSeeFriends: isMe || user?.viewerRelationship?.status === RELATIONSHIP.FRIENDS,
   };
 }

@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDismiss } from '../../utils/useDismiss';
 import { useNotifications } from './useNotifications';
+import { ACTIVITY_RENDERERS } from './activityRenderers';
 import { timeAgo } from '../../utils/timeAgo';
 
 // One incoming friend-request row: name + time, with Accept / Reject.
@@ -24,11 +25,14 @@ function FriendRequestItem({ request, busy, onRespond }) {
   );
 }
 
-// One activity row: "<name> accepted your friend request", linking to them.
+// One activity row, its message dispatched by type via ACTIVITY_RENDERERS.
+// Unknown types render nothing (forward-compatible with new activity kinds).
 function ActivityItem({ item, onOpen }) {
+  const render = ACTIVITY_RENDERERS[item.type];
+  if (!render) return null;
   return (
     <button className="notif-activity-row" onClick={() => onOpen(item.username)}>
-      <span><strong>{item.name || `@${item.username}`}</strong> accepted your friend request.</span>
+      <span>{render(item)}</span>
       {item.at && <span className="notif-time notif-activity-time">{timeAgo(item.at)}</span>}
     </button>
   );

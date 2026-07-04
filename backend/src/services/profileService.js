@@ -1,118 +1,17 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const Waitlist = require('../models/Waitlist');
 const {
-  checkLength, checkPassword, checkRequired,
-  normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
-  validateDateOfBirth, COOLDOWN_DAYS, daysUntil,
+  checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername,
+  cleanName, validateDateOfBirth, COOLDOWN_DAYS, daysUntil,
 } = require('../utils/validate');
 const httpError = require('../utils/httpError');
-const {
-  assertEmailVerified, consumeVerification,
-  requestResetCode, verifyResetCode, assertResetVerified, consumeReset,
-} = require('./verificationService');
-const { friendSummaryFor } = require('./friendService');
 const { findUserByUsername } = require('./userLookup');
+const { friendSummaryFor } = require('./friendService');
+const { toProfileView } = require('./userSerializers');
 
 // Field projections — define what each query exposes in one place.
 const PROFILE_FIELDS = 'username firstName lastName dateOfBirth createdAt usernameChangedAt nameChangedAt';
 const SEARCH_FIELDS = 'username firstName lastName -_id'; // client keys by username; _id stays internal
 const ADMIN_LIST_FIELDS = 'email username firstName lastName dateOfBirth createdAt';
-
-function signToken(user) {
-  return jwt.sign(
-    { type: 'user', id: user._id.toString(), email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-}
-
-async function registerUser(email, password) {
-  checkRequired('Email', email);
-  checkRequired('Password', password);
-  checkLength('email', email);
-  checkLength('password', password);
-  checkPassword(password);
-  email = normalizeEmail(email);
-
-  const entry = await Waitlist.findOne({ email });
-  if (!entry || !entry.approved) throw httpError(403, 'Email is not approved');
-
-  const existing = await User.findOne({ email });
-  if (existing) throw httpError(409, 'An account with this email already exists');
-
-  // Proof-of-inbox: the email must have completed code verification. This is the
-  // non-bypassable enforcement point — skipping the verify UI still fails here.
-  await assertEmailVerified(email);
-
-  const passwordHash = await bcrypt.hash(password, 12);
-  await User.create({ email, passwordHash });
-  await Promise.all([
-    Waitlist.deleteOne({ email }),
-    consumeVerification(email),
-  ]);
-}
-
-// A bcrypt hash of a throwaway value, compared against when the email isn't
-// found so login takes ~the same time whether or not the account exists (closes
-// the timing oracle that would otherwise reveal which emails are registered).
-const DUMMY_HASH = bcrypt.hashSync('imprint-no-such-user', 12);
-
-async function loginUser(email, password) {
-  if (typeof email !== 'string' || typeof password !== 'string')
-    throw httpError(401, 'Invalid email or password.');
-
-  // passwordHash is select:false, so opt it back in here (the only place that
-  // needs it).
-  const user = await User.findOne({ email: normalizeEmail(email) }).select('+passwordHash');
-  // Always run a compare (real hash, or the dummy) so timing doesn't leak
-  // account existence.
-  const match = await bcrypt.compare(password, user ? user.passwordHash : DUMMY_HASH);
-  if (!user || !match) throw httpError(401, 'Invalid email or password.');
-
-  return { token: signToken(user), username: user.username || null };
-}
-
-// --- password reset (forgot-password flow) ----------------------------------
-// Emails a 6-char reset code (same challenge as signup) to an existing account.
-// Enumeration-safe: generic success whether or not the email has an account.
-async function requestPasswordReset(email) {
-  return requestResetCode(email);
-}
-
-// Verifies a reset code. On success the user is effectively logged in (proving
-// inbox control), so we return the same { token, username } as loginUser — this
-// is what lets the client either change the password or skip straight to the
-// dashboard. The reset challenge stays verified (not consumed) so a follow-up
-// resetPassword call is authorized.
-async function verifyPasswordReset(email, code) {
-  await verifyResetCode(email, code);
-  const user = await User.findOne({ email: normalizeEmail(email) });
-  if (!user) throw httpError(400, 'Invalid or expired code. Please request a new one.');
-  return { token: signToken(user), username: user.username || null };
-}
-
-// Sets a new password for the account. Gated by assertResetVerified (a verified,
-// unexpired reset challenge) on top of the route's requireAuth, then reuses the
-// same password policy as signup. Consumes the challenge (single-use).
-async function resetPassword(email, newPassword) {
-  await assertResetVerified(email);
-  checkRequired('Password', newPassword);
-  checkLength('password', newPassword);
-  checkPassword(newPassword);
-  email = normalizeEmail(email);
-
-  const passwordHash = await bcrypt.hash(newPassword, 12);
-  await User.updateOne({ email }, { passwordHash });
-  await consumeReset(email);
-}
-
-// "Skip & log in" path: the client already holds the token from verify; clear the
-// verified challenge so it can't be reused.
-async function finishReset(email) {
-  await consumeReset(email);
-}
 
 async function checkUsername(username) {
   checkRequired('Username', username);
@@ -153,28 +52,6 @@ async function searchUsers(q) {
 
 async function getUserByUsername(username) {
   return findUserByUsername(username, PROFILE_FIELDS);
-}
-
-// Shapes a User document into the public profile representation for a given
-// viewer. The raw Mongoose document never crosses this boundary: the internal
-// _id (and anything else on the doc) is dropped, and the owner-only fields —
-// date of birth and the cooldown stamps the edit screen needs — are included
-// only for the owner or an admin. Keeping the whole visibility policy here means
-// callers just get "the profile this viewer may see," with no field-level rules
-// leaking into the HTTP layer.
-function toProfileView(user, { isOwner = false, isAdmin = false } = {}) {
-  const view = {
-    username: user.username,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    createdAt: user.createdAt,
-  };
-  if (isOwner || isAdmin) {
-    view.dateOfBirth = user.dateOfBirth;
-    view.usernameChangedAt = user.usernameChangedAt;
-    view.nameChangedAt = user.nameChangedAt;
-  }
-  return view;
 }
 
 async function getProfileFor(username, { viewerId = null, isAdmin = false } = {}) {
@@ -251,7 +128,5 @@ async function listUsers() {
 }
 
 module.exports = {
-  registerUser, loginUser, checkUsername, setupProfile, searchUsers,
-  getProfileFor, updateUserByUsername, listUsers,
-  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset,
+  checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers,
 };

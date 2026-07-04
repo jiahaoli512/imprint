@@ -17,7 +17,7 @@ export function useNotifications() {
     let alive = true;
     const load = (fn, set) => fn().then((d) => { if (alive) set(Array.isArray(d) ? d : []); }).catch(() => {});
     load(api.getFriendRequests, setRequests);
-    load(api.getFriendActivity, setActivity);
+    load(api.getActivity, setActivity);
     return () => { alive = false; };
   }, []);
 

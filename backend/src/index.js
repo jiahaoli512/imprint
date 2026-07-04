@@ -13,6 +13,7 @@ const markerRoutes = require('./routes/markers');
 const locationRoutes = require('./routes/locations');
 const contactRoutes = require('./routes/contact');
 const friendRoutes = require('./routes/friends');
+const activityRoutes = require('./routes/activity');
 
 // Fail fast at startup if a critical secret is missing, rather than discovering
 // it at first use (a 500 mid-request). Email vars only warn — the app runs
@@ -99,6 +100,7 @@ app.use('/api/markers', markerRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/friends', friendRoutes);
+app.use('/api/activity', activityRoutes);
 
 app.use((err, req, res, next) => {
   if (err.message === 'Not allowed by CORS') {
