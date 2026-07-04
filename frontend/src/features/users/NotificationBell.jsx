@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { api, getActivitySeen, setActivitySeen } from '../../api/client';
 import { useDismiss } from '../../utils/useDismiss';
+import { useNotifications } from './useNotifications';
 import { timeAgo } from '../../utils/timeAgo';
 
 // One incoming friend-request row: name + time, with Accept / Reject.
@@ -43,54 +43,24 @@ function ActivityItem({ item, onOpen }) {
 // interior. Point-in-time: fetched once on mount (no realtime infra).
 export default function NotificationBell({ align = 'left' }) {
   const navigate = useNavigate();
-  const [requests, setRequests] = useState([]);
-  const [activity, setActivity] = useState([]);
-  const [seenAt, setSeenAt] = useState(() => getActivitySeen());
+  const { requests, activity, busyId, respond, markSeen, count } = useNotifications();
   const [open, setOpen] = useState(false);
-  const [busyId, setBusyId] = useState(null);
   const wrapRef = useRef(null);
-
-  useEffect(() => {
-    let alive = true;
-    const load = (fn, set) => fn().then((d) => { if (alive) set(Array.isArray(d) ? d : []); }).catch(() => {});
-    load(api.getFriendRequests, setRequests);
-    load(api.getFriendActivity, setActivity);
-    return () => { alive = false; };
-  }, []);
 
   useDismiss(wrapRef, () => setOpen(false), { active: open, escape: true });
 
   // Opening the panel marks all current activity as seen.
   function toggle() {
     setOpen((o) => {
-      if (!o) {
-        const now = new Date().toISOString();
-        setActivitySeen(now);
-        setSeenAt(now);
-      }
+      if (!o) markSeen();
       return !o;
     });
-  }
-
-  async function respond(id, action) {
-    setBusyId(id);
-    try {
-      await api.respondFriendRequest(id, action);
-      setRequests((rs) => rs.filter((r) => r.id !== id));
-    } catch {
-      /* keep the row so the user can retry */
-    } finally {
-      setBusyId(null);
-    }
   }
 
   function openProfile(username) {
     setOpen(false);
     navigate(`/${username}/profile`);
   }
-
-  const unseenActivity = activity.filter((a) => !seenAt || (a.at && a.at > seenAt)).length;
-  const count = requests.length + unseenActivity;
 
   return (
     <div className="notif-wrap" ref={wrapRef}>

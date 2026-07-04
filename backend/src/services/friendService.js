@@ -176,7 +176,7 @@ function getFriendCount(userId) {
 // The viewer's relationship to a profile owner, for the profile's friend button:
 //   'self' | 'none' | 'outgoing' | 'incoming' | 'friends'
 // When 'incoming', also returns the pending request id so the profile's inline
-// Accept can act on it directly.
+// Accept can act on it directly. Internal — profiles consume friendSummaryFor.
 async function getRelationship(viewerId, ownerId) {
   const owner = ownerId.toString();
   if (viewerId === owner) return { status: 'self' };
@@ -189,7 +189,21 @@ async function getRelationship(viewerId, ownerId) {
   return { status: 'incoming', requestId: edge._id.toString() };
 }
 
+// The friend fields a profile view is decorated with: the public friend count,
+// plus (for a signed-in non-owner viewer) their relationship to the owner.
+// Owning the shape here means userService doesn't need to know what "friend data
+// on a profile" is — it just spreads the result. The two independent queries run
+// in parallel.
+async function friendSummaryFor(ownerId, { viewerId = null, isOwner = false } = {}) {
+  const wantsRelationship = !!viewerId && !isOwner;
+  const [friendCount, viewerRelationship] = await Promise.all([
+    getFriendCount(ownerId),
+    wantsRelationship ? getRelationship(viewerId, ownerId) : Promise.resolve(null),
+  ]);
+  return viewerRelationship ? { friendCount, viewerRelationship } : { friendCount };
+}
+
 module.exports = {
   sendFriendRequest, listIncomingRequests, listActivity, respondToRequest,
-  removeFriend, listFriends, getFriendCount, getRelationship,
+  removeFriend, listFriends, friendSummaryFor,
 };
