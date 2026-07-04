@@ -6,6 +6,7 @@ import {
 } from './mapStyle';
 import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker } from './mapComponents';
 import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
+import { BASEMAPS, useBasemap } from './basemap';
 
 // Most DOM pins we'll ever mount at once — a safety ceiling on top of the
 // screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
@@ -135,6 +136,7 @@ function InvalidateOnResize({ dep }) {
 export default function MapView({ displayMarkers, editing, userLocation, onAddMarker, onRemoveMarker, onRegion, onDiscoveryBusy, onDiscoverySettle, expanded }) {
   const [quality] = useMapQuality();
   const cfg = QUALITY[quality] || QUALITY[DEFAULT_QUALITY];
+  const [basemap] = useBasemap();
 
   return (
     <MapContainer
@@ -147,7 +149,8 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
       preferCanvas={true}
     >
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+        key={basemap}
+        url={BASEMAPS[basemap].url}
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
       <MapClickHandler editing={editing} onAdd={onAddMarker} />

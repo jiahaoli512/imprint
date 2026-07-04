@@ -51,6 +51,15 @@ body {
   }
 }
 
+/* Manual "reduce motion" override (Display Settings) — same effect as the media
+   query above, toggled via a [data-reduce-motion] attribute on <html>. */
+[data-reduce-motion] *, [data-reduce-motion] *::before, [data-reduce-motion] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 /* ── PAGE TRANSITIONS ── */
 @keyframes pageEnter {
   from { opacity: 0; transform: translateY(10px); }
@@ -810,11 +819,18 @@ footer {
   /* Subtract the iOS safe-area insets so a tall modal, when centered, never
      slips under the status bar / notch (native app). */
   max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  /* The modal itself never scrolls (no outer scroll): it's a flex column with the
+     header/filters/dots fixed and the badge grid flexing to fill + scrolling
+     internally. So there's a single scroll — the badges — never a nested one. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding-top: 52px;
 }
+/* Fixed rows around the scrolling grid. */
+.modal-badges > .badge-nav,
+.modal-badges > .badge-filters,
+.modal-badges > .badge-dots { flex: 0 0 auto; }
 
 /* Round icon button: a circular surface2 button with a muted glyph (shared by
    the modal close X and the badge carousel arrows). Position/size live on the
@@ -867,8 +883,33 @@ footer {
 
 /* Scroll-to-top: a zero-height sticky anchor keeps the button pinned to the top
    of the scrolling badges modal without taking layout space. */
-.badge-top-anchor { position: sticky; top: 0; height: 0; z-index: 6; }
-.badge-scrolltop { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; }
+/* Scroll-to-top FAB floats at the top-right of the scrolling grid (below the
+   carousel nav), so it never collides with the nav arrows or the close X. */
+.badge-scrolltop { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; z-index: 7; }
+
+/* The badge grid scrolls internally at ~2 rows (rather than scrolling the whole
+   modal). A bottom fade + nudging chevron overlays the *peeking* next row — so the
+   fully-visible rows' labels stay crisp — and hides once you reach the end. */
+.badge-scroll-region { position: relative; min-height: 0; }
+.badge-scroll-hint {
+  position: absolute;
+  left: 0;
+  right: 8px; /* clear the scrollbar */
+  bottom: 0;
+  height: 52px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+  color: var(--accent);
+  /* Reach fully-solid surface early so the thin peek is masked (not see-through):
+     the bottom ~70% is solid var(--surface), only the top fades in. */
+  background: linear-gradient(to bottom, transparent, var(--surface) 32%);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.badge-scroll-hint-hidden { opacity: 0; }
+.badge-scroll-hint svg { animation: scrollNudge 1.5s ease-in-out infinite; }
 
 /* Same scroll-to-top affordance as the badges modal, pinned to the corner of a
    full-page scroll (e.g. the privacy policy). */
@@ -913,7 +954,18 @@ footer {
 /* Carousel slide: the viewport clips the horizontal travel so paging doesn't
    spawn a scrollbar; the inner .badge-slide animates in from the side of travel.
    key=index in BadgesModal remounts it so the animation re-runs each change. */
-.badge-slide-viewport { overflow-x: hidden; }
+.badge-slide-viewport {
+  overflow-x: hidden; /* clip the horizontal slide animation */
+  overflow-y: auto;
+  /* Hard cap at ~2 rows + a thin peek that the fade fully masks. Tune this if the
+     fade sits over the 2nd row (lower it) or too much of row 3 shows (also lower). */
+  max-height: 400px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+.badge-slide-viewport::-webkit-scrollbar { width: 8px; }
+.badge-slide-viewport::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.badge-slide-viewport::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 .badge-slide-next { animation: badgeSlideNext 0.28s ease; }
 .badge-slide-prev { animation: badgeSlidePrev 0.28s ease; }
 @keyframes badgeSlideNext {
@@ -1072,6 +1124,7 @@ footer {
   .badge-grid { gap: 8px; }
   .badge-card { width: 96px; gap: 8px; padding: 4px; }
   .badge-medallion { width: 92px; height: 92px; margin-bottom: 15px; }
+  .badge-slide-viewport { max-height: 330px; } /* ~2 rows of the smaller mobile cards */
   .badge-halo { inset: -10px; }
   .badge-ring { padding: 2px; }
   .badge-disc { width: 82px; height: 82px; box-shadow: inset 0 0 0 1px rgba(244,239,230,0.06), inset 0 2px 10px rgba(0,0,0,0.5), 0 8px 22px rgba(0,0,0,0.5); }
@@ -1114,6 +1167,47 @@ footer {
 .profile-name { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
 .profile-handle { margin: 0; font-size: 15px; color: var(--accent); font-weight: 600; }
 .profile-edit-btn { margin-top: 4px; }
+/* Edit form shows ~3–3.5 fields at a time; the rest scroll into view. Save/Cancel
+   and any error sit outside this container so they stay visible. */
+.profile-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 290px;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+.profile-edit-fields::-webkit-scrollbar { width: 8px; }
+.profile-edit-fields::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.profile-edit-fields::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* "More below" affordance for a scrollable area (ScrollHint): a bottom fade with
+   a nudging chevron that fades out once you reach the end. */
+.scroll-hint-wrap { position: relative; width: 100%; }
+.scroll-hint {
+  position: absolute;
+  left: 0;
+  right: 8px; /* clear the scrollbar */
+  bottom: 0;
+  height: 46px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  color: var(--accent);
+  background: linear-gradient(transparent, var(--bg) 85%);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+.scroll-hint-hidden { opacity: 0; }
+.scroll-hint svg { animation: scrollNudge 1.5s ease-in-out infinite; }
+@keyframes scrollNudge {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(4px); }
+}
 .profile-divider { height: 1px; background: var(--border); margin: 0 -40px; }
 .profile-info { padding-top: 28px; display: flex; flex-direction: column; gap: 16px; }
 .profile-info-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
@@ -1844,6 +1938,66 @@ footer {
   letter-spacing: 0.4px;
   opacity: 0.85;
 }
+
+/* ── Settings modal ── */
+.settings-modal { max-width: 460px; width: 100%; text-align: left; }
+
+/* Tab row across the top (segmented). */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 18px 0 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  overflow-x: auto;
+}
+.settings-tab-btn {
+  flex: 1 0 auto;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.settings-tab-btn:hover { color: var(--text); }
+.settings-tab-btn.active { color: var(--text); background: var(--surface); }
+
+.settings-placeholder { color: var(--muted); font-size: 14px; text-align: center; padding: 36px 0; margin: 0; }
+
+/* Display tab: stacked labeled setting rows. */
+.settings-panel { display: flex; flex-direction: column; gap: 22px; margin-top: 18px; }
+.settings-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.settings-row-desc { font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.4; }
+
+/* Boolean toggle switch. */
+.settings-toggle {
+  width: 46px;
+  height: 26px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.settings-toggle-knob {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.settings-toggle.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); border-color: transparent; }
+.settings-toggle.on .settings-toggle-knob { transform: translateX(20px); background: #06241b; }
 
 .dashboard-save-btn {
   padding: 7px 16px;

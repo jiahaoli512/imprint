@@ -15,6 +15,16 @@ export const clearSession = () => {
 export const getStoredMapQuality = () => localStorage.getItem('imprint_map_quality');
 export const setStoredMapQuality = (q) => localStorage.setItem('imprint_map_quality', q);
 
+// Per-device map base-style preference (dark/light/streets). Validation against the
+// known styles lives in basemap.js; here we only read/write the raw string.
+export const getStoredMapStyle = () => localStorage.getItem('imprint_map_style');
+export const setStoredMapStyle = (s) => localStorage.setItem('imprint_map_style', s);
+
+// Per-device "reduce motion" preference — force-disable animations regardless of the
+// OS prefers-reduced-motion setting. Stored as '1' (on) / '0' (off).
+export const getStoredReduceMotion = () => localStorage.getItem('imprint_reduce_motion') === '1';
+export const setStoredReduceMotion = (on) => localStorage.setItem('imprint_reduce_motion', on ? '1' : '0');
+
 // Per-session dashboard greeting (rolled on login). The greeting copy + rotation
 // live in utils/greeting.js; storage access stays here per the convention.
 export const getStoredGreeting = () => sessionStorage.getItem('imprint_greeting');

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import Modal from '../../components/Modal';
 import Badge from './Badge';
@@ -24,6 +24,7 @@ export default function BadgesModal({ user, markers, onClose }) {
   const [selected, setSelected] = useState([]); // selected continents; [] = All
   const [status, setStatus] = useState('all');  // all | unlocked | locked
   const [showTop, setShowTop] = useState(false); // scroll-to-top affordance
+  const [showHint, setShowHint] = useState(false); // "more below" scroll hint
   const touchX = useRef(null);
   const scrollRef = useRef(null);
 
@@ -36,14 +37,32 @@ export default function BadgesModal({ user, markers, onClose }) {
   const visitedCountries = useVisitedCountries(markers, category.id === 'countries');
   const ctx = { user, markers, visitedStates, visitedCountries };
 
-  // Toggle the scroll-to-top button once the modal is scrolled past the header.
+  // Scroll affordances: a scroll-to-top button past the header, and a "more below"
+  // fade + chevron that hides once you reach the end (or when nothing scrolls).
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    const update = () => {
+      setShowTop(el.scrollTop > 240);
+      const canScroll = el.scrollHeight - el.clientHeight > 4;
+      const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+      setShowHint(canScroll && !atEnd);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
+  }, []);
+
+  // Re-evaluate the hint when the visible content changes height (category switch
+  // or filter change) without firing a scroll event.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const onScroll = () => setShowTop(el.scrollTop > 240);
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, []);
+    const canScroll = el.scrollHeight - el.clientHeight > 4;
+    setShowHint(canScroll && el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+  }, [index, query, status, selected]);
 
   const scrollToTop = () => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -93,14 +112,7 @@ export default function BadgesModal({ user, markers, onClose }) {
   };
 
   return (
-    <Modal onClose={onClose} icon={false} closable className="modal-badges" containerRef={scrollRef}>
-      <div className="badge-top-anchor">
-        {showTop && (
-          <button className="icon-btn badge-scrolltop" onClick={scrollToTop} aria-label="Scroll to top">
-            <ChevronUp size={20} />
-          </button>
-        )}
-      </div>
+    <Modal onClose={onClose} icon={false} closable className="modal-badges">
       <div className="badge-nav">
         {count > 1 && (
           <button className="icon-btn badge-nav-arrow" onClick={() => go(-1)} aria-label="Previous category">
@@ -171,19 +183,29 @@ export default function BadgesModal({ user, markers, onClose }) {
         </div>
       )}
 
-      <div className="badge-slide-viewport" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        {/* key=index remounts on change so the slide animation re-runs; the
-            direction class picks which side it enters from. */}
-        <div key={index} className={`badge-slide ${dir < 0 ? 'badge-slide-prev' : 'badge-slide-next'}`}>
-          {badges.length === 0 ? (
-            <div className="badge-empty">No badges in this category yet — coming soon.</div>
-          ) : visible.length > 0 ? (
-            <div className="badge-grid">
-              {visible.map((b) => <Badge key={b.key} badge={b} />)}
-            </div>
-          ) : (
-            <div className="badge-empty">No matches.</div>
-          )}
+      <div className="badge-scroll-region">
+        <div className="badge-slide-viewport" ref={scrollRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          {/* key=index remounts on change so the slide animation re-runs; the
+              direction class picks which side it enters from. */}
+          <div key={index} className={`badge-slide ${dir < 0 ? 'badge-slide-prev' : 'badge-slide-next'}`}>
+            {badges.length === 0 ? (
+              <div className="badge-empty">No badges in this category yet — coming soon.</div>
+            ) : visible.length > 0 ? (
+              <div className="badge-grid">
+                {visible.map((b) => <Badge key={b.key} badge={b} />)}
+              </div>
+            ) : (
+              <div className="badge-empty">No matches.</div>
+            )}
+          </div>
+        </div>
+        {showTop && (
+          <button className="icon-btn badge-scrolltop" onClick={scrollToTop} aria-label="Scroll to top">
+            <ChevronUp size={20} />
+          </button>
+        )}
+        <div className={`badge-scroll-hint${showHint ? '' : ' badge-scroll-hint-hidden'}`} aria-hidden="true">
+          <ChevronDown size={20} />
         </div>
       </div>
 

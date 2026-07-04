@@ -3,6 +3,7 @@ import { ArrowLeft, List, LayoutDashboard } from 'lucide-react';
 import LogoutButton from '../../components/LogoutButton';
 import AdminViewingBadge from '../../components/AdminViewingBadge';
 import NotificationBell from './NotificationBell';
+import SettingsButton from '../settings/SettingsButton';
 
 // The fixed top-of-page controls on a profile: a context-aware Back button plus,
 // in admin view, the admin nav (waitlist / dashboard / logout) and the "viewing
@@ -31,6 +32,7 @@ export default function ProfileToolbar({ username, isAdminView, isMe }) {
           </span>
         </button>
         {isMe && !isAdminView && <NotificationBell align="left" />}
+        {isMe && !isAdminView && <SettingsButton />}
         {isAdminView && (
           <>
             <button className="btn btn-ghost" onClick={() => navigate('/admin/waitlist')}>
