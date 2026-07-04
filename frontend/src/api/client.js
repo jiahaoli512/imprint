@@ -128,6 +128,8 @@ export const api = {
   sendFriendRequest:    (username)   => request.post('/api/friends/request', { username }),
   getFriendRequests:    ()           => request('/api/friends/requests'),
   respondFriendRequest: (id, action) => request.post(`/api/friends/requests/${encodeURIComponent(id)}/respond`, { action }),
+  getFriendsOf:         (username)   => request(`/api/friends/of/${encodeURIComponent(username)}`),
+  removeFriend:         (username)   => request.del(`/api/friends/${encodeURIComponent(username)}`),
 
   // Markers
   getMarkers:      (username) => request(`/api/markers/user/${encodeURIComponent(username)}`),

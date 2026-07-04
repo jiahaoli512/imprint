@@ -108,6 +108,44 @@ async function respondToRequest(userId, requestId, action) {
   return { status: 'accepted' };
 }
 
+// Removes an accepted friendship between the caller and `friendUsername` (either
+// direction — the single edge is deleted, so the removal is mutual). No-op-safe:
+// throws 404 if they aren't actually friends.
+async function removeFriend(userId, friendUsername) {
+  const other = await findUserByUsername(friendUsername, '_id');
+  const edge = await edgeBetween(userId, other._id);
+  if (!edge || edge.status !== 'accepted') throw httpError(404, "You aren't friends with this user.");
+  await edge.deleteOne();
+  return { status: 'none' };
+}
+
+// Lists a user's friends (accepted edges), for the friend-count click-through.
+// Visibility: only the owner themselves or one of the owner's friends may see
+// the list — anyone else gets a 403 (so a stranger can't harvest the graph).
+async function listFriends(viewerId, ownerUsername) {
+  const owner = await findUserByUsername(ownerUsername, '_id');
+  const ownerId = owner._id;
+  const isOwner = ownerId.toString() === viewerId;
+
+  if (!isOwner) {
+    const edge = await edgeBetween(viewerId, ownerId);
+    if (!edge || edge.status !== 'accepted') throw httpError(403, 'Only friends can view this list.');
+  }
+
+  const edges = await FriendRequest.find({
+    status: 'accepted',
+    $or: [{ requester: ownerId }, { recipient: ownerId }],
+  })
+    .populate('requester', 'username firstName lastName')
+    .populate('recipient', 'username firstName lastName');
+
+  return edges
+    .map((e) => (e.requester?._id?.toString() === ownerId.toString() ? e.recipient : e.requester))
+    .filter(Boolean)
+    .map((u) => ({ username: u.username, name: fullName(u) }))
+    .sort((a, b) => a.username.localeCompare(b.username));
+}
+
 // Count of accepted friendships a user is part of (either side of the edge).
 function getFriendCount(userId) {
   return FriendRequest.countDocuments({
@@ -134,5 +172,5 @@ async function getRelationship(viewerId, ownerId) {
 
 module.exports = {
   sendFriendRequest, listIncomingRequests, respondToRequest,
-  getFriendCount, getRelationship,
+  removeFriend, listFriends, getFriendCount, getRelationship,
 };

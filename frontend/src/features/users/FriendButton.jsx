@@ -1,53 +1,53 @@
 import { useState } from 'react';
-import { UserPlus, Check, Clock } from 'lucide-react';
+import { UserPlus, Check, Clock, UserMinus } from 'lucide-react';
 import { api } from '../../api/client';
 
 // The friend action shown on another user's profile. Driven by the viewer's
 // relationship to the owner (from the profile payload). State is point-in-time:
-// a request/accept flips it optimistically; a reject on the other side shows as
-// reset on the next profile load (no realtime infra).
+// a request/accept/remove flips it optimistically; the other side's action shows
+// on the next profile load (no realtime infra). `onChange(newStatus)` lets the
+// parent keep the friend count / list-clickability in sync.
 //   none     → "Add Friend +"          (sends a request)
 //   outgoing → "Friend Request Sent"    (disabled)
 //   incoming → "Accept Friend Request"  (accepts the pending request)
-//   friends  → "Friends ✓"              (disabled)
-export default function FriendButton({ username, relationship }) {
+//   friends  → "Remove Friend"          (removes the friendship, both ways)
+export default function FriendButton({ username, relationship, onChange }) {
   const [status, setStatus] = useState(relationship?.status || 'none');
   const [requestId] = useState(relationship?.requestId || null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  async function add() {
+  // Runs an action, flips to `next` on success, and notifies the parent.
+  async function run(fn, next, fallback) {
     setBusy(true);
     setError('');
     try {
-      await api.sendFriendRequest(username);
-      setStatus('outgoing');
+      await fn();
+      setStatus(next);
+      onChange?.(next);
     } catch (e) {
-      setError(e.message || 'Could not send request.');
+      setError(e.message || fallback);
     } finally {
       setBusy(false);
     }
   }
 
-  async function accept() {
-    if (!requestId) return;
-    setBusy(true);
-    setError('');
-    try {
-      await api.respondFriendRequest(requestId, 'accept');
-      setStatus('friends');
-    } catch (e) {
-      setError(e.message || 'Could not accept request.');
-    } finally {
-      setBusy(false);
-    }
-  }
+  const add = () => run(() => api.sendFriendRequest(username), 'outgoing', 'Could not send request.');
+  const accept = () => requestId && run(() => api.respondFriendRequest(requestId, 'accept'), 'friends', 'Could not accept request.');
+  const remove = () => run(() => api.removeFriend(username), 'none', 'Could not remove friend.');
 
   if (status === 'outgoing')
     return <button className="btn friend-btn friend-btn-sent" disabled><Clock size={14} /> Friend Request Sent</button>;
 
   if (status === 'friends')
-    return <button className="btn friend-btn friend-btn-friends" disabled><Check size={14} /> Friends</button>;
+    return (
+      <>
+        <button className="btn friend-btn friend-btn-remove" onClick={remove} disabled={busy}>
+          <UserMinus size={14} /> {busy ? 'Removing…' : 'Remove Friend'}
+        </button>
+        {error && <p className="auth-error" style={{ marginTop: '6px' }}>{error}</p>}
+      </>
+    );
 
   if (status === 'incoming')
     return (

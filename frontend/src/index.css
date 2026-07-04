@@ -1123,9 +1123,37 @@ footer {
 
 /* Friend count + friend button on a profile */
 .profile-friends { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-weight: 600; }
+.profile-friends-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.profile-friends-link:hover { color: var(--accent); }
 .friend-btn { margin-top: 8px; }
-.friend-btn-sent, .friend-btn-friends { opacity: 0.7; cursor: default; }
-.friend-btn-friends { color: var(--success); }
+.friend-btn-sent { opacity: 0.7; cursor: default; }
+.friend-btn-remove:hover { color: var(--error); border-color: var(--error); }
+
+/* Friends list rows in the friend-count modal */
+.friends-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; text-align: left; }
+.friends-list-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text);
+  text-align: left;
+  transition: background 0.15s;
+}
+.friends-list-row:hover { background: var(--surface); }
 
 /* Toolbar notification bell + count badge */
 .notif-bell { position: relative; }
