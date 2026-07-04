@@ -181,6 +181,7 @@ export default function UserProfile() {
               )}
               {!isMe && !isAdminView && (
                 <FriendButton
+                  key={user.username}
                   username={user.username}
                   relationship={user.viewerRelationship}
                   onChange={handleFriendChange}
