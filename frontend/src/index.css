@@ -1212,16 +1212,24 @@ footer {
 }
 
 /* A pending-request row in the bell modal */
+/* Stacked so the name and the Accept/Reject buttons never collide in the narrow
+   notification-section column. */
 .friend-request-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface2);
+  min-width: 0;
 }
+/* Truncate a long @username / name instead of overflowing the row. */
+.friend-request-row > div:first-child { min-width: 0; overflow: hidden; }
+.friend-request-row > div:first-child > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Equal-width Accept / Reject filling the row. */
+.friend-request-row .btn { flex: 1; justify-content: center; }
 
 .modal-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 8px; }
 .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
