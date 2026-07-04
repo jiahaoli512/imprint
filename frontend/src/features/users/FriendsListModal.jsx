@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal';
-import Spinner from '../../components/Spinner';
+import LogoMark from '../../components/LogoMark';
 import { api } from '../../api/client';
 
 // Lists a user's friends, opened by clicking the friend count. Only reachable
@@ -30,7 +30,9 @@ export default function FriendsListModal({ username, isMe, onClose }) {
     <Modal onClose={onClose} icon={false} closable>
       <h2 className="modal-title">{isMe ? 'Your friends' : `@${username}'s friends`}</h2>
       {friends === null ? (
-        <Spinner />
+        <div className="friends-list-loading">
+          <LogoMark size={28} icon={16} style={{ opacity: 0.5 }} />
+        </div>
       ) : error ? (
         <p className="auth-error" style={{ marginTop: '12px' }}>{error}</p>
       ) : friends.length === 0 ? (
