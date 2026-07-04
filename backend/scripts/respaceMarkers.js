@@ -12,7 +12,7 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') }
 const mongoose = require('mongoose');
 const MapMarkers = require('../src/models/MapMarkers');
 const User = require('../src/models/User');
-const { thinPoints, MARKER_SPACING_M } = require('../src/services/markerService');
+const { thinPoints, MARKER_SPACING_M } = require('../src/utils/markerGeometry');
 
 const APPLY = process.argv.includes('--apply');
 const CONFIRM_PROD = process.argv.includes('--yes-prod');
