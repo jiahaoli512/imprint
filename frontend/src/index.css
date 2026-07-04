@@ -810,11 +810,19 @@ footer {
   /* Subtract the iOS safe-area insets so a tall modal, when centered, never
      slips under the status bar / notch (native app). */
   max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  /* The modal itself never scrolls (no outer scroll): it's a flex column with the
+     header/filters/dots fixed and the badge grid flexing to fill + scrolling
+     internally. So there's a single scroll — the badges — never a nested one. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding-top: 52px;
 }
+/* Fixed rows around the scrolling grid. */
+.modal-badges > .badge-nav,
+.modal-badges > .badge-filters,
+.modal-badges > .badge-dots,
+.modal-badges > .badge-top-anchor { flex: 0 0 auto; }
 
 /* Round icon button: a circular surface2 button with a muted glyph (shared by
    the modal close X and the badge carousel arrows). Position/size live on the
@@ -873,7 +881,7 @@ footer {
 /* The badge grid scrolls internally at ~2 rows (rather than scrolling the whole
    modal). A bottom fade + nudging chevron overlays the *peeking* next row — so the
    fully-visible rows' labels stay crisp — and hides once you reach the end. */
-.badge-scroll-region { position: relative; }
+.badge-scroll-region { position: relative; flex: 1 1 auto; min-height: 0; }
 .badge-scroll-hint {
   position: absolute;
   left: 0;
@@ -938,9 +946,12 @@ footer {
 .badge-slide-viewport {
   overflow-x: hidden; /* clip the horizontal slide animation */
   overflow-y: auto;
-  /* ~2 full rows + a peek of the next; the peek is ≳ the fade height (56px) so the
-     fade covers only the peeking row, leaving row 2's labels crisp. Tune if the
-     fade sits slightly over/under the row boundary. */
+  /* Fills the flex scroll-region, but capped to ~2 full rows + a peek of the next
+     (the peek is ≳ the fade height, 56px, so the fade covers only the peeking row
+     and leaves row 2's labels crisp). On short screens the region shrinks and this
+     shows fewer rows — the modal never overflows. Tune the cap if the fade sits
+     slightly over/under the row boundary. */
+  height: 100%;
   max-height: 520px;
   scrollbar-width: thin;
   scrollbar-color: var(--muted) transparent;
