@@ -28,7 +28,7 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
     } catch { setResults([]); }
   }, 250);
 
-  useDismiss(containerRef, () => setShowResults(false));
+  useDismiss(containerRef, () => setShowResults(false), { escape: true });
 
   function handleChange(e) {
     const val = e.target.value;
@@ -52,7 +52,7 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
       const q = search.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       if (q) { setSearch(''); setShowResults(false); navigate(`/${q}`); }
     }
-    if (e.key === 'Escape') setShowResults(false);
+    // Escape-to-close is handled by useDismiss (document-level).
   }
 
   const isHeader = variant === 'header';
