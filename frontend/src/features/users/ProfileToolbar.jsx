@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, List, LayoutDashboard } from 'lucide-react';
 import LogoutButton from '../../components/LogoutButton';
 import AdminViewingBadge from '../../components/AdminViewingBadge';
-import FriendRequestsBell from './FriendRequestsBell';
+import NotificationBell from './NotificationBell';
 
 // The fixed top-of-page controls on a profile: a context-aware Back button plus,
 // in admin view, the admin nav (waitlist / dashboard / logout) and the "viewing
@@ -30,7 +30,7 @@ export default function ProfileToolbar({ username, isAdminView, isMe }) {
             {isAdminView ? `@${username}'s dashboard` : isMe ? 'Dashboard' : 'Back'}
           </span>
         </button>
-        {isMe && !isAdminView && <FriendRequestsBell />}
+        {isMe && !isAdminView && <NotificationBell />}
         {isAdminView && (
           <>
             <button className="btn btn-ghost" onClick={() => navigate('/admin/waitlist')}>

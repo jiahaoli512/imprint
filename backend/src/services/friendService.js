@@ -2,7 +2,7 @@ const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const httpError = require('../utils/httpError');
 const { normalizeUsername } = require('../utils/validate');
-const { sendFriendAcceptedEmail } = require('../utils/email');
+const { sendFriendRequestEmail, sendFriendAcceptedEmail } = require('../utils/email');
 
 // A user's display name from first/last (empty string when neither is set).
 function fullName(user) {
@@ -33,7 +33,7 @@ function edgeBetween(a, b) {
 // `recipientUsername`. Rejects self-adds and any pre-existing relationship
 // (pending in either direction, or already friends).
 async function sendFriendRequest(requesterId, recipientUsername) {
-  const recipient = await findUserByUsername(recipientUsername, '_id');
+  const recipient = await findUserByUsername(recipientUsername, 'email firstName lastName');
   if (recipient._id.toString() === requesterId)
     throw httpError(400, "You can't add yourself as a friend.");
 
@@ -49,6 +49,15 @@ async function sendFriendRequest(requesterId, recipientUsername) {
     // Lost a race against a concurrent identical insert — treat as already pending.
     if (err.code === 11000) throw httpError(409, 'A friend request is already pending.');
     throw err;
+  }
+
+  // Notify the recipient by email. Fire-and-forget: a mail hiccup shouldn't fail
+  // the request (matches the accepted-email pattern).
+  if (recipient.email) {
+    const requester = await User.findById(requesterId, 'firstName lastName username');
+    const requesterName = fullName(requester) || requester?.username || 'Someone';
+    sendFriendRequestEmail(recipient.email, requesterName)
+      .catch((err) => console.error('[email] Failed to send friend-request email:', err.message));
   }
   return { status: 'outgoing' };
 }

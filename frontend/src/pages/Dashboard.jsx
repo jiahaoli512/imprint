@@ -6,6 +6,7 @@ import AppHeader from '../components/AppHeader';
 import LogoutButton from '../components/LogoutButton';
 import AdminViewingBadge from '../components/AdminViewingBadge';
 import UserSearch from '../features/users/UserSearch';
+import NotificationBell from '../features/users/NotificationBell';
 import MapCard from '../features/map/MapCard';
 import SaveMapPrompt from '../features/map/SaveMapPrompt';
 import DiscoveryPanel from '../features/map/DiscoveryPanel';
@@ -128,6 +129,13 @@ export default function Dashboard() {
 
           {!isAdminView && !isNative && !expanded && <WebTrackingNotice />}
         </div>
+
+        {!isAdminView && (
+          <div className="dashboard-notif">
+            <NotificationBell />
+            <span className="dashboard-notif-label">Notifications</span>
+          </div>
+        )}
       </div>
 
       <SaveMapPrompt {...savePrompt} />

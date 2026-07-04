@@ -202,6 +202,32 @@ async function sendContactEmail({ firstName, lastName, email, feedback, category
   });
 }
 
+// Notifies a user that someone wants to add them as a friend. `to` is the
+// recipient's email; `requesterName` is who sent the request.
+async function sendFriendRequestEmail(to, requesterName) {
+  const safeRequester = escapeHtml(requesterName);
+
+  await sendEmail({
+    to: [{ email: to, name: to.split('@')[0] }],
+    subject: `${requesterName} sent you a friend request on Imprint`,
+    htmlContent: renderBrandedEmail({
+      eyebrow: 'New friend request',
+      heading: `${safeRequester} wants<br>to be friends.`,
+      body: `
+          <p style="margin:0 0 32px;font-size:16px;color:#6b7a99;line-height:1.7;">
+            <strong style="color:#f0f4ff;">${safeRequester}</strong> sent you a friend request on Imprint. Open the app and check your notifications to accept or decline.
+          </p>
+
+          <!-- Divider -->
+          <div style="height:1px;background:rgba(255,255,255,0.07);margin-bottom:32px;"></div>
+
+          <p style="margin:0;font-size:13px;color:#6b7a99;line-height:1.6;">
+            You'll only be connected if you accept. If you don't recognize this person, you can safely ignore this email.
+          </p>`,
+    }),
+  });
+}
+
 // Notifies a user that someone accepted their friend request. `to` is the
 // original requester's email; `requesterName` is their display name (for the
 // greeting), `accepterName` the person who just accepted.
@@ -230,4 +256,4 @@ async function sendFriendAcceptedEmail(to, requesterName, accepterName) {
   });
 }
 
-module.exports = { sendApprovalEmail, sendVerificationEmail, sendContactEmail, sendFriendAcceptedEmail };
+module.exports = { sendApprovalEmail, sendVerificationEmail, sendContactEmail, sendFriendRequestEmail, sendFriendAcceptedEmail };
