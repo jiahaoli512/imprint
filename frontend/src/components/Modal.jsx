@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Fingerprint, X } from 'lucide-react';
 
@@ -26,6 +26,16 @@ export default function Modal({ onClose, icon = true, closable = false, classNam
       Object.assign(body.style, prev);
       window.scrollTo(0, scrollY);
     };
+  }, []);
+
+  // Escape closes the modal (the overlay already handles click-outside). Kept in
+  // a ref so a fresh onClose each render doesn't re-subscribe the listener.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onCloseRef.current(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, []);
 
   return createPortal(
