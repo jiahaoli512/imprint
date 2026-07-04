@@ -7,6 +7,7 @@ import LogoutButton from '../components/LogoutButton';
 import AdminViewingBadge from '../components/AdminViewingBadge';
 import UserSearch from '../features/users/UserSearch';
 import NotificationBell from '../features/users/NotificationBell';
+import SettingsButton from '../features/settings/SettingsButton';
 import MapCard from '../features/map/MapCard';
 import SaveMapPrompt from '../features/map/SaveMapPrompt';
 import DiscoveryPanel from '../features/map/DiscoveryPanel';
@@ -67,6 +68,7 @@ export default function Dashboard() {
         right={
           <>
             {!isAdminView && <NotificationBell align="right" />}
+            {!isAdminView && <SettingsButton />}
             {isAdminView
               ? <AdminViewingBadge username={username} />
               : <span style={{ fontSize: '13px', color: 'var(--muted)' }}>@{username}</span>}

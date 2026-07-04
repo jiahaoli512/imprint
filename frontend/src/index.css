@@ -51,6 +51,15 @@ body {
   }
 }
 
+/* Manual "reduce motion" override (Display Settings) — same effect as the media
+   query above, toggled via a [data-reduce-motion] attribute on <html>. */
+[data-reduce-motion] *, [data-reduce-motion] *::before, [data-reduce-motion] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 /* ── PAGE TRANSITIONS ── */
 @keyframes pageEnter {
   from { opacity: 0; transform: translateY(10px); }
@@ -1929,6 +1938,66 @@ footer {
   letter-spacing: 0.4px;
   opacity: 0.85;
 }
+
+/* ── Settings modal ── */
+.settings-modal { max-width: 460px; width: 100%; text-align: left; }
+
+/* Tab row across the top (segmented). */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 18px 0 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  overflow-x: auto;
+}
+.settings-tab-btn {
+  flex: 1 0 auto;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.settings-tab-btn:hover { color: var(--text); }
+.settings-tab-btn.active { color: var(--text); background: var(--surface); }
+
+.settings-placeholder { color: var(--muted); font-size: 14px; text-align: center; padding: 36px 0; margin: 0; }
+
+/* Display tab: stacked labeled setting rows. */
+.settings-panel { display: flex; flex-direction: column; gap: 22px; margin-top: 18px; }
+.settings-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.settings-row-desc { font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.4; }
+
+/* Boolean toggle switch. */
+.settings-toggle {
+  width: 46px;
+  height: 26px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.settings-toggle-knob {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.settings-toggle.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); border-color: transparent; }
+.settings-toggle.on .settings-toggle-knob { transform: translateX(20px); background: #06241b; }
 
 .dashboard-save-btn {
   padding: 7px 16px;

@@ -5,6 +5,10 @@ import 'flag-icons/css/flag-icons.min.css'
 import './index.css'
 import 'leaflet/dist/leaflet.css'
 import App from './App.jsx'
+import { applyReduceMotion } from './features/settings/reduceMotion'
+
+// Reflect the stored reduce-motion preference onto <html> before first paint.
+applyReduceMotion();
 
 // On native (iOS/Android), disable browser zoom so focusing an input doesn't
 // auto-zoom the page (and leave it distorted on navigation). Leaflet handles
