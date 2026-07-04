@@ -881,21 +881,21 @@ footer {
 /* The badge grid scrolls internally at ~2 rows (rather than scrolling the whole
    modal). A bottom fade + nudging chevron overlays the *peeking* next row — so the
    fully-visible rows' labels stay crisp — and hides once you reach the end. */
-.badge-scroll-region { position: relative; flex: 1 1 auto; min-height: 0; }
+.badge-scroll-region { position: relative; min-height: 0; }
 .badge-scroll-hint {
   position: absolute;
   left: 0;
   right: 8px; /* clear the scrollbar */
   bottom: 0;
-  height: 64px;
+  height: 52px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 6px;
   color: var(--accent);
-  /* Reach fully-solid surface partway down so the peeking row dissolves cleanly
-     into the background instead of showing as a dimmed, low-contrast ghost. */
-  background: linear-gradient(to bottom, transparent, var(--surface) 45%);
+  /* Reach fully-solid surface early so the thin peek is masked (not see-through):
+     the bottom ~70% is solid var(--surface), only the top fades in. */
+  background: linear-gradient(to bottom, transparent, var(--surface) 32%);
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
@@ -948,13 +948,9 @@ footer {
 .badge-slide-viewport {
   overflow-x: hidden; /* clip the horizontal slide animation */
   overflow-y: auto;
-  /* Fills the flex scroll-region, but capped to ~2 full rows + a peek of the next
-     (the peek is ≳ the fade height, 56px, so the fade covers only the peeking row
-     and leaves row 2's labels crisp). On short screens the region shrinks and this
-     shows fewer rows — the modal never overflows. Tune the cap if the fade sits
-     slightly over/under the row boundary. */
-  height: 100%;
-  max-height: 520px;
+  /* Hard cap at ~2 rows + a thin peek that the fade fully masks. Tune this if the
+     fade sits over the 2nd row (lower it) or too much of row 3 shows (also lower). */
+  max-height: 480px;
   scrollbar-width: thin;
   scrollbar-color: var(--muted) transparent;
 }
@@ -1119,7 +1115,7 @@ footer {
   .badge-grid { gap: 8px; }
   .badge-card { width: 96px; gap: 8px; padding: 4px; }
   .badge-medallion { width: 92px; height: 92px; margin-bottom: 15px; }
-  .badge-slide-viewport { max-height: 360px; } /* ~2 rows of the smaller mobile cards */
+  .badge-slide-viewport { max-height: 330px; } /* ~2 rows of the smaller mobile cards */
   .badge-halo { inset: -10px; }
   .badge-ring { padding: 2px; }
   .badge-disc { width: 82px; height: 82px; box-shadow: inset 0 0 0 1px rgba(244,239,230,0.06), inset 0 2px 10px rgba(0,0,0,0.5), 0 8px 22px rgba(0,0,0,0.5); }
