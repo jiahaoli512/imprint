@@ -1234,6 +1234,23 @@ footer {
 .notif-activity-row:hover { background: var(--surface); }
 .notif-activity-row strong { color: var(--text); font-weight: 600; }
 
+/* On mobile the dropdown can't hang off the small bell button (it shoots off
+   the screen edge). Anchor it to the viewport instead: a fixed, full-width sheet
+   just below the header, insetting equally from both sides. */
+@media (max-width: 768px) {
+  .notif-dropdown,
+  .notif-dropdown-left,
+  .notif-dropdown-right {
+    position: fixed;
+    top: calc(68px + env(safe-area-inset-top));
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100vh - 90px - env(safe-area-inset-top));
+    overflow-y: auto;
+  }
+}
+
 @media (max-width: 560px) {
   .notif-sections { grid-template-columns: 1fr; }
   .notif-section + .notif-section { border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 16px; }
