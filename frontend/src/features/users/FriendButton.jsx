@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { UserPlus, Check, Clock, UserMinus } from 'lucide-react';
 import { api } from '../../api/client';
+import { RELATIONSHIP } from './friendship';
 
 // The friend action shown on another user's profile. Driven by the viewer's
 // relationship to the owner (from the profile payload). State is point-in-time:
 // a request/accept/remove flips it optimistically; the other side's action shows
 // on the next profile load (no realtime infra). `onChange(newStatus)` lets the
 // parent keep the friend count / list-clickability in sync.
-//   none     → "Add Friend +"          (sends a request)
-//   outgoing → "Friend Request Sent"    (disabled)
-//   incoming → "Accept Friend Request"  (accepts the pending request)
-//   friends  → "Remove Friend"          (removes the friendship, both ways)
+//   none     → "Add Friend"            (sends a request)
+//   outgoing → "Friend Request Sent"   (disabled)
+//   incoming → "Accept Friend Request" (accepts the pending request)
+//   friends  → "Remove Friend"         (removes the friendship, both ways)
 export default function FriendButton({ username, relationship, onChange }) {
   const [status, setStatus] = useState(relationship?.status || 'none');
   const [requestId] = useState(relationship?.requestId || null);
@@ -32,37 +33,24 @@ export default function FriendButton({ username, relationship, onChange }) {
     }
   }
 
-  const add = () => run(() => api.sendFriendRequest(username), 'outgoing', 'Could not send request.');
-  const accept = () => requestId && run(() => api.respondFriendRequest(requestId, 'accept'), 'friends', 'Could not accept request.');
-  const remove = () => run(() => api.removeFriend(username), 'none', 'Could not remove friend.');
+  // One entry per relationship state — adding a state is a new row, not new JSX.
+  const view = {
+    [RELATIONSHIP.NONE]:     { className: 'friend-btn', Icon: UserPlus, label: 'Add Friend', busyLabel: 'Sending…',
+      onClick: () => run(() => api.sendFriendRequest(username), RELATIONSHIP.OUTGOING, 'Could not send request.') },
+    [RELATIONSHIP.OUTGOING]: { className: 'friend-btn friend-btn-sent', Icon: Clock, label: 'Friend Request Sent', disabled: true },
+    [RELATIONSHIP.INCOMING]: { className: 'friend-btn btn-primary', Icon: Check, label: 'Accept Friend Request', busyLabel: 'Accepting…',
+      onClick: () => requestId && run(() => api.respondFriendRequest(requestId, 'accept'), RELATIONSHIP.FRIENDS, 'Could not accept request.') },
+    [RELATIONSHIP.FRIENDS]:  { className: 'friend-btn friend-btn-remove', Icon: UserMinus, label: 'Remove Friend', busyLabel: 'Removing…',
+      onClick: () => run(() => api.removeFriend(username), RELATIONSHIP.NONE, 'Could not remove friend.') },
+  }[status];
 
-  if (status === 'outgoing')
-    return <button className="btn friend-btn friend-btn-sent" disabled><Clock size={14} /> Friend Request Sent</button>;
+  if (!view) return null; // 'self' / unknown — no action to show
 
-  if (status === 'friends')
-    return (
-      <>
-        <button className="btn friend-btn friend-btn-remove" onClick={remove} disabled={busy}>
-          <UserMinus size={14} /> {busy ? 'Removing…' : 'Remove Friend'}
-        </button>
-        {error && <p className="auth-error" style={{ marginTop: '6px' }}>{error}</p>}
-      </>
-    );
-
-  if (status === 'incoming')
-    return (
-      <>
-        <button className="btn btn-primary friend-btn" onClick={accept} disabled={busy}>
-          <Check size={14} /> {busy ? 'Accepting…' : 'Accept Friend Request'}
-        </button>
-        {error && <p className="auth-error" style={{ marginTop: '6px' }}>{error}</p>}
-      </>
-    );
-
+  const { className, Icon, label, busyLabel, onClick, disabled } = view;
   return (
     <>
-      <button className="btn friend-btn" onClick={add} disabled={busy}>
-        <UserPlus size={14} /> {busy ? 'Sending…' : 'Add Friend'}
+      <button className={`btn ${className}`} onClick={onClick} disabled={disabled || busy}>
+        <Icon size={14} /> {busy && busyLabel ? busyLabel : label}
       </button>
       {error && <p className="auth-error" style={{ marginTop: '6px' }}>{error}</p>}
     </>

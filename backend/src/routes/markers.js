@@ -15,10 +15,11 @@ router.put('/singleton', requireAdminAuth, handle(async (req, res) => {
   res.json(await saveUserMarkers('singleton', req.body.points));
 }));
 
-// Per-user markers. Readable by any signed-in user or an admin — not public,
-// since markers can be auto-built from a user's background location history.
+// Per-user markers. Readable only by the owner, an admin, or one of the owner's
+// friends (enforced in the service) — markers are auto-built from background
+// location history, so they're not exposed to arbitrary signed-in users.
 router.get('/user/:username', requireUserOrAdmin, handle(async (req, res) => {
-  res.json(await getUserMarkers(req.params.username));
+  res.json(await getUserMarkers(req.params.username, { viewerId: req.user?.id, isAdmin: !!req.admin }));
 }));
 
 // Save own markers (requires auth)

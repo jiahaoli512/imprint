@@ -1,0 +1,23 @@
+import L from 'leaflet';
+
+// Map geometry + palette + marker icons, shared by MapView and MapCard. The
+// presentation concern, split out of the old mapUtils grab-bag.
+export const MARKER_RADIUS_M = 15.24;   // mirrors MARKER_RADIUS_M in backend markerService
+export const LOCATION_RADIUS_M = 80;   // accuracy circle around the user's location
+export const MARKER_COLOR = '#e2a156';      // saved markers (and accent)
+export const MARKER_EDIT_COLOR = '#e2685a'; // markers/errors while editing
+export const LOCATE_BLUE = '#5aa9e6';       // the "locate me" dot/highlight
+
+export const pinIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:10px;height:10px;background:#e2a156;border:2px solid #0b0e13;border-radius:50%;box-shadow:0 0 4px rgba(226,161,86,0.25)"></div>`,
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
+});
+
+export const pinIconEdit = L.divIcon({
+  className: '',
+  html: `<div style="width:10px;height:10px;background:#e2685a;border:2px solid #0b0e13;border-radius:50%;box-shadow:0 0 4px rgba(226,104,90,0.25);cursor:pointer"></div>`,
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
+});

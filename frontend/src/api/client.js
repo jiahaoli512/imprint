@@ -134,7 +134,7 @@ export const api = {
   // Friends
   sendFriendRequest:    (username)   => request.post('/api/friends/request', { username }),
   getFriendRequests:    ()           => request('/api/friends/requests'),
-  getFriendActivity:    ()           => request('/api/friends/activity'),
+  getActivity:          ()           => request('/api/activity'),
   respondFriendRequest: (id, action) => request.post(`/api/friends/requests/${encodeURIComponent(id)}/respond`, { action }),
   getFriendsOf:         (username)   => request(`/api/friends/of/${encodeURIComponent(username)}`),
   removeFriend:         (username)   => request.del(`/api/friends/${encodeURIComponent(username)}`),

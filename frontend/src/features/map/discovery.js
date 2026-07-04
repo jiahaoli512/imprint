@@ -3,7 +3,7 @@
 // testable. The metric is "discovered grid cells": the region is split into
 // cells sized by zoom level, a cell counts once any marker falls in it, and the
 // percentage is the discovered cell area over the region's true area.
-import { getLevel, continentContaining, oceanAt, CONTINENT_BBOX, inBBox } from './mapUtils';
+import { continentContaining, oceanAt, CONTINENT_BBOX, inBBox } from './geo';
 
 const EARTH_RADIUS_M = 6371000;
 const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
@@ -47,8 +47,8 @@ const STATIC_AREA_KM2 = {
 };
 
 // Continent/ocean naming helpers (continentContaining, oceanAt, CONTINENT_BBOX,
-// inBBox) live in mapUtils so the toolbar label and this module resolve water
-// the same way. See the imports above.
+// inBBox) live in geo.js so the toolbar label and this module resolve water the
+// same way. See the imports above.
 
 // Bounded cache so panning within one region doesn't refetch its boundary. Keyed
 // by level + rounded lat/lng (approximate — can reuse a neighbour near a border,
@@ -321,5 +321,3 @@ export function computeDiscovery(markers, region, level, regionName) {
     regionAreaKm2: regionAreaM2 / 1e6,
   };
 }
-
-export { getLevel };

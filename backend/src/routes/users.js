@@ -5,7 +5,9 @@ const requireAdminAuth = require('../middleware/adminAuth');
 const requireUserOrAdmin = require('../middleware/userOrAdmin');
 const optionalAuth = require('../middleware/optionalAuth');
 const { authLimiter, codeRequestLimiter } = require('../middleware/rateLimit');
-const { registerUser, loginUser, checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers, requestPasswordReset, verifyPasswordReset, resetPassword, finishReset } = require('../services/userService');
+const { registerUser, loginUser } = require('../services/authService');
+const { requestPasswordReset, verifyPasswordReset, resetPassword, finishReset } = require('../services/passwordResetService');
+const { checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers } = require('../services/profileService');
 const { requestCode, verifyCode } = require('../services/verificationService');
 
 router.post('/', authLimiter, handle(async (req, res) => {
@@ -39,8 +41,8 @@ router.post('/reset/verify-code', authLimiter, handle(async (req, res) => {
 }));
 
 router.post('/reset/password', requireAuth, handle(async (req, res) => {
-  await resetPassword(req.user.email, req.body.password);
-  res.json({ ok: true });
+  // Returns a fresh token (the reset revokes the old one it was called with).
+  res.json({ ok: true, ...await resetPassword(req.user.email, req.body.password) });
 }));
 
 router.post('/reset/finish', requireAuth, handle(async (req, res) => {

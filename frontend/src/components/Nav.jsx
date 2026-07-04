@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { Menu, X } from 'lucide-react';
+import { useDismiss } from '../utils/useDismiss';
 
 const REPO_URL = 'https://github.com/jiahaoli512/imprint';
 
@@ -20,9 +21,13 @@ const isNative = Capacitor.isNativePlatform();
 export default function Nav() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const navRef = useRef(null);
+
+  // Close the mobile drawer when tapping outside the nav or pressing Escape.
+  useDismiss(navRef, () => setOpen(false), { active: open, escape: true });
 
   return (
-    <nav className={`nav${open ? ' nav-open' : ''}`}>
+    <nav ref={navRef} className={`nav${open ? ' nav-open' : ''}`}>
       <div className="logo">
         <LogoMark />
         Imprint

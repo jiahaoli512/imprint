@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getLevel, fetchRegionGeometry, computeDiscovery } from './discovery';
+import { getLevel } from './region';
+import { fetchRegionGeometry, computeDiscovery } from './discovery';
 
 // Drives the dashboard discovery gauge. Exposes a status/percent plus the
 // `onBusy`/`onSettle` callbacks the map's DiscoverySettleTracker calls: any map

@@ -1154,6 +1154,21 @@ footer {
   transition: background 0.15s;
 }
 .friends-list-row:hover { background: var(--surface); }
+
+/* Shared user identity (handle + optional muted name), used in lists/dropdowns */
+.user-handle { font-size: 13px; font-weight: 600; }
+.user-name { font-size: 12px; color: var(--muted); }
+
+/* A result row in the user-search dropdown */
+.user-search-result {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.user-search-result:hover { background: var(--surface2); }
 .friends-list-loading { display: flex; align-items: center; justify-content: center; padding: 28px 0; margin-top: 8px; }
 
 /* Toolbar notification bell + count badge */
@@ -1258,6 +1273,13 @@ footer {
 }
 
 /* A pending-request row in the bell modal */
+.friend-request-info { min-width: 0; }
+.friend-request-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.friend-request-username { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-request-name { display: block; font-size: 12px; color: var(--muted); }
+.friend-request-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.notif-activity-time { display: block; margin-top: 4px; }
+
 /* Stacked so the name and the Accept/Reject buttons never collide in the narrow
    notification-section column. */
 .friend-request-row {

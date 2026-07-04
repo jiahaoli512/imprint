@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Eye, Pencil, Trash2, LocateFixed, Maximize2, Minimize2, SlidersHorizontal } from 'lucide-react';
 import MapView from './MapView';
 import MapQualityModal from './MapQualityModal';
-import { LOCATE_BLUE } from './mapUtils';
+import { LOCATE_BLUE } from './mapStyle';
 
 // The shared map panel used by both the user dashboard and the admin dashboards:
 // a window-chrome toolbar (mode toggle when editable, region label, clear/locate
