@@ -202,4 +202,32 @@ async function sendContactEmail({ firstName, lastName, email, feedback, category
   });
 }
 
-module.exports = { sendApprovalEmail, sendVerificationEmail, sendContactEmail };
+// Notifies a user that someone accepted their friend request. `to` is the
+// original requester's email; `requesterName` is their display name (for the
+// greeting), `accepterName` the person who just accepted.
+async function sendFriendAcceptedEmail(to, requesterName, accepterName) {
+  const safeRequester = escapeHtml(requesterName);
+  const safeAccepter = escapeHtml(accepterName);
+
+  await sendEmail({
+    to: [{ email: to, name: requesterName }],
+    subject: `${accepterName} accepted your friend request 🎉`,
+    htmlContent: renderBrandedEmail({
+      eyebrow: 'You have a new friend',
+      heading: `You're now friends<br>with ${safeAccepter}.`,
+      body: `
+          <p style="margin:0 0 32px;font-size:16px;color:#6b7a99;line-height:1.7;">
+            Hi ${safeRequester}, good news — <strong style="color:#f0f4ff;">${safeAccepter}</strong> accepted your friend request on Imprint. You're now connected.
+          </p>
+
+          <!-- Divider -->
+          <div style="height:1px;background:rgba(255,255,255,0.07);margin-bottom:32px;"></div>
+
+          <p style="margin:0;font-size:13px;color:#6b7a99;line-height:1.6;">
+            Open Imprint to see where you've both been on the map.
+          </p>`,
+    }),
+  });
+}
+
+module.exports = { sendApprovalEmail, sendVerificationEmail, sendContactEmail, sendFriendAcceptedEmail };

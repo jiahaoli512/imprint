@@ -12,6 +12,7 @@ const {
   assertEmailVerified, consumeVerification,
   requestResetCode, verifyResetCode, assertResetVerified, consumeReset,
 } = require('./verificationService');
+const { getFriendCount, getRelationship } = require('./friendService');
 
 // Field projections — define what each query exposes in one place.
 const PROFILE_FIELDS = 'username firstName lastName dateOfBirth createdAt usernameChangedAt nameChangedAt';
@@ -187,7 +188,17 @@ function toProfileView(user, { isOwner = false, isAdmin = false } = {}) {
 async function getProfileFor(username, { viewerId = null, isAdmin = false } = {}) {
   const user = await getUserByUsername(username);
   const isOwner = !!viewerId && viewerId === user._id.toString();
-  return toProfileView(user, { isOwner, isAdmin });
+  const view = toProfileView(user, { isOwner, isAdmin });
+
+  // Friend fields (async, DB-backed) are attached here rather than in the pure
+  // toProfileView serializer. friendCount is public; viewerRelationship is the
+  // logged-in viewer's relationship to this profile (drives the friend button),
+  // only meaningful for a non-owner user viewer.
+  view.friendCount = await getFriendCount(user._id);
+  if (viewerId && !isOwner) {
+    view.viewerRelationship = await getRelationship(viewerId, user._id);
+  }
+  return view;
 }
 
 // Edits a profile's name and/or username. Each field group is applied only when

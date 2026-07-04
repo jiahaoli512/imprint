@@ -14,6 +14,7 @@ import { useFitText } from '../utils/useFitText';
 import { useUser } from '../features/users/useUser';
 import { useProfileEdit } from '../features/users/useProfileEdit';
 import ProfileToolbar from '../features/users/ProfileToolbar';
+import FriendButton from '../features/users/FriendButton';
 import BadgesModal from '../features/badges/BadgesModal';
 
 const isNative = Capacitor.isNativePlatform();
@@ -150,6 +151,12 @@ export default function UserProfile() {
                 <h1 ref={nameRef} className="profile-name">{displayName}</h1>
               )}
               <p className="profile-handle">@{user.username}</p>
+              <p className="profile-friends">
+                {user.friendCount ?? 0} {(user.friendCount ?? 0) === 1 ? 'friend' : 'friends'}
+              </p>
+              {!isMe && !isAdminView && (
+                <FriendButton username={user.username} relationship={user.viewerRelationship} />
+              )}
               {isMe && (
                 <button className="btn btn-ghost profile-edit-btn" onClick={edit.start}>
                   <Pencil size={14} /> Edit Profile

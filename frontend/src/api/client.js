@@ -124,6 +124,11 @@ export const api = {
   searchUsers:    (q)                  => request(`/api/users/search?q=${encodeURIComponent(q)}`),
   adminSearchUsers: (q)                => adminRequest(`/api/users/search?q=${encodeURIComponent(q)}`),
 
+  // Friends
+  sendFriendRequest:    (username)   => request.post('/api/friends/request', { username }),
+  getFriendRequests:    ()           => request('/api/friends/requests'),
+  respondFriendRequest: (id, action) => request.post(`/api/friends/requests/${encodeURIComponent(id)}/respond`, { action }),
+
   // Markers
   getMarkers:      (username) => request(`/api/markers/user/${encodeURIComponent(username)}`),
   saveMarkers:     (points)   => request.put('/api/markers', { points }),

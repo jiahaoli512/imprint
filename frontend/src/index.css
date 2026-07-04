@@ -1121,6 +1121,42 @@ footer {
 .profile-info-value { font-size: 13px; font-weight: 600; }
 .profile-badges-btn { align-self: center; }
 
+/* Friend count + friend button on a profile */
+.profile-friends { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-weight: 600; }
+.friend-btn { margin-top: 8px; }
+.friend-btn-sent, .friend-btn-friends { opacity: 0.7; cursor: default; }
+.friend-btn-friends { color: var(--success); }
+
+/* Toolbar notification bell + count badge */
+.notif-bell { position: relative; }
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--error);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* A pending-request row in the bell modal */
+.friend-request-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+}
+
 .modal-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 8px; }
 .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
 
