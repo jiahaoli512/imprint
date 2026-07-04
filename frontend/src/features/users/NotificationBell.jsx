@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api, getActivitySeen, setActivitySeen } from '../../api/client';
+import { timeAgo } from '../../utils/timeAgo';
 
 // A multipurpose notification bell (own profile + own dashboard, never admin
 // view). The count badge sums pending friend requests + unseen activity;
@@ -92,7 +93,10 @@ export default function NotificationBell({ align = 'left' }) {
                   {requests.map((r) => (
                     <div key={r.id} className="friend-request-row">
                       <div style={{ minWidth: 0 }}>
-                        <span style={{ fontWeight: 600 }}>@{r.username}</span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+                          <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{r.username}</span>
+                          {r.at && <span className="notif-time">{timeAgo(r.at)}</span>}
+                        </div>
                         {r.name && <span style={{ display: 'block', fontSize: '12px', color: 'var(--muted)' }}>{r.name}</span>}
                       </div>
                       <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
@@ -125,6 +129,7 @@ export default function NotificationBell({ align = 'left' }) {
                       <span>
                         <strong>{a.name || `@${a.username}`}</strong> accepted your friend request.
                       </span>
+                      {a.at && <span className="notif-time" style={{ display: 'block', marginTop: '4px' }}>{timeAgo(a.at)}</span>}
                     </button>
                   ))}
                 </div>

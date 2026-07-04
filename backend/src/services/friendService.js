@@ -80,6 +80,7 @@ async function listIncomingRequests(userId) {
       id: r._id.toString(),
       username: r.requester.username,
       name: fullName(r.requester),
+      at: r.createdAt,
     }));
 }
 
