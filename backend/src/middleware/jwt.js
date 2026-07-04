@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
 // Single place that reads + verifies a Bearer token, so the four auth
 // middlewares don't each re-implement this security-sensitive parsing.
@@ -30,4 +31,15 @@ function assignIdentity(req, payload) {
   else req.user = payload;
 }
 
-module.exports = { readBearer, assignIdentity, isAdminToken };
+// A verified user token is only accepted while its `tv` still matches the
+// account's tokenVersion — bumping that version (on password reset) revokes every
+// previously-minted token. Admin tokens have no version (they're password-minted
+// and mutually exclusive with a user session), so they pass through here. A user
+// deleted since the token was issued fails the check too.
+async function userTokenFresh(payload) {
+  if (isAdminToken(payload) || !payload.id) return true;
+  const user = await User.findById(payload.id, 'tokenVersion');
+  return !!user && (user.tokenVersion || 0) === (payload.tv || 0);
+}
+
+module.exports = { readBearer, assignIdentity, isAdminToken, userTokenFresh };

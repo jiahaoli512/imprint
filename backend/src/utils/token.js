@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 // user in), so it lives here rather than in either service.
 function signToken(user) {
   return jwt.sign(
-    { type: 'user', id: user._id.toString(), email: user.email },
+    { type: 'user', id: user._id.toString(), email: user.email, tv: user.tokenVersion || 0 },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );

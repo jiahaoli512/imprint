@@ -18,6 +18,10 @@ const userSchema = new Schema(
     // these, so they don't start or reset a user's cooldown.
     usernameChangedAt: { type: Date },
     nameChangedAt:     { type: Date },
+    // Bumped whenever existing sessions must be revoked (e.g. a password reset).
+    // User JWTs carry the version they were minted at; the auth middleware rejects
+    // a token whose version no longer matches, so old tokens stop working.
+    tokenVersion:      { type: Number, default: 0 },
   },
   { timestamps: true }
 );

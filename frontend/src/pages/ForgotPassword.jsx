@@ -74,7 +74,10 @@ export default function ForgotPassword() {
     setLoading(true);
     setResetError('');
     try {
-      await api.resetPassword(password);
+      // The reset revokes the token minted at verify, so swap in the fresh one it
+      // returns before navigating (otherwise the dashboard load would 401).
+      const data = await api.resetPassword(password);
+      if (data?.token) setToken(data.token);
       goAuthed();
     } catch (err) {
       setResetError(err.message || 'Something went wrong. Please try again.');

@@ -41,8 +41,8 @@ router.post('/reset/verify-code', authLimiter, handle(async (req, res) => {
 }));
 
 router.post('/reset/password', requireAuth, handle(async (req, res) => {
-  await resetPassword(req.user.email, req.body.password);
-  res.json({ ok: true });
+  // Returns a fresh token (the reset revokes the old one it was called with).
+  res.json({ ok: true, ...await resetPassword(req.user.email, req.body.password) });
 }));
 
 router.post('/reset/finish', requireAuth, handle(async (req, res) => {

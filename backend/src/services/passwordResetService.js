@@ -35,8 +35,16 @@ async function resetPassword(email, newPassword) {
   email = normalizeEmail(email);
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await User.updateOne({ email }, { passwordHash });
+  // Bump tokenVersion so every previously-issued session is revoked (a stolen
+  // token stops working the moment the real user resets). Return a fresh token
+  // minted at the new version so the resetting client itself stays signed in.
+  const user = await User.findOneAndUpdate(
+    { email },
+    { $set: { passwordHash }, $inc: { tokenVersion: 1 } },
+    { new: true }
+  );
   await consumeReset(email);
+  return { token: signToken(user), username: user.username || null };
 }
 
 // "Skip & log in" path: the client already holds the token from verify; clear the
