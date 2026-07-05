@@ -49,7 +49,7 @@ backend/
                    #   verificationService, friendService, friendNotifications,
                    #   activityService, markerService, adminService, ...)
     constants/     # shared vocabularies (friendship status/edge/action)
-    middleware/    # auth, adminAuth, userOrAdmin, optionalAuth, jwt (Bearer parse +
+    middleware/    # auth, adminAuth, userOrAdmin, jwt (Bearer parse +
                    #   session-freshness), rateLimit, sanitize, handle
     models/        # Mongoose schemas (User, Waitlist, MapMarkers, Location,
                    #   FriendRequest, EmailVerification)
