@@ -9,11 +9,15 @@ import { refreshGreeting } from '../utils/greeting';
 import { useForm } from '../utils/useForm';
 import FieldLabel from '../components/FieldLabel';
 
+// The signup age gate. Mirrors MIN_AGE in backend/src/utils/validate.js — keep in
+// sync if the threshold changes.
+const MIN_AGE = 18;
+
 const maxDob = new Date();
-maxDob.setFullYear(maxDob.getFullYear() - 18);
+maxDob.setFullYear(maxDob.getFullYear() - MIN_AGE);
 const MAX_DOB = maxDob.toISOString().split('T')[0];
 
-// mirrors ageFromDob() in userService.js — keep in sync if the threshold changes
+// mirrors ageFromDob() in backend/src/utils/validate.js
 function ageOk(dobStr) {
   if (!dobStr) return false;
   const today = new Date();
@@ -21,7 +25,7 @@ function ageOk(dobStr) {
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  return age >= 18;
+  return age >= MIN_AGE;
 }
 
 // True if `s` ("YYYY-MM-DD") is a real calendar date — rejects impossible ones
