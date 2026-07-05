@@ -1,17 +1,15 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Waitlist = require('../models/Waitlist');
-const { checkLength, checkPassword, checkRequired, normalizeEmail } = require('../utils/validate');
+const { checkLength, checkRequired, validatePassword, normalizeEmail } = require('../utils/validate');
 const httpError = require('../utils/httpError');
-const { signToken } = require('../utils/token');
+const { toAuthResult } = require('./userSerializers');
 const { assertEmailVerified, consumeVerification } = require('./verificationService');
 
 async function registerUser(email, password) {
   checkRequired('Email', email);
-  checkRequired('Password', password);
   checkLength('email', email);
-  checkLength('password', password);
-  checkPassword(password);
+  validatePassword(password);
   email = normalizeEmail(email);
 
   const entry = await Waitlist.findOne({ email });
@@ -49,7 +47,7 @@ async function loginUser(email, password) {
   const match = await bcrypt.compare(password, user ? user.passwordHash : DUMMY_HASH);
   if (!user || !match) throw httpError(401, 'Invalid email or password.');
 
-  return { token: signToken(user), username: user.username || null };
+  return toAuthResult(user);
 }
 
 module.exports = { registerUser, loginUser };
