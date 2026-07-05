@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const { checkPassword, checkRequired, checkLength, normalizeEmail } = require('../utils/validate');
+const { validatePassword, normalizeEmail } = require('../utils/validate');
 const httpError = require('../utils/httpError');
-const { signToken } = require('../utils/token');
+const { toAuthResult } = require('./userSerializers');
 const { requestResetCode, verifyResetCode, assertResetVerified, consumeReset } = require('./verificationService');
 
 // Forgot-password flow. Emails a 6-char reset code (same challenge as signup) to
@@ -21,7 +21,7 @@ async function verifyPasswordReset(email, code) {
   await verifyResetCode(email, code);
   const user = await User.findOne({ email: normalizeEmail(email) });
   if (!user) throw httpError(400, 'Invalid or expired code. Please request a new one.');
-  return { token: signToken(user), username: user.username || null };
+  return toAuthResult(user);
 }
 
 // Sets a new password for the account. Gated by assertResetVerified (a verified,
@@ -29,9 +29,7 @@ async function verifyPasswordReset(email, code) {
 // same password policy as signup. Consumes the challenge (single-use).
 async function resetPassword(email, newPassword) {
   await assertResetVerified(email);
-  checkRequired('Password', newPassword);
-  checkLength('password', newPassword);
-  checkPassword(newPassword);
+  validatePassword(newPassword);
   email = normalizeEmail(email);
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
@@ -44,7 +42,7 @@ async function resetPassword(email, newPassword) {
     { new: true }
   );
   await consumeReset(email);
-  return { token: signToken(user), username: user.username || null };
+  return toAuthResult(user);
 }
 
 // "Skip & log in" path: the client already holds the token from verify; clear the

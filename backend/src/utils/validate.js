@@ -217,8 +217,17 @@ function checkPassword(password) {
     throw httpError(400, 'Password must contain a special character (not at the start or end).');
 }
 
+// Full validation of a password input: presence, the max-length cap (LIMITS,
+// which checkPassword doesn't enforce), then the strength policy. One entry point
+// so signup and password reset validate identically.
+function validatePassword(password) {
+  checkRequired('Password', password);
+  checkLength('password', password);
+  checkPassword(password);
+}
+
 module.exports = {
-  LIMITS, checkLength, checkNoSpaces, checkNameChars, checkEmail, checkPassword,
+  LIMITS, checkLength, checkNoSpaces, checkNameChars, checkEmail, checkPassword, validatePassword,
   checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
   COOLDOWN_DAYS, daysUntil, NAME_RE, NAME_SPACES_RE, USERNAME_RE,
   validateDateOfBirth, validateVerificationCode,

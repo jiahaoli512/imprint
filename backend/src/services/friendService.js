@@ -29,6 +29,17 @@ async function areFriends(aId, bId) {
   return isAccepted(await edgeBetween(aId, bId));
 }
 
+// The friends-only visibility rule, owned here so callers don't re-implement it
+// (or reach into friendship internals): a viewer may see an owner's gated data
+// only if they're the owner, an admin, or an accepted friend — else 403. Used for
+// both a user's markers and their friend list.
+async function assertCanViewOwnerData(viewerId, ownerId, { isAdmin = false, message = 'Not authorized.' } = {}) {
+  if (isAdmin) return;
+  const owner = ownerId.toString();
+  if (viewerId && (viewerId === owner || await areFriends(viewerId, owner))) return;
+  throw httpError(403, message);
+}
+
 // Query matching every accepted friendship a user is part of (either side).
 const acceptedFriendshipsOf = (userId) => ({
   status: EDGE.ACCEPTED,
@@ -129,12 +140,8 @@ async function removeFriend(userId, friendUsername) {
 async function listFriends(viewerId, ownerUsername) {
   const owner = await findUserByUsername(ownerUsername, '_id');
   const ownerId = owner._id;
-  const isOwner = ownerId.toString() === viewerId;
 
-  if (!isOwner) {
-    const edge = await edgeBetween(viewerId, ownerId);
-    if (!isAccepted(edge)) throw httpError(403, 'Only friends can view this list.');
-  }
+  await assertCanViewOwnerData(viewerId, ownerId, { message: 'Only friends can view this list.' });
 
   const edges = await FriendRequest.find(acceptedFriendshipsOf(ownerId))
     .populate('requester', PUBLIC_USER_FIELDS)
@@ -184,5 +191,5 @@ async function friendSummaryFor(ownerId, { viewerId = null, isOwner = false } = 
 
 module.exports = {
   sendFriendRequest, listIncomingRequests, friendAcceptedActivity, respondToRequest,
-  removeFriend, listFriends, friendSummaryFor, areFriends,
+  removeFriend, listFriends, friendSummaryFor, areFriends, assertCanViewOwnerData,
 };

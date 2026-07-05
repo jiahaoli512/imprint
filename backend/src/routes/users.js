@@ -3,12 +3,12 @@ const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
 const requireAdminAuth = require('../middleware/adminAuth');
 const requireUserOrAdmin = require('../middleware/userOrAdmin');
-const optionalAuth = require('../middleware/optionalAuth');
 const { authLimiter, codeRequestLimiter } = require('../middleware/rateLimit');
 const { registerUser, loginUser } = require('../services/authService');
 const { requestPasswordReset, verifyPasswordReset, resetPassword, finishReset } = require('../services/passwordResetService');
 const { checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers } = require('../services/profileService');
 const { requestCode, verifyCode } = require('../services/verificationService');
+const { viewerContext } = require('../utils/viewer');
 
 router.post('/', authLimiter, handle(async (req, res) => {
   await registerUser(req.body.email, req.body.password);
@@ -74,8 +74,11 @@ router.get('/search', requireUserOrAdmin, handle(async (req, res) => {
   res.json(await searchUsers(req.query.q || ''));
 }));
 
-router.get('/by-username/:username', optionalAuth, handle(async (req, res) => {
-  res.json(await getProfileFor(req.params.username, { viewerId: req.user?.id, isAdmin: !!req.admin }));
+// Signed-in (user or admin) only: a profile exposes real names, join date, and
+// friend count, so anonymous callers can't harvest PII — matching /search and
+// /check-username. viewerContext still resolves owner vs. admin vs. other viewer.
+router.get('/by-username/:username', requireUserOrAdmin, handle(async (req, res) => {
+  res.json(await getProfileFor(req.params.username, viewerContext(req)));
 }));
 
 router.patch('/by-username/:username', requireUserOrAdmin, handle(async (req, res) => {
@@ -83,7 +86,7 @@ router.patch('/by-username/:username', requireUserOrAdmin, handle(async (req, re
   res.json(await updateUserByUsername(
     req.params.username,
     { firstName, lastName, username },
-    { viewerId: req.user?.id, isAdmin: !!req.admin },
+    viewerContext(req),
   ));
 }));
 
