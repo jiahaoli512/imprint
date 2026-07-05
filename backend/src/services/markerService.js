@@ -1,9 +1,8 @@
 const MapMarkers = require('../models/MapMarkers');
-const httpError = require('../utils/httpError');
 const { validatePoints } = require('../utils/validate');
 const { createProximityGrid, MARKER_SPACING_M } = require('../utils/markerGeometry');
 const { findUserByUsername } = require('./userLookup');
-const { areFriends } = require('./friendService');
+const { assertCanViewOwnerData } = require('./friendService');
 
 // Resolves a username to its user id (the MapMarkers key), 404ing if there's no
 // such user. Returns the id as a string.
@@ -22,10 +21,7 @@ async function getAdminMarkers() {
 // can't pull an arbitrary user's whereabouts (or their badge-derived data).
 async function getUserMarkers(username, { viewerId = null, isAdmin = false } = {}) {
   const ownerId = await userIdForUsername(username);
-  if (!isAdmin && ownerId !== viewerId) {
-    const allowed = viewerId && await areFriends(viewerId, ownerId);
-    if (!allowed) throw httpError(403, 'Only friends can view this map.');
-  }
+  await assertCanViewOwnerData(viewerId, ownerId, { isAdmin, message: 'Only friends can view this map.' });
   const doc = await MapMarkers.findById(ownerId);
   return doc ? doc.points : [];
 }
