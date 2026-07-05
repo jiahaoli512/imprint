@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { createStore } from '../location/createStore';
+import { createSetting, keyNormalizer } from '../settings/createSetting';
 import { getStoredMapQuality, setStoredMapQuality } from '../../api/client';
 
 // Map render-quality tiers. Each tier is a combination of the marker primitive
@@ -23,24 +22,14 @@ export const QUALITY_ORDER = ['low', 'medium', 'high', 'ultra', 'max'];
 export const QUALITY_LABEL = { low: 'Low', medium: 'Medium', high: 'High', ultra: 'Ultra High', max: 'Max' };
 export const DEFAULT_QUALITY = 'medium';
 
-// Coerce any stored/incoming value to a known tier.
-function normalize(q) {
-  return q && Object.prototype.hasOwnProperty.call(QUALITY, q) ? q : DEFAULT_QUALITY;
-}
-
-// Module-level store so the picker (in MapCard) and the renderer (in MapView)
+// Module-level setting so the picker (in Settings) and the renderer (in MapView)
 // share one source of truth and the map re-renders the instant the tier changes.
-const qualityStore = createStore(normalize(getStoredMapQuality()));
+const quality = createSetting({
+  read: getStoredMapQuality,
+  write: setStoredMapQuality,
+  normalize: keyNormalizer(QUALITY, DEFAULT_QUALITY),
+});
 
-export function setMapQuality(q) {
-  const next = normalize(q);
-  setStoredMapQuality(next); // persist per-device
-  qualityStore.set(next);
-}
-
+export const setMapQuality = quality.set;
 // [quality, setMapQuality] — subscribes so any consumer re-renders on change.
-export function useMapQuality() {
-  const [quality, setQuality] = useState(qualityStore.get());
-  useEffect(() => qualityStore.subscribe(setQuality), []);
-  return [quality, setMapQuality];
-}
+export const useMapQuality = quality.use;
