@@ -4,6 +4,7 @@ const requireAuth = require('../middleware/auth');
 const requireAdminAuth = require('../middleware/adminAuth');
 const requireUserOrAdmin = require('../middleware/userOrAdmin');
 const { getAdminMarkers, getUserMarkers, saveUserMarkers, saveUserMarkersByUsername } = require('../services/markerService');
+const { viewerContext } = require('../utils/viewer');
 
 // Admin singleton (used by AdminDashboard)
 router.get('/', requireAdminAuth, handle(async (req, res) => {
@@ -19,7 +20,7 @@ router.put('/singleton', requireAdminAuth, handle(async (req, res) => {
 // friends (enforced in the service) — markers are auto-built from background
 // location history, so they're not exposed to arbitrary signed-in users.
 router.get('/user/:username', requireUserOrAdmin, handle(async (req, res) => {
-  res.json(await getUserMarkers(req.params.username, { viewerId: req.user?.id, isAdmin: !!req.admin }));
+  res.json(await getUserMarkers(req.params.username, viewerContext(req)));
 }));
 
 // Save own markers (requires auth)

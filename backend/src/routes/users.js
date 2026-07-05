@@ -9,6 +9,7 @@ const { registerUser, loginUser } = require('../services/authService');
 const { requestPasswordReset, verifyPasswordReset, resetPassword, finishReset } = require('../services/passwordResetService');
 const { checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers } = require('../services/profileService');
 const { requestCode, verifyCode } = require('../services/verificationService');
+const { viewerContext } = require('../utils/viewer');
 
 router.post('/', authLimiter, handle(async (req, res) => {
   await registerUser(req.body.email, req.body.password);
@@ -75,7 +76,7 @@ router.get('/search', requireUserOrAdmin, handle(async (req, res) => {
 }));
 
 router.get('/by-username/:username', optionalAuth, handle(async (req, res) => {
-  res.json(await getProfileFor(req.params.username, { viewerId: req.user?.id, isAdmin: !!req.admin }));
+  res.json(await getProfileFor(req.params.username, viewerContext(req)));
 }));
 
 router.patch('/by-username/:username', requireUserOrAdmin, handle(async (req, res) => {
@@ -83,7 +84,7 @@ router.patch('/by-username/:username', requireUserOrAdmin, handle(async (req, re
   res.json(await updateUserByUsername(
     req.params.username,
     { firstName, lastName, username },
-    { viewerId: req.user?.id, isAdmin: !!req.admin },
+    viewerContext(req),
   ));
 }));
 
