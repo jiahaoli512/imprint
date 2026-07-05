@@ -18,3 +18,7 @@ export const PW_RULES = [
 
 // True when a password satisfies every rule.
 export const passwordValid = (p) => PW_RULES.every((r) => r.test(p));
+
+// Each rule annotated with whether the given password passes it — the shape the
+// PasswordChecklist renders. Keeps the "rules + pass state" derivation in one place.
+export const evaluatePassword = (p) => PW_RULES.map((r) => ({ ...r, passed: r.test(p) }));

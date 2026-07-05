@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import ConfirmModal from '../components/ConfirmModal';
 import CodeVerifyStep from '../components/CodeVerifyStep';
+import PasswordChecklist from '../components/PasswordChecklist';
 import { api, clearCodeCooldown } from '../api/client';
 import { isValidEmail, normalizeEmail } from '../utils/validateName';
-import { PW_RULES } from '../utils/passwordRules';
+import { passwordValid } from '../utils/passwordRules';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -28,8 +29,7 @@ export default function Signup() {
     }
   }, [step]);
 
-  const checks = PW_RULES.map(r => ({ ...r, passed: r.test(password) }));
-  const allPassed = checks.every(c => c.passed);
+  const allPassed = passwordValid(password);
   const passwordsMatch = allPassed && confirmPassword.length > 0 && confirmPassword === password;
 
   async function handleRegister() {
@@ -156,14 +156,7 @@ export default function Signup() {
                 </button>
               </div>
 
-              <ul className="auth-checks">
-                {checks.map(c => (
-                  <li key={c.key} className={c.passed ? 'check-pass' : 'check-fail'}>
-                    {c.passed ? <Check size={12} /> : <X size={12} />}
-                    {c.label}
-                  </li>
-                ))}
-              </ul>
+              <PasswordChecklist password={password} />
 
               <div className="auth-input-wrap">
                 <input
