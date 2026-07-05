@@ -1,6 +1,6 @@
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
 const httpError = require('../utils/httpError');
+const { signAdminToken } = require('../utils/token');
 
 // Constant-time string equality (avoids leaking the password via comparison
 // timing). Hashing first gives both sides equal length so timingSafeEqual is
@@ -11,14 +11,12 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(ha, hb);
 }
 
-// Validates the admin password (server-side) and mints a short-lived admin JWT.
-// Keeps "how admin tokens are minted" in the service layer, alongside the user
-// auth logic, rather than inline in the route.
+// Validates the admin password (server-side), then delegates minting to the token
+// seam. The service owns the auth *decision*; token.js owns how JWTs are signed.
 function login(password) {
   if (!password || !safeEqual(password, process.env.ADMIN_PASSWORD))
     throw httpError(401, 'Incorrect password.');
-  const token = jwt.sign({ type: 'admin', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '8h' });
-  return { token };
+  return { token: signAdminToken() };
 }
 
 module.exports = { login };

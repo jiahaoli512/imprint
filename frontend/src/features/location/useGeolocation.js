@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { createStore } from './createStore';
+import { useState } from 'react';
+import { createStore, useStore } from './createStore';
 
 // Resolves [lat, lng] from the browser, with the given options.
 function requestPosition(options) {
@@ -52,11 +52,9 @@ const locationStore = createStore(null);
 // Encapsulates the "locate me" concern: requesting the device location and
 // exposing the resulting position (persisted), loading flag, and any error.
 export function useGeolocation() {
-  const [userLocation, setUserLocation] = useState(locationStore.get());
+  const userLocation = useStore(locationStore);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
-
-  useEffect(() => locationStore.subscribe(setUserLocation), []);
 
   async function locate() {
     setLocating(true);

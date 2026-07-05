@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { createStore } from '../location/createStore';
+import { createSetting, keyNormalizer } from '../settings/createSetting';
 import { getStoredMapStyle, setStoredMapStyle } from '../../api/client';
 
 // Per-device map base style. All three come from CARTO (one provider, one
@@ -14,24 +13,14 @@ export const BASEMAPS = {
 export const BASEMAP_ORDER = ['dark', 'light', 'streets'];
 export const DEFAULT_BASEMAP = 'dark';
 
-// Coerce any stored/incoming value to a known style.
-function normalize(s) {
-  return s && Object.prototype.hasOwnProperty.call(BASEMAPS, s) ? s : DEFAULT_BASEMAP;
-}
+// Module-level setting so the picker (settings) and the renderer (MapView) share
+// one source of truth and the map re-tiles the instant the style changes.
+const basemap = createSetting({
+  read: getStoredMapStyle,
+  write: setStoredMapStyle,
+  normalize: keyNormalizer(BASEMAPS, DEFAULT_BASEMAP),
+});
 
-// Module-level store so the picker (settings) and the renderer (MapView) share one
-// source of truth and the map re-tiles the instant the style changes.
-const basemapStore = createStore(normalize(getStoredMapStyle()));
-
-export function setBasemap(s) {
-  const next = normalize(s);
-  setStoredMapStyle(next); // persist per-device
-  basemapStore.set(next);
-}
-
+export const setBasemap = basemap.set;
 // [basemap, setBasemap] — subscribes so any consumer re-renders on change.
-export function useBasemap() {
-  const [basemap, setLocal] = useState(basemapStore.get());
-  useEffect(() => basemapStore.subscribe(setLocal), []);
-  return [basemap, setBasemap];
-}
+export const useBasemap = basemap.use;

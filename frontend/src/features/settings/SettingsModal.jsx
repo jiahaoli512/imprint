@@ -2,10 +2,11 @@ import { useState } from 'react';
 import Modal from '../../components/Modal';
 import DisplaySettings from './DisplaySettings';
 
-// Tabs across the top. Only "display" has content today; the rest are placeholders
-// so the structure is ready for Account / Notifications / Privacy settings later.
+// Tabs across the top. Each entry carries its body `component`; a tab without one
+// renders the "Coming soon" placeholder. Adding a real Account / Notifications /
+// Privacy tab is just filling in `component` — no change to the render below.
 const TABS = [
-  { id: 'display', label: 'Display' },
+  { id: 'display', label: 'Display', component: DisplaySettings },
   { id: 'account', label: 'Account' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'privacy', label: 'Privacy' },
@@ -13,6 +14,7 @@ const TABS = [
 
 export default function SettingsModal({ onClose }) {
   const [tab, setTab] = useState('display');
+  const ActiveBody = TABS.find((t) => t.id === tab)?.component;
 
   return (
     <Modal onClose={onClose} icon={false} closable className="settings-modal">
@@ -32,11 +34,7 @@ export default function SettingsModal({ onClose }) {
         ))}
       </div>
 
-      {tab === 'display' ? (
-        <DisplaySettings />
-      ) : (
-        <p className="settings-placeholder">Coming soon.</p>
-      )}
+      {ActiveBody ? <ActiveBody /> : <p className="settings-placeholder">Coming soon.</p>}
     </Modal>
   );
 }

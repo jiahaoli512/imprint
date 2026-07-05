@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import ConfirmModal from '../components/ConfirmModal';
 import CodeVerifyStep from '../components/CodeVerifyStep';
+import PasswordChecklist from '../components/PasswordChecklist';
+import PasswordInput from '../components/PasswordInput';
 import { api, clearCodeCooldown } from '../api/client';
 import { isValidEmail, normalizeEmail } from '../utils/validateName';
-import { PW_RULES } from '../utils/passwordRules';
+import { passwordValid } from '../utils/passwordRules';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -14,8 +15,6 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,8 +27,7 @@ export default function Signup() {
     }
   }, [step]);
 
-  const checks = PW_RULES.map(r => ({ ...r, passed: r.test(password) }));
-  const allPassed = checks.every(c => c.passed);
+  const allPassed = passwordValid(password);
   const passwordsMatch = allPassed && confirmPassword.length > 0 && confirmPassword === password;
 
   async function handleRegister() {
@@ -142,48 +140,21 @@ export default function Signup() {
             <h1 className="auth-title">Create Password</h1>
             <p className="auth-sub">Choose a strong password.</p>
             <div className="auth-form">
-              <div className="auth-input-wrap">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
-                  placeholder="Password"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setConfirmPassword(''); }}
-                  autoComplete="new-password"
-                />
-                <button type="button" className="auth-eye" onClick={() => setShowPassword(s => !s)}>
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+              <PasswordInput
+                placeholder="Password"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setConfirmPassword(''); }}
+              />
 
-              <ul className="auth-checks">
-                {checks.map(c => (
-                  <li key={c.key} className={c.passed ? 'check-pass' : 'check-fail'}>
-                    {c.passed ? <Check size={12} /> : <X size={12} />}
-                    {c.label}
-                  </li>
-                ))}
-              </ul>
+              <PasswordChecklist password={password} />
 
-              <div className="auth-input-wrap">
-                <input
-                  type={showConfirm ? 'text' : 'password'}
-                  className={`auth-input${passwordsMatch ? ' auth-input-match' : ''}`}
-                  placeholder="Confirm password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  disabled={!allPassed}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="auth-eye"
-                  onClick={() => setShowConfirm(s => !s)}
-                  disabled={!allPassed}
-                >
-                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+              <PasswordInput
+                placeholder="Confirm password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                disabled={!allPassed}
+                extraClass={passwordsMatch ? 'auth-input-match' : ''}
+              />
 
               {registerError && <p className="auth-error">{registerError}</p>}
 

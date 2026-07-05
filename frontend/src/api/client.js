@@ -186,6 +186,12 @@ export function profileApiFor(isAdminView) {
     : { getUser: api.getUser, updateUser: api.updateUser };
 }
 
+// Resolve the user-search call for the current view (admin vs. self), keeping the
+// isAdminView→endpoint mapping in this module like the other *ApiFor resolvers.
+export function searchApiFor(isAdminView) {
+  return { searchUsers: isAdminView ? api.adminSearchUsers : api.searchUsers };
+}
+
 // Resolve marker load/save bound to a username for the current view. Loading is
 // the same for both; only the save endpoint differs.
 export function markersApiFor(isAdminView, username) {

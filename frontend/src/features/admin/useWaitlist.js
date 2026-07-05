@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api/client';
+import { downloadCsv } from '../../utils/csv';
 
 // Owns waitlist data and all its mutations (approve, delete, reorder) plus CSV
 // export. Mutations apply optimistic updates and roll back / refetch on failure.
@@ -45,28 +46,12 @@ export function useWaitlist() {
     catch { api.getWaitlist().then(setEntries).catch(() => {}); }
   }
 
-  // Escapes a value for CSV: doubles quotes, and prefixes a `'` to values that
-  // begin with a formula trigger so spreadsheets can't execute injected content
-  // (e.g. a waitlist name of `=HYPERLINK(...)`).
-  function csvCell(v) {
-    let s = String(v ?? '');
-    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-
   function exportCSV() {
     const rows = [['#', 'Email', 'Name', 'Joined', 'Approved']];
     entries.forEach((e, i) => {
       rows.push([i + 1, e.email, e.name || '', new Date(e.createdAt).toLocaleString(), e.approved ? 'Yes' : 'No']);
     });
-    const csv = rows.map((r) => r.map(csvCell).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'imprint-waitlist.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv('imprint-waitlist.csv', rows);
   }
 
   return { entries, loading, error, approvingId, approve, remove, reorder, exportCSV };

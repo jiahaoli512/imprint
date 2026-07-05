@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
+import PasswordInput from '../components/PasswordInput';
 import { api, setUsername, setToken, clearAdminSession } from '../api/client';
 import { isValidEmail, normalizeEmail } from '../utils/validateName';
 import { refreshGreeting } from '../utils/greeting';
@@ -9,7 +8,6 @@ import { useForm } from '../utils/useForm';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
 
   const { values, setField, error, submitting, handleSubmit } = useForm(
     { email: '', password: '' },
@@ -45,19 +43,12 @@ export default function Login() {
                 onChange={setField('email')}
                 autoComplete="email"
               />
-              <div className="auth-input-wrap">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
-                  placeholder="Password"
-                  value={values.password}
-                  onChange={setField('password')}
-                  autoComplete="current-password"
-                />
-                <button type="button" className="auth-eye" onClick={() => setShowPassword(s => !s)}>
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+              <PasswordInput
+                placeholder="Password"
+                value={values.password}
+                onChange={setField('password')}
+                autoComplete="current-password"
+              />
               {error && <p className="auth-error">{error}</p>}
               <div style={{ textAlign: 'right', marginTop: '-4px' }}>
                 <button type="button" className="auth-link-btn" onClick={() => navigate('/forgot')}>
