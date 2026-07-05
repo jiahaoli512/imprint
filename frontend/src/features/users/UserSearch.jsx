@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { api } from '../../api/client';
+import { searchApiFor } from '../../api/client';
 import { fullName } from '../../utils/fullName';
 import { useDebouncedCallback } from '../../utils/useDebouncedCallback';
 import { useDismiss } from '../../utils/useDismiss';
@@ -20,10 +20,12 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
   const containerRef = useRef(null);
 
   // Admin view carries an admin token (no user session), so search must go
-  // through the admin request; a regular user uses the user request.
+  // through the admin request; a regular user uses the user request. The
+  // resolver keeps that view→endpoint mapping in client.js.
+  const { searchUsers } = searchApiFor(isAdminView);
   const debouncedSearch = useDebouncedCallback(async (q) => {
     try {
-      const data = await (isAdminView ? api.adminSearchUsers : api.searchUsers)(q);
+      const data = await searchUsers(q);
       setResults(data);
       setShowResults(true);
     } catch { setResults([]); }
