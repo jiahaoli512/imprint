@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import CodeVerifyStep from '../components/CodeVerifyStep';
 import PasswordChecklist from '../components/PasswordChecklist';
+import PasswordInput from '../components/PasswordInput';
 import {
   api, clearCodeCooldown,
   setToken, setUsername, clearAdminSession,
@@ -29,8 +29,6 @@ export default function ForgotPassword() {
   // New password
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [resetError, setResetError] = useState('');
 
   const allPassed = passwordValid(password);
@@ -149,41 +147,21 @@ export default function ForgotPassword() {
           <h1 className="auth-title">New Password</h1>
           <p className="auth-sub">Choose a strong password.</p>
           <div className="auth-form">
-            <div className="auth-input-wrap">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                className="auth-input"
-                placeholder="New password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setConfirmPassword(''); }}
-                autoComplete="new-password"
-              />
-              <button type="button" className="auth-eye" onClick={() => setShowPassword((s) => !s)}>
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
+            <PasswordInput
+              placeholder="New password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setConfirmPassword(''); }}
+            />
 
             <PasswordChecklist password={password} />
 
-            <div className="auth-input-wrap">
-              <input
-                type={showConfirm ? 'text' : 'password'}
-                className={`auth-input${passwordsMatch ? ' auth-input-match' : ''}`}
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={!allPassed}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                className="auth-eye"
-                onClick={() => setShowConfirm((s) => !s)}
-                disabled={!allPassed}
-              >
-                {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
+            <PasswordInput
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={!allPassed}
+              extraClass={passwordsMatch ? 'auth-input-match' : ''}
+            />
 
             {resetError && <p className="auth-error">{resetError}</p>}
 
