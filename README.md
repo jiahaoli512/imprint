@@ -1,4 +1,4 @@
-# Imprint (v2.4) *Updated Jun 27, 2026*
+# Imprint (v2.6) *Updated Jul 5, 2026*
 
 How much of the world have you seen?
 
@@ -12,22 +12,26 @@ Imprint maps every place you've ever been - turning your travels into a living p
 - **Mobile** — iOS app via Capacitor 7 (wraps the web build); background location via `@capacitor-community/background-geolocation`
 - **Backend** — Node.js + Express 5, structured into routes → services → models
 - **Database** — MongoDB via Mongoose
-- **Email** — Brevo (Sendinblue) transactional API for approval and contact‑form emails
-- **Auth** — JWT for users and admins; bcrypt password hashing
+- **Email** — Brevo (Sendinblue) transactional API for approval, signup/reset verification codes, contact‑form, and friend‑request/accepted emails
+- **Auth** — JWT for users and admins; bcrypt password hashing; emailed 6‑char verification codes for signup and password reset; server‑side session revocation on password reset (`tokenVersion`)
 - **Deployment** — Frontend on Vercel, backend on Render (an external uptime monitor pings `/health` to limit free‑tier cold starts; the web client also retries transient load failures)
 
 ## Features
 
 - **Waitlist** — public signup; admins approve entries, which triggers an approval email
-- **Accounts** — registration is gated to approved waitlist emails; passwords are hashed with bcrypt
-- **Profiles** — username, first/last name, and an 18+ date‑of‑birth gate set during onboarding
+- **Accounts** — registration is gated to approved waitlist emails and a **6‑char email verification code** (bcrypt‑hashed at rest, 30‑min TTL, attempt‑capped, resend‑throttled), enforced server‑side; passwords are hashed with bcrypt
+- **Forgot password** — email → reset code → change password or skip & log in. Verifying the reset code proves inbox control and returns a login token; setting a new password revokes all other sessions and keeps the resetting client signed in
+- **Profiles** — username, first/last name, and an 18+ date‑of‑birth gate set during onboarding. Self‑service username (30‑day) and name (7‑day) changes are cooldown‑limited; admins bypass the cooldown
 - **Interactive map** — a Leaflet map of per‑user markers, built passively from mobile background tracking (admins can also edit a user's map); zoom‑aware region labels (city → county → state → country → continent → Earth) via reverse geocoding. Over water the label names the nearest **ocean** (open sea) or **continent** (coastal) instead of going blank.
 - **Discovery gauge** — a radial gauge showing the **% of the current region you've discovered** (markers bucketed into scale‑invariant grid cells over the region's area). Its place name always matches the map's region label, including oceans/continents.
-- **Map Quality** — a per‑device setting (Low → Medium → High → Ultra High → Max) trading marker fidelity for performance: it controls viewport culling, screen‑grid thinning, a render cap, and DOM‑pin vs. canvas rendering. Medium (the default) keeps large maps smooth; this is render‑only and never affects the discovery %.
+- **Map Quality** — a per‑device setting (Low → Medium → High → Ultra High → Max), set in **Settings → Display**, trading marker fidelity for performance: it controls viewport culling, screen‑grid thinning, a render cap, and DOM‑pin vs. canvas rendering. Medium (the default) keeps large maps smooth; this is render‑only and never affects the discovery %.
 - **Locate me** — a one‑shot "where am I" control (web and mobile) that drops a blue location circle and flies to street‑level zoom
 - **Enlarge map** — a web‑only toggle that grows the map to fill the content area (header/footer untouched)
 - **Passive tracking (mobile)** — opt‑in background location that records a point roughly every 100 m of movement and passively builds your map; new places become markers, thinned to a sparse 100 m trail rather than a continuous tube. On the web a static notice explains it's mobile‑only.
 - **Badges** — an achievement gallery on every profile (opened from a "Badges" button), organised into swipeable categories with a slide animation, position dots, and a per‑category earned count + percentage. Categories: **Account milestones** (animated medallions awarded by account age — Account Created → One Year, computed client‑side from `createdAt`), **Passports** (a flag medallion per country, tinted by continent), and **Passports (United States)** (the 50 states + D.C. with a red/white/blue theme). Large categories get a name search; Passports adds a multi‑select continent filter; all categories share an Unlocked / Locked / All status filter. Earned badges animate (breathe, spinning ring, sparkle, ribbon tails); locked ones are grayed. Long names truncate, and a scroll‑to‑top button appears on long lists. Mobile compacts the grid to ~3 per row.
+- **Friends** — send/accept/reject friend requests (a single directed edge; reject is a hard delete that frees a re‑request). Profiles show a friend count and your relationship; the friend list is visible to the owner and friends only. A user's markers/badges are gated to the owner, admins, and **friends**, so badges show as locked on a non‑friend's profile. Each request emails the recipient (first name only), rate‑limited to 30/hour
+- **Notifications & activity** — a header notification bell (own dashboard + profile) drops down two sections: pending friend **requests** and an **activity** feed (e.g. "@x accepted your friend request"), newest‑first with relative timestamps. The badge counts pending requests plus unseen activity (unseen tracked client‑side). The activity feed is a source registry — adding a new activity type is one source function + one renderer
+- **Settings** — a gear next to the bell opens a tabbed modal (Display · Account · Notifications · Privacy; only Display is implemented). **Display** exposes three per‑device preferences: **Map Quality**, **Map Base Style** (Dark / Light / Streets, all CARTO; dark default; tiles swap live), and **Reduce Motion** (force‑disables animations/transitions, applied before first paint). All persist per device, unsynced to the account
 - **Public profiles & search** — look up other users by username and view their profiles (signed‑in users only)
 - **Admin dashboard** — password‑protected (server‑side) panel to manage the waitlist and edit any user's map/profile
 - **Privacy Policy & Contact** — a `/privacy` policy page and a `/contact` form that emails the Imprint inbox, both linked from the footer
@@ -38,32 +42,46 @@ Imprint maps every place you've ever been - turning your travels into a living p
 ```
 backend/
   src/
-    routes/        # thin HTTP handlers (admin, users, waitlist, markers, locations, contact)
-    services/      # business logic (admin, users, waitlist, markers, locations, contact)
-    middleware/    # auth, adminAuth, userOrAdmin, optionalAuth, rateLimit, sanitize, handle
-    models/        # Mongoose schemas (User, Waitlist, MapMarkers, Location)
-    utils/         # validate, email, httpError
+    routes/        # thin HTTP handlers (admin, users, friends, activity, waitlist,
+                   #   markers, locations, verification, contact)
+    services/      # business logic — user domain split by responsibility
+                   #   (authService, passwordResetService, profileService,
+                   #   verificationService, friendService, friendNotifications,
+                   #   activityService, markerService, adminService, ...)
+    constants/     # shared vocabularies (friendship status/edge/action)
+    middleware/    # auth, adminAuth, userOrAdmin, optionalAuth, jwt (Bearer parse +
+                   #   session-freshness), rateLimit, sanitize, handle
+    models/        # Mongoose schemas (User, Waitlist, MapMarkers, Location,
+                   #   FriendRequest, EmailVerification)
+    utils/         # validate, email, token (JWT sign/verify seam),
+                   #   markerGeometry, names, httpError
 frontend/
   src/
-    pages/         # route components (Home, Login, Signup, Profile, Dashboard,
-                   #   AdminDashboard, Admin, UserProfile, PrivacyPolicy, Contact, ...)
-    components/    # shared UI (AuthShell, Modal, LogoMark, FieldLabel, LogoutModal,
-                   #   AdminLoginModal, ConfirmModal, Spinner, Footer, Nav, ...)
+    pages/         # route components (Home, Login, Signup, ForgotPassword, Profile,
+                   #   Dashboard, AdminDashboard, Admin, UserProfile, PrivacyPolicy,
+                   #   Contact, ...)
+    components/    # shared UI (AuthShell, Modal, PasswordInput, PasswordChecklist,
+                   #   CodeVerifyStep, LogoMark, FieldLabel, ConfirmModal, Nav, ...)
     auth/          # route guards
-    features/map/      # Leaflet map (MapView, MapCard, useMarkers, mapUtils),
-                       #   discovery gauge (discovery, useDiscovery, DiscoveryPanel),
-                       #   render quality (mapQuality, MapQualityModal)
-    features/location/ # geolocation + passive tracking (useGeolocation,
+    features/map/      # Leaflet map split by concern (MapView, MapCard, mapStyle,
+                       #   geo, region, mapComponents), discovery gauge (discovery,
+                       #   useDiscovery, DiscoveryPanel), render quality (mapQuality),
+                       #   base style (basemap)
+    features/location/ # geolocation + passive tracking (useGeolocation, createStore,
                        #   backgroundTracking, LocationTrackingPanel, WebTrackingNotice)
-    features/users/    # user search, useUser/useProfileEdit, ProfileToolbar
+    features/users/    # user search, useUser, friends (FriendButton, FriendsListModal,
+                       #   useProfileFriends), notifications (NotificationBell,
+                       #   useNotifications, activityRenderers), ProfileToolbar
+    features/settings/ # settings modal + per-device stores (SettingsModal,
+                       #   DisplaySettings, createSetting, reduceMotion)
     features/badges/   # badges modal + carousel (BadgesModal, Badge) and a
                        #   category registry (categories/: accountAge, countries,
                        #   statesUS) — add a category = a new file + one line
-    features/admin/    # waitlist + users tables and their hooks
-    utils/         # validateName, fullName, matchesQuery, formatDate, retry,
-                   #   useForm, hooks
+    features/admin/    # waitlist + users tables and their hooks (usePagination)
+    utils/         # validateName, fullName, passwordRules, csv, formatDate, retry,
+                   #   useForm, useAsync, useDismiss, useDebouncedCallback
     assets/        # static assets (state-flags/ — US state/territory SVGs)
-    api/client.js  # single API layer + session/token helpers
+    api/client.js  # single API layer + session/token helpers (only file touching storage)
   ios/             # Capacitor iOS project
 ```
 
@@ -112,7 +130,7 @@ Frontend runs on `http://localhost:5173`, backend on `http://localhost:4000`. If
 
 ## Email (Brevo)
 
-Approval emails (on waitlist approval) and contact‑form submissions are sent through the Brevo transactional API.
+Approval emails (on waitlist approval), signup/reset verification codes, friend‑request and friend‑accepted notifications, and contact‑form submissions are all sent through the Brevo transactional API (a single `sendEmail` seam behind a shared branded template).
 
 1. Create a Brevo account and generate an API key
 2. Set `BREVO_API_KEY` in `backend/.env`
@@ -143,10 +161,12 @@ Open the **Admin** link in the site footer (web only) and enter `ADMIN_PASSWORD`
 
 The backend enforces security server‑side (not just in the UI):
 
-- **Authentication** — JWT for users and admins; protected routes require a valid token, and profile edits require ownership (or admin)
+- **Authentication** — JWT for users and admins (HS256 pinned on both sign and verify, in a single token seam); protected routes require a valid token, and profile edits require ownership (or admin)
+- **Session revocation** — user tokens carry a `tv` claim checked against the account's `tokenVersion` on every authenticated request; a password reset bumps the version, invalidating every previously‑issued token (including a stolen one) while returning a fresh token so the resetting client stays signed in
+- **Email verification** — signup and password reset require a 6‑char code emailed to the address, enforced **server‑side** (bcrypt‑hashed at rest, 30‑min TTL, 5‑attempt cap via atomic `$inc`, resend cooldown); skipping the verify UI still fails. Ineligible emails get a uniform response (no enumeration)
 - **Admin auth** — the admin password is validated server‑side in constant time; the panel uses a signed admin JWT, never a client‑side password check. The client‑side admin flag is cosmetic — every admin route still verifies the admin JWT
-- **Authorization** — per‑user markers and location history are gated to a signed‑in user or admin (not public); profile edits enforce ownership in the service layer
-- **Rate limiting** — a general API limiter, a strict limiter on login/registration/admin‑login, and a dedicated cap on the public contact form
+- **Authorization** — per‑user markers and location history are gated to the **owner, an admin, or one of the owner's friends** (not any signed‑in user); friend‑request responses are restricted to the recipient; profile edits enforce ownership in the service layer
+- **Rate limiting** — a general API limiter, a strict limiter on login/registration/admin‑login, a cap on verification‑code requests, a friend‑request limiter (30/hour), and a dedicated cap on the public contact form
 - **CORS allowlist** — restricted to known origins (configurable via `ALLOWED_ORIGINS`), plus localhost (dev), `capacitor://localhost` (iOS), and this project's Vercel deploys (matched by project slug — not any `*.vercel.app`)
 - **Security headers** — Helmet, with JSON body-size caps (100 kb globally; a larger 4 MB limit only on the marker‑save routes, which carry the full points array)
 - **Input validation** — length limits, name character rules, email‑format checks, a 4‑digit DOB/18+ check, and a password policy (≥12 chars with mixed character classes) all enforced server‑side
