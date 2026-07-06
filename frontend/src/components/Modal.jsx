@@ -7,24 +7,32 @@ import { Fingerprint, X } from 'lucide-react';
 // supply the card's contents (title, copy, action buttons) as children.
 // `closable` renders a visible top-right X (in addition to overlay-click).
 export default function Modal({ onClose, icon = true, closable = false, className = '', containerRef, children }) {
-  // Lock background scroll while the modal is open. `overflow: hidden` alone is
-  // unreliable (notably iOS/Capacitor, where the body still rubber-band scrolls),
-  // so pin the body with `position: fixed` and offset it by the current scroll
-  // position — then restore both on close so the page doesn't jump.
+  // Lock background scroll while the modal is open. We deliberately do NOT use
+  // the `position: fixed` body trick: on iOS/WKWebView, toggling the body in and
+  // out of `position: fixed` un-pins every `position: fixed` element on the page
+  // (e.g. the portaled profile toolbar) document-wide until a full relayout — so
+  // they scroll away and never return until you navigate/refresh. Instead lock
+  // with `overflow: hidden` (which keeps the body in flow, so fixed elements stay
+  // pinned) plus a non-passive `touchmove` guard for iOS: WKWebView still
+  // rubber-band-scrolls the document on touch under `overflow: hidden`, so we
+  // preventDefault any touch drag that isn't inside the modal card. Touches
+  // within the modal are allowed so its own scrollable areas keep working (they
+  // use `overscroll-behavior` to avoid chaining the scroll to the page).
   useEffect(() => {
     const { body } = document;
-    const scrollY = window.scrollY;
-    const prev = {
-      position: body.style.position, top: body.style.top,
-      width: body.style.width, overflow: body.style.overflow,
-    };
-    body.style.position = 'fixed';
-    body.style.top = `-${scrollY}px`;
-    body.style.width = '100%';
+    const prev = { overflow: body.style.overflow, overscrollBehavior: body.style.overscrollBehavior };
     body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+
+    const onTouchMove = (e) => {
+      if (!(e.target instanceof Element) || !e.target.closest('.modal')) e.preventDefault();
+    };
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+
     return () => {
-      Object.assign(body.style, prev);
-      window.scrollTo(0, scrollY);
+      body.style.overflow = prev.overflow;
+      body.style.overscrollBehavior = prev.overscrollBehavior;
+      document.removeEventListener('touchmove', onTouchMove);
     };
   }, []);
 

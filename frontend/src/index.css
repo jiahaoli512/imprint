@@ -962,6 +962,7 @@ footer {
 .badge-slide-viewport {
   overflow-x: hidden; /* clip the horizontal slide animation */
   overflow-y: auto;
+  overscroll-behavior: contain; /* don't chain scroll to the locked page (see Modal.jsx) */
   /* Hard cap at ~2 rows + a thin peek that the fade fully masks. Tune this if the
      fade sits over the 2nd row (lower it) or too much of row 3 shows (also lower). */
   max-height: 400px;
@@ -1180,6 +1181,7 @@ footer {
   gap: 18px;
   max-height: 290px;
   overflow-y: auto;
+  overscroll-behavior: contain; /* don't chain scroll to the locked page (see Modal.jsx) */
   padding-right: 8px;
   scrollbar-width: thin;
   scrollbar-color: var(--muted) transparent;
@@ -1945,7 +1947,7 @@ footer {
 }
 
 /* ── Settings modal ── */
-.settings-modal { max-width: 460px; width: 100%; text-align: left; max-height: 100%; overflow-y: auto; }
+.settings-modal { max-width: 460px; width: 100%; text-align: left; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; }
 
 /* Tab row across the top (segmented). */
 .settings-tabs {
@@ -1988,6 +1990,7 @@ footer {
   max-height: 390px;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain; /* don't chain scroll to the locked page (see Modal.jsx) */
   padding-right: 8px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
