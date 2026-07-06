@@ -42,17 +42,12 @@ body {
   overscroll-behavior-y: auto;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Manual "reduce motion" override (Display Settings) — same effect as the media
-   query above, toggled via a [data-reduce-motion] attribute on <html>. */
+/* Reduce motion is driven by the in-app Display Settings toggle (a
+   [data-reduce-motion] attribute on <html>), NOT a hard `prefers-reduced-motion`
+   media query. The OS "Reduce Motion" accessibility setting only seeds the
+   toggle's default (see getStoredReduceMotion) — a media query here would apply
+   `!important` app-wide and could never be overridden by the toggle, so a user
+   whose device has Reduce Motion on could never re-enable animations. */
 [data-reduce-motion] *, [data-reduce-motion] *::before, [data-reduce-motion] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;

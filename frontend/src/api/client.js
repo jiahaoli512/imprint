@@ -31,9 +31,17 @@ export const setStoredMarkerColor = (c) => localStorage.setItem('imprint_marker_
 export const getStoredPointOpacity = () => localStorage.getItem('imprint_point_opacity');
 export const setStoredPointOpacity = (t) => localStorage.setItem('imprint_point_opacity', String(t));
 
-// Per-device "reduce motion" preference — force-disable animations regardless of the
-// OS prefers-reduced-motion setting. Stored as '1' (on) / '0' (off).
-export const getStoredReduceMotion = () => localStorage.getItem('imprint_reduce_motion') === '1';
+// Per-device "reduce motion" preference — the single control for disabling
+// animations (there is no hard prefers-reduced-motion CSS override; see index.css).
+// Stored as '1' (on) / '0' (off); when the user hasn't chosen yet, default to the
+// OS "Reduce Motion" setting so accessibility is respected out of the box but stays
+// overridable via Display Settings.
+export const getStoredReduceMotion = () => {
+  const v = localStorage.getItem('imprint_reduce_motion');
+  if (v === '1') return true;
+  if (v === '0') return false;
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+};
 export const setStoredReduceMotion = (on) => localStorage.setItem('imprint_reduce_motion', on ? '1' : '0');
 
 // Per-session dashboard greeting (rolled on login). The greeting copy + rotation
