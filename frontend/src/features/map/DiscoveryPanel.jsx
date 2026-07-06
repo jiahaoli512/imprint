@@ -47,9 +47,11 @@ export default function DiscoveryPanel({ region, status, percent = 0, level }) {
             cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none"
             stroke="url(#discoveryGrad)" strokeWidth="10" strokeLinecap="round"
             strokeDasharray={C}
-            strokeDashoffset={firstLoad ? C : dashoffset}
             transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
-            style={{ opacity: loading ? 0.3 : 1 }}
+            // strokeDashoffset must be an inline *style* (not an SVG attribute):
+            // WebKit/iOS only runs the CSS transition when the value changes as a
+            // CSS property, so as an attribute the arc jumps instead of easing.
+            style={{ opacity: loading ? 0.3 : 1, strokeDashoffset: firstLoad ? C : dashoffset }}
           />
           {/* indeterminate spinner overlaid only while loading */}
           {loading && (
