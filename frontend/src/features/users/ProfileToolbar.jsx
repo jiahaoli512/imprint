@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, List, LayoutDashboard } from 'lucide-react';
@@ -20,23 +20,23 @@ import SettingsButton from '../settings/SettingsButton';
 // Same rationale as ScrollToTopButton.
 export default function ProfileToolbar({ username, isAdminView, isMe }) {
   const navigate = useNavigate();
-  const toolbarRef = useRef(null);
 
   // Self-heal an iOS/WKWebView quirk: the shared Modal locks scroll by toggling
   // document.body to position:fixed and back (see Modal.jsx). That body toggle
-  // can leave this position:fixed toolbar (portaled to <body>) detached from the
-  // viewport — it scrolls away and won't repaint until a layout is forced. Watch
-  // for the lock releasing (body no longer fixed) and nudge the toolbar to
-  // re-composite. The hide→reflow→show happens in one tick, so there's no paint
-  // of the hidden state and thus no visible flicker.
+  // leaves this position:fixed toolbar (portaled to <body>) detached from the
+  // viewport — it scrolls away and won't re-pin. Re-composite tricks (reflow,
+  // a transient transform) don't reliably re-pin the *same* DOM node, but a
+  // brand-new node always lays out correctly (that's why the initial portal and
+  // an app "refresh" fix it). So on the lock releasing (body no longer fixed),
+  // bump a key to remount the toolbar as a fresh node. Only the locked→unlocked
+  // transition remounts, so it fires once per modal close, not on every write.
+  const [remountKey, setRemountKey] = useState(0);
+  const lockedRef = useRef(false);
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      if (document.body.style.position === 'fixed') return; // lock still engaged
-      const el = toolbarRef.current;
-      if (!el) return;
-      el.style.display = 'none';
-      void el.offsetHeight; // force reflow → iOS re-pins the fixed layer
-      el.style.display = '';
+      const locked = document.body.style.position === 'fixed';
+      if (lockedRef.current && !locked) setRemountKey((k) => k + 1);
+      lockedRef.current = locked;
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['style'] });
     return () => observer.disconnect();
@@ -55,7 +55,7 @@ export default function ProfileToolbar({ username, isAdminView, isMe }) {
           <AdminViewingBadge username={username} />
         </div>
       )}
-      <div className="profile-toolbar" ref={toolbarRef}>
+      <div className="profile-toolbar" key={remountKey}>
         <button className="btn btn-ghost" onClick={onBack}>
           <ArrowLeft size={16} />{' '}
           <span className="btn-label">
