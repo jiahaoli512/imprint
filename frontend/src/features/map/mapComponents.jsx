@@ -13,6 +13,37 @@ export function InvalidateOnMount() {
   return null;
 }
 
+const LOCATE_ZOOM = 16; // street-level zoom when centering on the user
+
+// Flies the map to `position` at street level (keeping a closer zoom if already in).
+export function FlyToLocation({ position }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) map.flyTo(position, Math.max(map.getZoom(), LOCATE_ZOOM), { duration: 1.2 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position]);
+  return null;
+}
+
+// Keep the map sized to its container while it animates (e.g. the enlarge
+// toggle): re-measure each frame for the transition's duration so Leaflet fills
+// the growing/shrinking area smoothly instead of leaving a grey gap.
+export function InvalidateOnResize({ dep }) {
+  const map = useMap();
+  useEffect(() => {
+    let raf, start;
+    const DURATION = 400; // ≥ the CSS transition (0.35s)
+    const tick = (t) => {
+      if (start === undefined) start = t;
+      map.invalidateSize({ animate: false });
+      if (t - start < DURATION) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [dep, map]);
+  return null;
+}
+
 export function MapClickHandler({ editing, onAdd }) {
   useMapEvents({
     click(e) { if (editing) onAdd([e.latlng.lat, e.latlng.lng]); },

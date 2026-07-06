@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
   makePinIcon, pinIconEdit, LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_EDIT_COLOR,
 } from './mapStyle';
-import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker } from './mapComponents';
+import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker, FlyToLocation, InvalidateOnResize } from './mapComponents';
 import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
 import { BASEMAPS, useBasemap } from './basemap';
 import { useMarkerColor } from './markerColor';
@@ -108,35 +108,6 @@ const locationIcon = L.divIcon({
   iconSize: [14, 14],
   iconAnchor: [7, 7],
 });
-
-const LOCATE_ZOOM = 16; // street-level zoom when centering on the user
-
-function FlyToLocation({ position }) {
-  const map = useMap();
-  useEffect(() => {
-    if (position) map.flyTo(position, Math.max(map.getZoom(), LOCATE_ZOOM), { duration: 1.2 });
-  }, [position]);
-  return null;
-}
-
-// Keep the map sized to its container while it animates (e.g. the enlarge
-// toggle): re-measure each frame for the transition's duration so Leaflet fills
-// the growing/shrinking area smoothly instead of leaving a grey gap.
-function InvalidateOnResize({ dep }) {
-  const map = useMap();
-  useEffect(() => {
-    let raf, start;
-    const DURATION = 400; // ≥ the CSS transition (0.35s)
-    const tick = (t) => {
-      if (start === undefined) start = t;
-      map.invalidateSize({ animate: false });
-      if (t - start < DURATION) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [dep, map]);
-  return null;
-}
 
 // Renders the Leaflet map and all its layers. Stateless: marker data and edit
 // state come in as props; user interactions are reported via callbacks.
