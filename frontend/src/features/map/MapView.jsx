@@ -154,11 +154,11 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
       style={{ height: '100%', width: '100%' }}
       worldCopyJump={true}
       preferCanvas={true}
+      attributionControl={false}
     >
       <TileLayer
         key={basemap}
         url={BASEMAPS[basemap].url}
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
       <MapClickHandler editing={editing} onAdd={onAddMarker} />
       <RegionDetector onRegion={onRegion} />
