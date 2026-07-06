@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { QUALITY_ORDER, QUALITY_LABEL, DEFAULT_QUALITY, useMapQuality } from '../map/mapQuality';
 import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/basemap';
 import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
@@ -61,6 +62,58 @@ function ColorPicker({ presets, value, onChange }) {
   );
 }
 
+// A slider paired with an editable number field (type a percentage directly) and
+// a reset-to-0% button. `onChange` clamps, so out-of-range typed values snap in.
+function OpacityControl({ value, onChange, min, max }) {
+  const [text, setText] = useState(String(value));
+  // Reflect slider/reset changes into the field (it's the source of truth while
+  // typing, so only sync from outside).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setText(String(value)), [value]);
+
+  const onText = (t) => {
+    setText(t);
+    const n = parseInt(t, 10);
+    if (Number.isFinite(n)) onChange(n);
+  };
+
+  return (
+    <div className="settings-slider-row">
+      <input
+        type="range"
+        className="settings-slider"
+        min={min}
+        max={max}
+        step={1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        aria-label="Point opacity"
+      />
+      <div className="settings-num-wrap">
+        <input
+          type="number"
+          className="settings-num"
+          min={min}
+          max={max}
+          value={text}
+          onChange={(e) => onText(e.target.value)}
+          onBlur={() => setText(String(value))}
+          aria-label="Point opacity percent"
+        />
+        <span className="settings-num-suffix">%</span>
+      </div>
+      <button
+        type="button"
+        className="settings-reset"
+        onClick={() => onChange(0)}
+        disabled={value === 0}
+      >
+        Reset
+      </button>
+    </div>
+  );
+}
+
 // The Display Settings tab: per-device map + motion preferences.
 export default function DisplaySettings() {
   const [quality, setQuality] = useMapQuality();
@@ -84,19 +137,7 @@ export default function DisplaySettings() {
       </Setting>
 
       <Setting title="Point opacity" description="How solid your markers look. 0% is the default; +100% is fully opaque, -100% fully transparent.">
-        <div className="settings-slider-row">
-          <input
-            type="range"
-            className="settings-slider"
-            min={MIN_OPACITY}
-            max={MAX_OPACITY}
-            step={1}
-            value={pointOpacity}
-            onChange={(e) => setPointOpacity(Number(e.target.value))}
-            aria-label="Point opacity"
-          />
-          <span className="settings-slider-value">{pointOpacity > 0 ? '+' : ''}{pointOpacity}%</span>
-        </div>
+        <OpacityControl value={pointOpacity} onChange={setPointOpacity} min={MIN_OPACITY} max={MAX_OPACITY} />
       </Setting>
 
       <Setting title="Reduce motion" description="Minimize animations and transitions across the app.">
