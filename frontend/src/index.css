@@ -1978,9 +1978,9 @@ footer {
   flex-direction: column;
   gap: 22px;
   margin-top: 18px;
-  /* Show ~2 settings at a time; scroll for the rest (ScrollHint overlays the
+  /* Show ~3.5 settings at a time; scroll for the rest (ScrollHint overlays the
      orange nudging chevron + fade). */
-  max-height: 220px;
+  max-height: 330px;
   overflow-y: auto;
   padding-right: 8px;
   scrollbar-width: thin;
