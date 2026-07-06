@@ -117,7 +117,16 @@ export default function BadgesModal({ user, markers, onClose }) {
   // per-category filters, and tween the strip to it.
   const goTo = (target) => {
     const t = clamp(target, 0, count - 1);
-    if (t === index) return;
+    // Compare against indexRef (always fresh), not the `index` state variable:
+    // the touch-drag effect below binds its listeners once (deps=[count]) so it
+    // permanently holds the `goTo` closure — and thus the `index` value — from
+    // whatever render it was created on (mount, index=0). Checking `index`
+    // directly silently no-oped every time a swipe's target was page 0 (it
+    // matched that stale closed-over 0), which both froze navigation to the
+    // first page and left the true index out of sync, breaking edge-resistance
+    // (which relies on the real index) and letting drags run unbounded.
+    if (t === indexRef.current) return;
+    indexRef.current = t; // sync immediately; the [index] effect will confirm it next render
     setIndex(t);
     setQuery('');
     setSelected([]);
