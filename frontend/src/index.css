@@ -956,11 +956,12 @@ footer {
 .badge-chip:hover { color: var(--text); }
 .badge-chip.is-active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
 
-/* Carousel slide: the viewport clips the horizontal travel so paging doesn't
-   spawn a scrollbar; the inner .badge-slide animates in from the side of travel.
-   key=index in BadgesModal remounts it so the animation re-runs each change. */
+/* Carousel: the viewport is the (vertical) scroller and clips the horizontal
+   travel; the inner .badge-track is a flex row of one page at rest, or two pages
+   (current + neighbour) mid-transition, translated in px by BadgesModal — dragged
+   with the finger while swiping, then eased to the snap point. */
 .badge-slide-viewport {
-  overflow-x: hidden; /* clip the horizontal slide animation */
+  overflow-x: hidden; /* clip the horizontal page travel */
   overflow-y: auto;
   overscroll-behavior: contain; /* don't chain scroll to the locked page (see Modal.jsx) */
   /* Hard cap at ~2 rows + a thin peek that the fade fully masks. Tune this if the
@@ -972,16 +973,10 @@ footer {
 .badge-slide-viewport::-webkit-scrollbar { width: 8px; }
 .badge-slide-viewport::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .badge-slide-viewport::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-.badge-slide-next { animation: badgeSlideNext 0.28s ease; }
-.badge-slide-prev { animation: badgeSlidePrev 0.28s ease; }
-@keyframes badgeSlideNext {
-  from { opacity: 0; transform: translateX(38px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes badgeSlidePrev {
-  from { opacity: 0; transform: translateX(-38px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
+.badge-track { display: flex; }
+/* Each page fills the viewport width; two of them make the track 200% wide (the
+   viewport clips the off-screen one). min-width:0 lets the grid inside shrink. */
+.badge-page { flex: 0 0 100%; min-width: 0; }
 
 /* Shown when a category has no badges yet (e.g. Passports). Min-height keeps the
    modal from collapsing/jumping when paging to an empty category. */
