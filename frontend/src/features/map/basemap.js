@@ -5,7 +5,7 @@ import { getStoredMapStyle, setStoredMapStyle } from '../../api/client';
 // attribution — the same string MapView already uses), so switching is just a
 // tile-URL swap. `dark` matches the app's dark theme and is the default.
 export const BASEMAPS = {
-  dark:    { label: 'Dark',    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png' },
+  dark:    { label: 'Imprint Dark',    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png' },
   light:   { label: 'Light',   url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png' },
   streets: { label: 'Streets', url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png' },
 };

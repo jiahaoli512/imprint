@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react';
 // max-height + overflow) and overlays a bottom fade + a nudging chevron so it's
 // obvious there's more content below. The hint fades out once the user reaches
 // the end, and stays hidden when the content isn't scrollable at all.
-export default function ScrollHint({ className = '', children }) {
+export default function ScrollHint({ className = '', wrapClassName = '', children }) {
   const ref = useRef(null);
   const [show, setShow] = useState(false);
 
@@ -25,7 +25,7 @@ export default function ScrollHint({ className = '', children }) {
   }, []);
 
   return (
-    <div className="scroll-hint-wrap">
+    <div className={`scroll-hint-wrap ${wrapClassName}`.trim()}>
       <div ref={ref} className={className}>{children}</div>
       <div className={`scroll-hint${show ? '' : ' scroll-hint-hidden'}`} aria-hidden="true">
         <ChevronDown size={18} />
