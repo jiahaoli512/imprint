@@ -1,7 +1,7 @@
 import { QUALITY_ORDER, QUALITY_LABEL, DEFAULT_QUALITY, useMapQuality } from '../map/mapQuality';
 import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/basemap';
 import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
-import { usePointTransparency, MIN_TRANSPARENCY, MAX_TRANSPARENCY } from '../map/pointTransparency';
+import { usePointOpacity, MIN_OPACITY, MAX_OPACITY } from '../map/pointOpacity';
 import InlineColorPicker from './InlineColorPicker';
 import { useReduceMotion } from './reduceMotion';
 import ScrollHint from '../../components/ScrollHint';
@@ -48,7 +48,8 @@ function ColorPicker({ presets, value, onChange }) {
             key={c}
             type="button"
             className={`color-swatch${c === value ? ' active' : ''}`}
-            style={{ background: c }}
+            // Glow tinted by the swatch color, mirroring the map pin's colored halo.
+            style={{ background: c, boxShadow: `0 0 9px 1px ${c}b3` }}
             aria-label={`Point color ${c}`}
             aria-pressed={c === value}
             onClick={() => onChange(c)}
@@ -65,7 +66,7 @@ export default function DisplaySettings() {
   const [quality, setQuality] = useMapQuality();
   const [basemap, setBasemap] = useBasemap();
   const [markerColor, setMarkerColor] = useMarkerColor();
-  const [transparency, setTransparency] = usePointTransparency();
+  const [pointOpacity, setPointOpacity] = usePointOpacity();
   const [reduceMotion, setReduceMotion] = useReduceMotion();
 
   return (
@@ -82,19 +83,19 @@ export default function DisplaySettings() {
         <ColorPicker presets={MARKER_PRESETS} value={markerColor} onChange={setMarkerColor} />
       </Setting>
 
-      <Setting title="Point transparency" description="Fade your markers on the map. 0% is the default; higher makes them more see-through.">
+      <Setting title="Point opacity" description="How solid your markers look. 0% is the default; +100% is fully opaque, -100% fully transparent.">
         <div className="settings-slider-row">
           <input
             type="range"
             className="settings-slider"
-            min={MIN_TRANSPARENCY}
-            max={MAX_TRANSPARENCY}
+            min={MIN_OPACITY}
+            max={MAX_OPACITY}
             step={1}
-            value={transparency}
-            onChange={(e) => setTransparency(Number(e.target.value))}
-            aria-label="Point transparency"
+            value={pointOpacity}
+            onChange={(e) => setPointOpacity(Number(e.target.value))}
+            aria-label="Point opacity"
           />
-          <span className="settings-slider-value">{transparency > 0 ? '+' : ''}{transparency}%</span>
+          <span className="settings-slider-value">{pointOpacity > 0 ? '+' : ''}{pointOpacity}%</span>
         </div>
       </Setting>
 

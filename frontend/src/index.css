@@ -1982,6 +1982,7 @@ footer {
      orange nudging chevron + fade). */
   max-height: 390px;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 8px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
@@ -1994,7 +1995,7 @@ footer {
 .settings-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
 .settings-row-desc { font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.4; }
 
-/* Range slider (point transparency). */
+/* Range slider (point opacity). */
 .settings-slider-row { display: flex; align-items: center; gap: 12px; }
 .settings-slider {
   flex: 1;
@@ -2062,21 +2063,23 @@ footer {
 /* Marker color picker: centered preset swatches above the inline picker. */
 .color-picker { display: flex; flex-direction: column; gap: 16px; }
 .color-swatches { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+/* Swatches styled like the map's glowing points: a dark rim (like the pin's
+   border) over a color-tinted halo (box-shadow set inline, per color). */
 .color-swatch {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  border: 2px solid var(--border);
+  border: 2px solid var(--bg);
   padding: 0;
   cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.12s ease, outline-color 0.12s ease;
 }
-.color-swatch:hover { transform: scale(1.1); }
+.color-swatch:hover { transform: scale(1.15); }
 .color-swatch:active { transform: scale(0.94); }
-.color-swatch.active {
-  border-color: var(--text);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text);
-}
+/* Selected ring via outline so it doesn't overwrite the inline glow shadow. */
+.color-swatch.active { outline: 2px solid var(--text); outline-offset: 3px; }
+/* The inline picker preview is a glowing point too. */
+.ipick-preview { border-color: var(--bg) !important; }
 
 /* Inline HSV color picker (always expanded), themed for the app. */
 .ipick { display: flex; flex-direction: column; gap: 12px; }

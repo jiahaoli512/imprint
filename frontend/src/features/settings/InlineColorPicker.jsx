@@ -82,7 +82,7 @@ export default function InlineColorPicker({ value, onChange }) {
       </div>
 
       <div className="ipick-row">
-        <span className="ipick-preview" style={{ background: previewHex }} />
+        <span className="ipick-preview" style={{ background: previewHex, boxShadow: `0 0 10px 1px ${previewHex}b3` }} />
         <div ref={hueRef} className="ipick-hue" onPointerDown={onHueDown} onPointerMove={onHueMove}>
           <div className="ipick-thumb ipick-hue-thumb" style={{ left: `${(hsv.h / 360) * 100}%`, background: hueColor }} />
         </div>

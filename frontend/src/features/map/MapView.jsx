@@ -8,7 +8,7 @@ import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTrac
 import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
 import { BASEMAPS, useBasemap } from './basemap';
 import { useMarkerColor } from './markerColor';
-import { usePointTransparency, opacityFromTransparency } from './pointTransparency';
+import { usePointOpacity, opacityFromPercent } from './pointOpacity';
 
 // Most DOM pins we'll ever mount at once — a safety ceiling on top of the
 // screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
@@ -34,8 +34,8 @@ const DOT_BORDER = '#0b0e13';
 function MarkerLayer({ markers, editing, onRemove, cfg }) {
   const map = useMap();
   const [markerColor] = useMarkerColor();
-  const [transparency] = usePointTransparency();
-  const opacity = opacityFromTransparency(transparency);
+  const [opacityPercent] = usePointOpacity();
+  const opacity = opacityFromPercent(opacityPercent);
   const [version, setVersion] = useState(0);
   useMapEvents({
     moveend() { setVersion((v) => v + 1); },
