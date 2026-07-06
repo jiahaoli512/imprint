@@ -25,6 +25,11 @@ export const setStoredMapStyle = (s) => localStorage.setItem('imprint_map_style'
 export const getStoredMarkerColor = () => localStorage.getItem('imprint_marker_color');
 export const setStoredMarkerColor = (c) => localStorage.setItem('imprint_marker_color', c);
 
+// Per-device point transparency, an integer -100..100 (0 = default). Clamp/default
+// live in pointTransparency.js; here we only read/write the raw string.
+export const getStoredPointTransparency = () => localStorage.getItem('imprint_point_transparency');
+export const setStoredPointTransparency = (t) => localStorage.setItem('imprint_point_transparency', String(t));
+
 // Per-device "reduce motion" preference — force-disable animations regardless of the
 // OS prefers-reduced-motion setting. Stored as '1' (on) / '0' (off).
 export const getStoredReduceMotion = () => localStorage.getItem('imprint_reduce_motion') === '1';

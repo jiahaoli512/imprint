@@ -8,6 +8,7 @@ import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTrac
 import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
 import { BASEMAPS, useBasemap } from './basemap';
 import { useMarkerColor } from './markerColor';
+import { usePointTransparency, opacityFromTransparency } from './pointTransparency';
 
 // Most DOM pins we'll ever mount at once — a safety ceiling on top of the
 // screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
@@ -33,6 +34,8 @@ const DOT_BORDER = '#0b0e13';
 function MarkerLayer({ markers, editing, onRemove, cfg }) {
   const map = useMap();
   const [markerColor] = useMarkerColor();
+  const [transparency] = usePointTransparency();
+  const opacity = opacityFromTransparency(transparency);
   const [version, setVersion] = useState(0);
   useMapEvents({
     moveend() { setVersion((v) => v + 1); },
@@ -76,7 +79,8 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
         radius={DOT_RADIUS}
         pathOptions={{
           color: DOT_BORDER, weight: DOT_WEIGHT,
-          fillColor: editing ? MARKER_EDIT_COLOR : markerColor, fillOpacity: 1, opacity: 1,
+          fillColor: editing ? MARKER_EDIT_COLOR : markerColor,
+          fillOpacity: editing ? 1 : opacity, opacity: editing ? 1 : opacity,
         }}
         eventHandlers={editing ? {
           click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
@@ -90,6 +94,7 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
       key={i}
       position={markers[i]}
       icon={editing ? pinIconEdit : makePinIcon(markerColor)}
+      opacity={editing ? 1 : opacity}
       eventHandlers={editing ? {
         click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
       } : undefined}

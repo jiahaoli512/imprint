@@ -1,6 +1,7 @@
 import { QUALITY_ORDER, QUALITY_LABEL, DEFAULT_QUALITY, useMapQuality } from '../map/mapQuality';
 import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/basemap';
 import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
+import { usePointTransparency, MIN_TRANSPARENCY, MAX_TRANSPARENCY } from '../map/pointTransparency';
 import InlineColorPicker from './InlineColorPicker';
 import { useReduceMotion } from './reduceMotion';
 import ScrollHint from '../../components/ScrollHint';
@@ -64,6 +65,7 @@ export default function DisplaySettings() {
   const [quality, setQuality] = useMapQuality();
   const [basemap, setBasemap] = useBasemap();
   const [markerColor, setMarkerColor] = useMarkerColor();
+  const [transparency, setTransparency] = usePointTransparency();
   const [reduceMotion, setReduceMotion] = useReduceMotion();
 
   return (
@@ -78,6 +80,22 @@ export default function DisplaySettings() {
 
       <Setting title="Point color" description="The color of your markers on the map. Pick a preset or choose a custom color.">
         <ColorPicker presets={MARKER_PRESETS} value={markerColor} onChange={setMarkerColor} />
+      </Setting>
+
+      <Setting title="Point transparency" description="Fade your markers on the map. 0% is the default; higher makes them more see-through.">
+        <div className="settings-slider-row">
+          <input
+            type="range"
+            className="settings-slider"
+            min={MIN_TRANSPARENCY}
+            max={MAX_TRANSPARENCY}
+            step={1}
+            value={transparency}
+            onChange={(e) => setTransparency(Number(e.target.value))}
+            aria-label="Point transparency"
+          />
+          <span className="settings-slider-value">{transparency > 0 ? '+' : ''}{transparency}%</span>
+        </div>
       </Setting>
 
       <Setting title="Reduce motion" description="Minimize animations and transitions across the app.">
