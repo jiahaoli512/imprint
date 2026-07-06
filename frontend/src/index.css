@@ -970,10 +970,16 @@ footer {
   min-width: 0;   /* let the grid inside shrink */
   display: flex;
   flex-direction: column;
+  /* Categories differ in header height (search box, continent chips) and in how
+     many badges they hold, so their natural content height varies — but every
+     page is stretched to match the tallest one (see .badge-track). Center the
+     nav/filters/grid block in that leftover space rather than pinning it to the
+     top, so a shorter category doesn't look like it's trailing off into a bare
+     gap while paging across categories of different sizes. */
+  justify-content: center;
 }
 .badge-page-grid {
-  flex: 1 1 auto; /* fill the column's stretched height (see .badge-track) up to the cap below */
-  min-height: 0;  /* required for a flex child to actually scroll instead of overflowing */
+  min-height: 0; /* let the grid shrink below its content size so it can scroll */
   overflow-y: auto;
   overscroll-behavior: contain; /* don't chain scroll to the locked page (see Modal.jsx) */
   /* Hard cap at ~2 rows + a thin peek that the fade fully masks. Tune this if the
