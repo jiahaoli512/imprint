@@ -58,9 +58,19 @@ export default function BadgesModal({ user, markers, onClose }) {
   // Scroll affordances follow the active page's grid: a scroll-to-top button past
   // the header, and a "more below" fade + chevron that hides at the end (or when
   // nothing scrolls). Rebinds when the active page (or its filtered height) changes.
+  //
+  // Every category's grid stays mounted permanently (for smooth paging — see
+  // useSlideCarousel), so it keeps whatever scrollTop it was left at last time it
+  // was active. Reset that to the top BEFORE computing the affordances below,
+  // in the same effect: if the reset instead ran in its own separate effect
+  // afterward, `update()` here would read the still-scrolled-down position first
+  // (hiding the hint even though there's more below), and only get corrected once
+  // the scrollTop write's async native 'scroll' event fired a frame later — a
+  // brief, visible flash/delay on revisiting a category you'd scrolled before.
   useEffect(() => {
     const el = gridRefs.current[activeSlot];
     if (!el) return undefined;
+    el.scrollTop = 0; // each category opens at the top of its own list
     const update = () => {
       setShowTop(el.scrollTop > 240);
       const canScroll = el.scrollHeight - el.clientHeight > 4;
@@ -73,12 +83,6 @@ export default function BadgesModal({ user, markers, onClose }) {
     ro.observe(el);
     return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
   }, [activeSlot, query, status, selected]);
-
-  // Each category opens at the top of its own list.
-  useEffect(() => {
-    const el = gridRefs.current[activeSlot];
-    if (el) el.scrollTop = 0;
-  }, [activeSlot]);
 
   const scrollToTop = () => gridRefs.current[activeSlot]?.scrollTo({ top: 0, behavior: 'smooth' });
 
