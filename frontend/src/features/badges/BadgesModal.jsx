@@ -7,90 +7,56 @@ import { BADGE_CATEGORIES } from './categories';
 import { useVisitedStates } from './useVisitedStates';
 import { useVisitedCountries } from './useVisitedCountries';
 import { useReduceMotion } from '../settings/reduceMotion';
+import { useSlideCarousel } from './useSlideCarousel';
 
-const SWIPE_THRESHOLD = 50; // px of horizontal drag before a swipe advances a page
-const AXIS_LOCK = 8;        // px of movement before we decide the gesture is horizontal vs vertical
-const EDGE_RESIST = 0.35;   // rubber-band factor when dragging past the first / last page
-const SLIDE_MS = 340;       // page-slide tween duration
-const FILTERABLE_MIN = 12;  // show search + continent filter past this many badges
+const FILTERABLE_MIN = 12; // show search + continent filter past this many badges
 const isNative = Capacitor.isNativePlatform();
+const count = BADGE_CATEGORIES.length;
+const wraps = count > 1;
 
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-const easeOutCubic = (p) => 1 - Math.pow(1 - p, 3);
+// The strip rendered by the carousel: the real categories, plus — when there's
+// more than one, so wrapping applies — a clone of the last category before them
+// and a clone of the first one after, for the loop trick (see useSlideCarousel).
+const SLOTS = wraps
+  ? [
+    { key: 'clone-last', real: count - 1, clone: true },
+    ...BADGE_CATEGORIES.map((cat, i) => ({ key: cat.id, real: i, clone: false })),
+    { key: 'clone-first', real: 0, clone: true },
+  ]
+  : BADGE_CATEGORIES.map((cat, i) => ({ key: cat.id, real: i, clone: false }));
 
-// Popup that pages through badge categories one at a time. Paging is a real
-// horizontal carousel: every category is mounted once side-by-side in a strip and
-// the strip's translateX is animated by page index. The slide is driven by a JS
-// requestAnimationFrame tween (not a CSS transition) — WebKit/iOS repeatedly
-// refused to animate the CSS transform transition here (it snapped), whereas
-// setting the transform each frame always animates. A touch swipe drags the strip
-// with the finger in real time and tweens to the snapped page on release. Mounting
-// all pages up front keeps paging cheap (nothing heavy mounts mid-slide). Large
-// categories (e.g. Passports) get a name search + continent filter. Generic over
-// the registry — adding a category is a new file + a line in ./categories.
+// Popup that pages through badge categories one at a time via a real horizontal,
+// wrap-around carousel (see useSlideCarousel for the paging mechanics). Every
+// category is mounted once — nothing heavy mounts mid-slide, which is what keeps
+// paging smooth. Large categories (e.g. Passports) get a name search + continent
+// filter. Generic over the registry — adding a category is a new file + a line in
+// ./categories.
 export default function BadgesModal({ user, markers, onClose }) {
-  const count = BADGE_CATEGORIES.length;
-  const [index, setIndex] = useState(0);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState([]); // selected continents; [] = All
   const [status, setStatus] = useState('all');  // all | unlocked | locked
   const [showTop, setShowTop] = useState(false); // scroll-to-top affordance
   const [showHint, setShowHint] = useState(false); // "more below" scroll hint
   const [reduceMotion] = useReduceMotion();
-  const viewportRef = useRef(null);
-  const trackRef = useRef(null);
-  const pageRefs = useRef([]);   // per-page scroll containers
-  const indexRef = useRef(0);    // current index for imperative handlers (avoids stale closures)
-  const offsetRef = useRef(0);   // current track translateX in px
-  const rafRef = useRef(0);
-  useEffect(() => { indexRef.current = index; }, [index]);
+  const pageRefs = useRef([]); // per-slot scroll containers, indexed like SLOTS
 
+  const { index, viewportRef, trackRef, slotCount, toSlot, goTo, step } =
+    useSlideCarousel(count, { reduceMotion });
+  const activeSlot = toSlot(index);
   const category = BADGE_CATEGORIES[index];
-  // All pages are mounted, so resolve every category's visited-geo up front (each
-  // hook keeps its Set, so a given atlas loads once). Geo-less categories are no-ops.
+
+  // All categories are mounted, so resolve every visited-geo hook up front (each
+  // keeps its resolved Set, so a given atlas loads once). Geo-less categories are
+  // no-ops.
   const visitedStates = useVisitedStates(markers, true);
   const visitedCountries = useVisitedCountries(markers, true);
   const ctx = { user, markers, visitedStates, visitedCountries };
-
-  // Imperatively position/animate the strip. Kept off React state so a 60fps tween
-  // (and finger tracking) doesn't rerender the heavy grid each frame.
-  const pageWidth = () => viewportRef.current?.clientWidth || 0;
-  const setOffset = (px) => {
-    offsetRef.current = px;
-    if (trackRef.current) trackRef.current.style.transform = `translateX(${px}px)`;
-  };
-  const animateOffset = (target) => {
-    cancelAnimationFrame(rafRef.current);
-    const start = offsetRef.current;
-    const dist = target - start;
-    if (reduceMotion || Math.abs(dist) < 0.5) { setOffset(target); return; }
-    const t0 = performance.now();
-    const step = (now) => {
-      const p = Math.min(1, (now - t0) / SLIDE_MS);
-      setOffset(start + dist * easeOutCubic(p));
-      if (p < 1) rafRef.current = requestAnimationFrame(step);
-    };
-    rafRef.current = requestAnimationFrame(step);
-  };
-
-  // Keep the strip positioned on the active page across mount and viewport resizes.
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return undefined;
-    const reposition = () => setOffset(-indexRef.current * el.clientWidth);
-    reposition();
-    const ro = new ResizeObserver(reposition);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
   // Scroll affordances follow the active page: a scroll-to-top button past the
   // header, and a "more below" fade + chevron that hides at the end (or when
   // nothing scrolls). Rebinds when the active page (or its filtered height) changes.
   useEffect(() => {
-    const el = pageRefs.current[index];
+    const el = pageRefs.current[activeSlot];
     if (!el) return undefined;
     const update = () => {
       setShowTop(el.scrollTop > 240);
@@ -103,92 +69,21 @@ export default function BadgesModal({ user, markers, onClose }) {
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
-  }, [index, query, status, selected]);
+  }, [activeSlot, query, status, selected]);
 
   // Each category opens at the top of its own list.
   useEffect(() => {
-    const el = pageRefs.current[index];
+    const el = pageRefs.current[activeSlot];
     if (el) el.scrollTop = 0;
-  }, [index]);
+  }, [activeSlot]);
 
-  const scrollToTop = () => pageRefs.current[index]?.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToTop = () => pageRefs.current[activeSlot]?.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Navigate to a page (clamped — the carousel doesn't wrap), resetting the
-  // per-category filters, and tween the strip to it.
-  const goTo = (target) => {
-    const t = clamp(target, 0, count - 1);
-    // Compare against indexRef (always fresh), not the `index` state variable:
-    // the touch-drag effect below binds its listeners once (deps=[count]) so it
-    // permanently holds the `goTo` closure — and thus the `index` value — from
-    // whatever render it was created on (mount, index=0). Checking `index`
-    // directly silently no-oped every time a swipe's target was page 0 (it
-    // matched that stale closed-over 0), which both froze navigation to the
-    // first page and left the true index out of sync, breaking edge-resistance
-    // (which relies on the real index) and letting drags run unbounded.
-    if (t === indexRef.current) return;
-    indexRef.current = t; // sync immediately; the [index] effect will confirm it next render
-    setIndex(t);
-    setQuery('');
-    setSelected([]);
-    setStatus('all');
-    animateOffset(-t * pageWidth());
-  };
-  const go = (d) => goTo(index + d);
-
-  // Touch drag: follow the finger horizontally, letting vertical drags scroll the
-  // list. Bound imperatively (not via React props) so touchmove is non-passive and
-  // can preventDefault once the gesture locks horizontal.
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el || count < 2) return undefined;
-    let g = null;
-
-    const onStart = (e) => {
-      cancelAnimationFrame(rafRef.current);
-      const t = e.touches[0];
-      g = { x0: t.clientX, y0: t.clientY, w: el.clientWidth, base: offsetRef.current, axis: null, dx: 0 };
-    };
-    const onMove = (e) => {
-      if (!g) return;
-      const t = e.touches[0];
-      const dx = t.clientX - g.x0;
-      const dy = t.clientY - g.y0;
-      if (g.axis == null) {
-        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > AXIS_LOCK) g.axis = 'x';
-        else if (Math.abs(dy) > AXIS_LOCK) g.axis = 'y'; // let the list scroll
-      }
-      if (g.axis === 'x') {
-        e.preventDefault(); // stop the vertical list from scrolling mid-swipe
-        g.dx = dx;
-        const i = indexRef.current;
-        const past = (i === 0 && dx > 0) || (i === count - 1 && dx < 0);
-        setOffset(g.base + (past ? dx * EDGE_RESIST : dx));
-      }
-    };
-    const onEnd = () => {
-      if (!g) return;
-      const swipe = g.axis === 'x';
-      const dx = g.dx;
-      g = null;
-      if (!swipe) return;
-      const i = indexRef.current;
-      if (dx <= -SWIPE_THRESHOLD && i < count - 1) goTo(i + 1);
-      else if (dx >= SWIPE_THRESHOLD && i > 0) goTo(i - 1);
-      else animateOffset(-i * el.clientWidth); // snap back
-    };
-
-    el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchmove', onMove, { passive: false });
-    el.addEventListener('touchend', onEnd, { passive: true });
-    el.addEventListener('touchcancel', onEnd, { passive: true });
-    return () => {
-      el.removeEventListener('touchstart', onStart);
-      el.removeEventListener('touchmove', onMove);
-      el.removeEventListener('touchend', onEnd);
-      el.removeEventListener('touchcancel', onEnd);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count]);
+  // Navigating (arrows, dots) resets the per-category filters so each opens
+  // unfiltered.
+  const resetFilters = () => { setQuery(''); setSelected([]); setStatus('all'); };
+  const go = (d) => { resetFilters(); step(d); };
+  const jumpTo = (i) => { resetFilters(); goTo(i); };
 
   const badges = category.getBadges(ctx);
   const earnedCount = badges.filter((b) => b.earned).length;
@@ -211,9 +106,9 @@ export default function BadgesModal({ user, markers, onClose }) {
   };
 
   // A single carousel page. The active page honours the search/status/continent
-  // filters; the others render unfiltered (their filters are default until active).
-  const renderPage = (cat, active) => {
-    const bs = cat.getBadges(ctx);
+  // filters; every other slot (including a clone) renders unfiltered.
+  const renderPage = (real, active) => {
+    const bs = BADGE_CATEGORIES[real].getBadges(ctx);
     if (bs.length === 0) {
       return <div className="badge-empty">No badges in this category yet — coming soon.</div>;
     }
@@ -233,7 +128,7 @@ export default function BadgesModal({ user, markers, onClose }) {
     <Modal onClose={onClose} icon={false} closable className="modal-badges">
       <div className="badge-nav">
         {count > 1 && (
-          <button className="icon-btn badge-nav-arrow" onClick={() => go(-1)} disabled={index === 0} aria-label="Previous category">
+          <button className="icon-btn badge-nav-arrow" onClick={() => go(-1)} aria-label="Previous category">
             <ChevronLeft size={20} />
           </button>
         )}
@@ -245,7 +140,7 @@ export default function BadgesModal({ user, markers, onClose }) {
           )}
         </div>
         {count > 1 && (
-          <button className="icon-btn badge-nav-arrow" onClick={() => go(1)} disabled={index === count - 1} aria-label="Next category">
+          <button className="icon-btn badge-nav-arrow" onClick={() => go(1)} aria-label="Next category">
             <ChevronRight size={20} />
           </button>
         )}
@@ -303,16 +198,16 @@ export default function BadgesModal({ user, markers, onClose }) {
 
       <div className="badge-scroll-region">
         <div className="badge-carousel" ref={viewportRef}>
-          <div className="badge-track" ref={trackRef} style={{ width: `${count * 100}%` }}>
-            {BADGE_CATEGORIES.map((cat, i) => (
+          <div className="badge-track" ref={trackRef} style={{ width: `${slotCount * 100}%` }}>
+            {SLOTS.map((slot, i) => (
               <div
                 className="badge-page"
-                key={cat.id}
+                key={`${slot.key}${slot.clone ? '-clone' : ''}`}
                 ref={(el) => { pageRefs.current[i] = el; }}
-                style={{ width: `${100 / count}%` }}
-                aria-hidden={i !== index}
+                style={{ width: `${100 / slotCount}%` }}
+                aria-hidden={i !== activeSlot}
               >
-                {renderPage(cat, i === index)}
+                {renderPage(slot.real, i === activeSlot)}
               </div>
             ))}
           </div>
@@ -333,7 +228,7 @@ export default function BadgesModal({ user, markers, onClose }) {
             <button
               key={c.id}
               className={`badge-dot ${i === index ? 'is-active' : ''}`}
-              onClick={() => goTo(i)}
+              onClick={() => jumpTo(i)}
               aria-label={`Go to ${c.title}`}
             />
           ))}

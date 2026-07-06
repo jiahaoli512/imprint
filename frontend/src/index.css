@@ -891,8 +891,6 @@ footer {
    modal). A bottom fade + nudging chevron overlays the *peeking* next row — so the
    fully-visible rows' labels stay crisp — and hides once you reach the end. */
 .badge-scroll-region { position: relative; min-height: 0; }
-.badge-nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
-.badge-nav-arrow:disabled:hover { color: var(--muted); background: var(--surface2); }
 .badge-scroll-hint {
   position: absolute;
   left: 0;
