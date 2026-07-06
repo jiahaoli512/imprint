@@ -21,6 +21,13 @@ if (Capacitor.isNativePlatform()) {
       'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
     );
   }
+
+  // iOS/WKWebView doesn't apply the :active pseudo-class on tap unless a touch
+  // listener is registered on the document. Without it, the button press
+  // animations (transform: scale on :active) — which work on web via mouse —
+  // never fire on the native app. A single empty passive touchstart listener
+  // opts the whole page into touch :active feedback.
+  document.addEventListener('touchstart', () => {}, { passive: true });
 }
 
 createRoot(document.getElementById('root')).render(
