@@ -785,6 +785,10 @@ footer {
   justify-content: center;
   z-index: 10000;
   overflow: hidden;
+  /* Keep modals (and their top-right close X) clear of the notch / status bar
+     and the home indicator on phones. */
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  box-sizing: border-box;
 }
 
 .modal {
@@ -1940,7 +1944,7 @@ footer {
 }
 
 /* ── Settings modal ── */
-.settings-modal { max-width: 460px; width: 100%; text-align: left; }
+.settings-modal { max-width: 460px; width: 100%; text-align: left; max-height: 100%; overflow-y: auto; }
 
 /* Tab row across the top (segmented). */
 .settings-tabs {
