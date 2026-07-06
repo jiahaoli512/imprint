@@ -3,6 +3,7 @@ import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/bas
 import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
 import InlineColorPicker from './InlineColorPicker';
 import { useReduceMotion } from './reduceMotion';
+import ScrollHint from '../../components/ScrollHint';
 
 // A labeled setting row: title + one-line description, then its control below.
 function Setting({ title, description, children }) {
@@ -66,7 +67,7 @@ export default function DisplaySettings() {
   const [reduceMotion, setReduceMotion] = useReduceMotion();
 
   return (
-    <div className="settings-panel">
+    <ScrollHint wrapClassName="settings-scroll" className="settings-panel">
       <Setting title="Map quality" description="Higher shows more of your points; lower stays smooth on large maps.">
         <Segmented order={QUALITY_ORDER} labelOf={(q) => QUALITY_LABEL[q]} value={quality} onChange={setQuality} defaultValue={DEFAULT_QUALITY} />
       </Setting>
@@ -90,6 +91,6 @@ export default function DisplaySettings() {
           <span className="settings-toggle-knob" />
         </button>
       </Setting>
-    </div>
+    </ScrollHint>
   );
 }

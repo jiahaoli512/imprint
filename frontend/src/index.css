@@ -1973,7 +1973,24 @@ footer {
 .settings-placeholder { color: var(--muted); font-size: 14px; text-align: center; padding: 36px 0; margin: 0; }
 
 /* Display tab: stacked labeled setting rows. */
-.settings-panel { display: flex; flex-direction: column; gap: 22px; margin-top: 18px; }
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 18px;
+  /* Show ~2 settings at a time; scroll for the rest (ScrollHint overlays the
+     orange nudging chevron + fade). */
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.settings-panel::-webkit-scrollbar { width: 8px; }
+.settings-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.settings-panel::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+/* Fade to the modal's surface (not the page bg) so there's no band. */
+.settings-scroll .scroll-hint { background: linear-gradient(transparent, var(--surface) 85%); }
 .settings-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
 .settings-row-desc { font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.4; }
 
