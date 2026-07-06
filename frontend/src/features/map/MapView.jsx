@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  pinIcon, pinIconEdit, LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_COLOR, MARKER_EDIT_COLOR,
+  makePinIcon, pinIconEdit, LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_EDIT_COLOR,
 } from './mapStyle';
 import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker } from './mapComponents';
 import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
 import { BASEMAPS, useBasemap } from './basemap';
+import { useMarkerColor } from './markerColor';
 
 // Most DOM pins we'll ever mount at once — a safety ceiling on top of the
 // screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
@@ -31,6 +32,7 @@ const DOT_BORDER = '#0b0e13';
 // Lives inside MapContainer so it can project lat/lng to screen pixels.
 function MarkerLayer({ markers, editing, onRemove, cfg }) {
   const map = useMap();
+  const [markerColor] = useMarkerColor();
   const [version, setVersion] = useState(0);
   useMapEvents({
     moveend() { setVersion((v) => v + 1); },
@@ -74,7 +76,7 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
         radius={DOT_RADIUS}
         pathOptions={{
           color: DOT_BORDER, weight: DOT_WEIGHT,
-          fillColor: editing ? MARKER_EDIT_COLOR : MARKER_COLOR, fillOpacity: 1, opacity: 1,
+          fillColor: editing ? MARKER_EDIT_COLOR : markerColor, fillOpacity: 1, opacity: 1,
         }}
         eventHandlers={editing ? {
           click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
@@ -87,7 +89,7 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
     <Marker
       key={i}
       position={markers[i]}
-      icon={editing ? pinIconEdit : pinIcon}
+      icon={editing ? pinIconEdit : makePinIcon(markerColor)}
       eventHandlers={editing ? {
         click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
       } : undefined}

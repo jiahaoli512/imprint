@@ -1,5 +1,6 @@
 import { QUALITY_ORDER, QUALITY_LABEL, DEFAULT_QUALITY, useMapQuality } from '../map/mapQuality';
 import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/basemap';
+import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
 import { useReduceMotion } from './reduceMotion';
 
 // A labeled setting row: title + one-line description, then its control below.
@@ -33,10 +34,40 @@ function Segmented({ order, labelOf, value, onChange, defaultValue }) {
   );
 }
 
+// Preset color swatches plus a color-wheel input for any custom hex. The active
+// color is highlighted; the wheel both reflects the current color and sets a
+// custom one. `value` is a lowercase "#rrggbb".
+function ColorPicker({ presets, value, onChange }) {
+  return (
+    <div className="color-picker">
+      {presets.map((c) => (
+        <button
+          key={c}
+          type="button"
+          className={`color-swatch${c === value ? ' active' : ''}`}
+          style={{ background: c }}
+          aria-label={`Point color ${c}`}
+          aria-pressed={c === value}
+          onClick={() => onChange(c)}
+        />
+      ))}
+      <label className="color-swatch color-wheel" title="Custom color">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label="Custom point color"
+        />
+      </label>
+    </div>
+  );
+}
+
 // The Display Settings tab: per-device map + motion preferences.
 export default function DisplaySettings() {
   const [quality, setQuality] = useMapQuality();
   const [basemap, setBasemap] = useBasemap();
+  const [markerColor, setMarkerColor] = useMarkerColor();
   const [reduceMotion, setReduceMotion] = useReduceMotion();
 
   return (
@@ -47,6 +78,10 @@ export default function DisplaySettings() {
 
       <Setting title="Map style" description="The base map tiles behind your markers.">
         <Segmented order={BASEMAP_ORDER} labelOf={(b) => BASEMAPS[b].label} value={basemap} onChange={setBasemap} defaultValue={DEFAULT_BASEMAP} />
+      </Setting>
+
+      <Setting title="Point color" description="The color of your markers on the map. Pick a preset or choose a custom color.">
+        <ColorPicker presets={MARKER_PRESETS} value={markerColor} onChange={setMarkerColor} />
       </Setting>
 
       <Setting title="Reduce motion" description="Minimize animations and transitions across the app.">
