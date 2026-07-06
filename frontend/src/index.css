@@ -979,17 +979,21 @@ footer {
      short category's grid is instead solved without reintroducing that. */
 }
 .badge-page-grid {
-  flex: 0 0 auto; /* a fixed box, not shrinkable — see the height note below */
+  /* flex-basis (not a plain height) is the target size for Passports — the
+     tallest category, and the one that therefore defines the page's overall
+     stretched height (see .badge-track). flex-grow:1 then lets every OTHER
+     category's grid consume whatever extra room its shorter header leaves
+     within that same stretched page height, growing past this basis to fill
+     all the way down to Passports' own bottom edge — instead of stopping at a
+     flat cap and leaving a bare gap underneath. The header/filters above stay
+     exactly where they were; only the grid's own size adapts. Explicit px (not
+     `auto`) keeps this deterministic across browsers — an `auto` basis here is
+     what caused the "more below" hint to misbehave on web for the largest
+     categories previously. */
+  flex: 1 1 400px;
+  min-height: 0; /* let it actually scroll instead of growing to fit all content */
   overflow-y: auto;
   overscroll-behavior: contain; /* don't chain scroll to the locked page (see Modal.jsx) */
-  /* A fixed height (not just a cap) so every category's grid box is the exact
-     same size regardless of how many badges it holds — the thing that's
-     actually visually prominent during a swipe, so keeping it uniform is what
-     makes paging feel even, without the cross-page misalignment that centering
-     the whole page caused. A short category's few badges then center *within*
-     this fixed box (see .badge-grid's align-content) instead of leaving the
-     whole page looking top-heavy with a bare gap underneath. */
-  height: 400px;
   display: flex;
   flex-direction: column;
   scrollbar-width: thin;
@@ -1156,7 +1160,7 @@ footer {
   .badge-grid { gap: 8px; }
   .badge-card { width: 96px; gap: 8px; padding: 4px; }
   .badge-medallion { width: 92px; height: 92px; margin-bottom: 15px; }
-  .badge-page-grid { height: 330px; } /* ~2 rows of the smaller mobile cards */
+  .badge-page-grid { flex-basis: 330px; } /* ~2 rows of the smaller mobile cards */
   .badge-halo { inset: -10px; }
   .badge-ring { padding: 2px; }
   .badge-disc { width: 82px; height: 82px; box-shadow: inset 0 0 0 1px rgba(244,239,230,0.06), inset 0 2px 10px rgba(0,0,0,0.5), 0 8px 22px rgba(0,0,0,0.5); }
