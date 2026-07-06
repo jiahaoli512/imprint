@@ -1999,24 +1999,9 @@ footer {
 .settings-toggle.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); border-color: transparent; }
 .settings-toggle.on .settings-toggle-knob { transform: translateX(20px); background: #06241b; }
 
-/* Marker color picker: centered preset swatches above a custom-color row. */
-.color-picker { display: flex; flex-direction: column; gap: 14px; }
+/* Marker color picker: centered preset swatches above the inline picker. */
+.color-picker { display: flex; flex-direction: column; gap: 16px; }
 .color-swatches { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.color-custom { display: flex; align-items: center; gap: 10px; }
-.color-hex-input {
-  flex: 1;
-  min-width: 0;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 14px;
-  font-family: var(--font-mono, monospace);
-  color: var(--text);
-  outline: none;
-  text-transform: lowercase;
-}
-.color-hex-input:focus { border-color: var(--accent); }
 .color-swatch {
   width: 28px;
   height: 28px;
@@ -2032,23 +2017,71 @@ footer {
   border-color: var(--text);
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text);
 }
-/* The custom-color wheel: a conic rainbow chip wrapping a hidden native input. */
-.color-wheel {
+
+/* Inline HSV color picker (always expanded), themed for the app. */
+.ipick { display: flex; flex-direction: column; gap: 12px; }
+/* Saturation (x) / value (y) panel: white→hue left-to-right, over transparent→black. */
+.ipick-sv {
   position: relative;
-  overflow: hidden;
-  background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red) !important;
-  display: inline-flex;
-}
-.color-wheel input[type="color"] {
-  position: absolute;
-  inset: 0;
   width: 100%;
-  height: 100%;
-  opacity: 0;
-  border: none;
-  padding: 0;
-  cursor: pointer;
+  height: 150px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  cursor: crosshair;
+  touch-action: none;
+  background:
+    linear-gradient(to top, #000, rgba(0, 0, 0, 0)),
+    linear-gradient(to right, #fff, var(--ipick-hue));
 }
+.ipick-thumb {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.ipick-row { display: flex; align-items: center; gap: 12px; }
+.ipick-preview {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+/* Hue slider (rainbow strip). */
+.ipick-hue {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  border-radius: 100px;
+  cursor: pointer;
+  touch-action: none;
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+.ipick-hue-thumb { top: 50%; width: 18px; height: 18px; }
+/* R / G / B / hex fields. */
+.ipick-fields { display: flex; gap: 8px; }
+.ipick-field { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.ipick-field-hex { flex: 1.7; }
+.ipick-num {
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 6px;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+.ipick-num:focus { border-color: var(--accent); }
+.ipick-hex { font-family: var(--font-mono, monospace); text-transform: lowercase; }
+.ipick-field-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--muted); }
 
 .dashboard-save-btn {
   padding: 7px 16px;

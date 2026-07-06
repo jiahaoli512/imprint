@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
 import { QUALITY_ORDER, QUALITY_LABEL, DEFAULT_QUALITY, useMapQuality } from '../map/mapQuality';
 import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/basemap';
 import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
+import InlineColorPicker from './InlineColorPicker';
 import { useReduceMotion } from './reduceMotion';
 
 // A labeled setting row: title + one-line description, then its control below.
@@ -35,25 +35,9 @@ function Segmented({ order, labelOf, value, onChange, defaultValue }) {
   );
 }
 
-const HEX_RE = /^#[0-9a-fA-F]{6}$/;
-
-// Preset color swatches (centered, wrapping) above a custom-color row: a color
-// wheel plus a hex text field you can type into directly — no click needed to
-// enter an RGB/hex value. `value` is a lowercase "#rrggbb".
+// Centered, wrapping preset swatches above an always-expanded custom color picker
+// (drag / RGB / hex). `value` is a lowercase "#rrggbb".
 function ColorPicker({ presets, value, onChange }) {
-  // Local text state so a partially-typed hex (e.g. "#3") doesn't get coerced to
-  // the default mid-edit; only a complete, valid hex is committed upstream.
-  const [hexText, setHexText] = useState(value);
-  // Reflect swatch/wheel changes back into the text field (the field is otherwise
-  // the source of truth while typing).
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setHexText(value), [value]);
-
-  const onHexInput = (t) => {
-    setHexText(t);
-    if (HEX_RE.test(t)) onChange(t.toLowerCase());
-  };
-
   return (
     <div className="color-picker">
       <div className="color-swatches">
@@ -69,28 +53,7 @@ function ColorPicker({ presets, value, onChange }) {
           />
         ))}
       </div>
-      <div className="color-custom">
-        <label className="color-swatch color-wheel" title="Open color picker">
-          <input
-            type="color"
-            value={value}
-            onChange={(e) => onHexInput(e.target.value)}
-            aria-label="Custom point color"
-          />
-        </label>
-        <input
-          type="text"
-          className="color-hex-input"
-          value={hexText}
-          onChange={(e) => onHexInput(e.target.value)}
-          spellCheck={false}
-          autoCapitalize="none"
-          autoCorrect="off"
-          maxLength={7}
-          placeholder="#rrggbb"
-          aria-label="Custom color hex code"
-        />
-      </div>
+      <InlineColorPicker value={value} onChange={onChange} />
     </div>
   );
 }
