@@ -6,24 +6,26 @@ import Badge from './Badge';
 import { BADGE_CATEGORIES } from './categories';
 import { useVisitedStates } from './useVisitedStates';
 import { useVisitedCountries } from './useVisitedCountries';
+import { useReduceMotion } from '../settings/reduceMotion';
 
 const SWIPE_THRESHOLD = 50; // px of horizontal drag before a swipe advances a page
 const AXIS_LOCK = 8;        // px of movement before we decide the gesture is horizontal vs vertical
 const EDGE_RESIST = 0.35;   // rubber-band factor when dragging past the first / last page
-const SLIDE_MS = 320;       // page-slide duration (matches the CSS transition below)
-const SLIDE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const SLIDE_MS = 340;       // page-slide tween duration
 const FILTERABLE_MIN = 12;  // show search + continent filter past this many badges
 const isNative = Capacitor.isNativePlatform();
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+const easeOutCubic = (p) => 1 - Math.pow(1 - p, 3);
 
 // Popup that pages through badge categories one at a time. Paging is a real
 // horizontal carousel: every category is mounted once side-by-side in a strip and
-// the strip is translated by the page index — so arrows/dots ease smoothly and a
-// touch swipe drags the strip with your finger in real time, snapping on release.
-// Mounting all pages up front (rather than remounting the heavy grid per change)
-// is what keeps the native slide smooth: nothing heavy mounts mid-transition and
-// the transform transition is always live, so WebKit actually animates it. Large
+// the strip's translateX is animated by page index. The slide is driven by a JS
+// requestAnimationFrame tween (not a CSS transition) — WebKit/iOS repeatedly
+// refused to animate the CSS transform transition here (it snapped), whereas
+// setting the transform each frame always animates. A touch swipe drags the strip
+// with the finger in real time and tweens to the snapped page on release. Mounting
+// all pages up front keeps paging cheap (nothing heavy mounts mid-slide). Large
 // categories (e.g. Passports) get a name search + continent filter. Generic over
 // the registry — adding a category is a new file + a line in ./categories.
 export default function BadgesModal({ user, markers, onClose }) {
@@ -34,18 +36,55 @@ export default function BadgesModal({ user, markers, onClose }) {
   const [status, setStatus] = useState('all');  // all | unlocked | locked
   const [showTop, setShowTop] = useState(false); // scroll-to-top affordance
   const [showHint, setShowHint] = useState(false); // "more below" scroll hint
-  const [dragPx, setDragPx] = useState(0);       // live finger offset while swiping
-  const [dragging, setDragging] = useState(false); // true → drop the slide transition so it tracks the finger
+  const [reduceMotion] = useReduceMotion();
   const viewportRef = useRef(null);
-  const pageRefs = useRef([]);                   // per-page scroll containers
+  const trackRef = useRef(null);
+  const pageRefs = useRef([]);   // per-page scroll containers
+  const indexRef = useRef(0);    // current index for imperative handlers (avoids stale closures)
+  const offsetRef = useRef(0);   // current track translateX in px
+  const rafRef = useRef(0);
+  useEffect(() => { indexRef.current = index; }, [index]);
 
   const category = BADGE_CATEGORIES[index];
   // All pages are mounted, so resolve every category's visited-geo up front (each
-  // hook keeps its Set, so this loads a given atlas once). Categories with no geo
-  // data are no-ops.
+  // hook keeps its Set, so a given atlas loads once). Geo-less categories are no-ops.
   const visitedStates = useVisitedStates(markers, true);
   const visitedCountries = useVisitedCountries(markers, true);
   const ctx = { user, markers, visitedStates, visitedCountries };
+
+  // Imperatively position/animate the strip. Kept off React state so a 60fps tween
+  // (and finger tracking) doesn't rerender the heavy grid each frame.
+  const pageWidth = () => viewportRef.current?.clientWidth || 0;
+  const setOffset = (px) => {
+    offsetRef.current = px;
+    if (trackRef.current) trackRef.current.style.transform = `translateX(${px}px)`;
+  };
+  const animateOffset = (target) => {
+    cancelAnimationFrame(rafRef.current);
+    const start = offsetRef.current;
+    const dist = target - start;
+    if (reduceMotion || Math.abs(dist) < 0.5) { setOffset(target); return; }
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / SLIDE_MS);
+      setOffset(start + dist * easeOutCubic(p));
+      if (p < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+  };
+
+  // Keep the strip positioned on the active page across mount and viewport resizes.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return undefined;
+    const reposition = () => setOffset(-indexRef.current * el.clientWidth);
+    reposition();
+    const ro = new ResizeObserver(reposition);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
   // Scroll affordances follow the active page: a scroll-to-top button past the
   // header, and a "more below" fade + chevron that hides at the end (or when
@@ -74,8 +113,8 @@ export default function BadgesModal({ user, markers, onClose }) {
 
   const scrollToTop = () => pageRefs.current[index]?.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Navigate to a page (clamped — the carousel doesn't wrap). Resets the
-  // per-category filters so each opens unfiltered.
+  // Navigate to a page (clamped — the carousel doesn't wrap), resetting the
+  // per-category filters, and tween the strip to it.
   const goTo = (target) => {
     const t = clamp(target, 0, count - 1);
     if (t === index) return;
@@ -83,6 +122,7 @@ export default function BadgesModal({ user, markers, onClose }) {
     setQuery('');
     setSelected([]);
     setStatus('all');
+    animateOffset(-t * pageWidth());
   };
   const go = (d) => goTo(index + d);
 
@@ -95,8 +135,9 @@ export default function BadgesModal({ user, markers, onClose }) {
     let g = null;
 
     const onStart = (e) => {
+      cancelAnimationFrame(rafRef.current);
       const t = e.touches[0];
-      g = { x0: t.clientX, y0: t.clientY, w: el.clientWidth, axis: null, dx: 0 };
+      g = { x0: t.clientX, y0: t.clientY, w: el.clientWidth, base: offsetRef.current, axis: null, dx: 0 };
     };
     const onMove = (e) => {
       if (!g) return;
@@ -104,31 +145,27 @@ export default function BadgesModal({ user, markers, onClose }) {
       const dx = t.clientX - g.x0;
       const dy = t.clientY - g.y0;
       if (g.axis == null) {
-        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > AXIS_LOCK) {
-          g.axis = 'x';
-          setDragging(true);
-        } else if (Math.abs(dy) > AXIS_LOCK) {
-          g.axis = 'y'; // let the list scroll; this gesture is not a page swipe
-        }
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > AXIS_LOCK) g.axis = 'x';
+        else if (Math.abs(dy) > AXIS_LOCK) g.axis = 'y'; // let the list scroll
       }
       if (g.axis === 'x') {
         e.preventDefault(); // stop the vertical list from scrolling mid-swipe
         g.dx = dx;
-        // Rubber-band when there's no page to reveal on that side.
-        const past = (index === 0 && dx > 0) || (index === count - 1 && dx < 0);
-        setDragPx(past ? dx * EDGE_RESIST : dx);
+        const i = indexRef.current;
+        const past = (i === 0 && dx > 0) || (i === count - 1 && dx < 0);
+        setOffset(g.base + (past ? dx * EDGE_RESIST : dx));
       }
     };
     const onEnd = () => {
       if (!g) return;
-      const wasSwipe = g.axis === 'x';
+      const swipe = g.axis === 'x';
       const dx = g.dx;
       g = null;
-      if (!wasSwipe) return;
-      setDragging(false); // re-enable the transition so it eases to the snap
-      setDragPx(0);
-      if (dx <= -SWIPE_THRESHOLD) goTo(index + 1);
-      else if (dx >= SWIPE_THRESHOLD) goTo(index - 1);
+      if (!swipe) return;
+      const i = indexRef.current;
+      if (dx <= -SWIPE_THRESHOLD && i < count - 1) goTo(i + 1);
+      else if (dx >= SWIPE_THRESHOLD && i > 0) goTo(i - 1);
+      else animateOffset(-i * el.clientWidth); // snap back
     };
 
     el.addEventListener('touchstart', onStart, { passive: true });
@@ -141,7 +178,8 @@ export default function BadgesModal({ user, markers, onClose }) {
       el.removeEventListener('touchend', onEnd);
       el.removeEventListener('touchcancel', onEnd);
     };
-  }, [index, count]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count]);
 
   const badges = category.getBadges(ctx);
   const earnedCount = badges.filter((b) => b.earned).length;
@@ -256,14 +294,7 @@ export default function BadgesModal({ user, markers, onClose }) {
 
       <div className="badge-scroll-region">
         <div className="badge-carousel" ref={viewportRef}>
-          <div
-            className="badge-track"
-            style={{
-              width: `${count * 100}%`,
-              transform: `translateX(calc(${(-index * 100) / count}% + ${dragPx}px))`,
-              transition: dragging ? 'none' : `transform ${SLIDE_MS}ms ${SLIDE_EASE}`,
-            }}
-          >
+          <div className="badge-track" ref={trackRef} style={{ width: `${count * 100}%` }}>
             {BADGE_CATEGORIES.map((cat, i) => (
               <div
                 className="badge-page"
