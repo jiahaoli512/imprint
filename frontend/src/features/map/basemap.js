@@ -1,4 +1,4 @@
-import { createSetting, keyNormalizer } from '../settings/createSetting';
+import { createSetting, keyNormalizer } from '../../utils/createSetting';
 import { getStoredMapStyle, setStoredMapStyle } from '../../api/client';
 
 // Per-device map base style. All three come from CARTO (one provider, one

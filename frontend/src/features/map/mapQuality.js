@@ -1,4 +1,4 @@
-import { createSetting, keyNormalizer } from '../settings/createSetting';
+import { createSetting, keyNormalizer } from '../../utils/createSetting';
 import { getStoredMapQuality, setStoredMapQuality } from '../../api/client';
 
 // Map render-quality tiers. Each tier is a combination of the marker primitive

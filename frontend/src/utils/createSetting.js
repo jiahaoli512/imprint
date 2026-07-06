@@ -1,4 +1,4 @@
-import { createStore, useStore } from '../location/createStore';
+import { createStore, useStore } from './createStore';
 
 // Factory for a per-device preference: an observable store fronting a persisted
 // value, with validation and an optional side-effect on change. Collapses the

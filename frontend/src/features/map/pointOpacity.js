@@ -1,4 +1,4 @@
-import { createSetting } from '../settings/createSetting';
+import { createSetting } from '../../utils/createSetting';
 import { getStoredPointOpacity, setStoredPointOpacity } from '../../api/client';
 
 // Per-device point opacity, as a percentage from -100 to +100 with 0 the default.

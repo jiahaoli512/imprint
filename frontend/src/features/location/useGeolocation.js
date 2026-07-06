@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createStore, useStore } from './createStore';
+import { createStore, useStore } from '../../utils/createStore';
 
 // Resolves [lat, lng] from the browser, with the given options.
 function requestPosition(options) {

@@ -1,6 +1,6 @@
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { api } from '../../api/client';
-import { createStore } from './createStore';
+import { createStore } from '../../utils/createStore';
 
 // Thin wrapper around @capacitor-community/background-geolocation. Only active
 // on native (iOS) — on web the plugin doesn't exist and tracking is a no-op.

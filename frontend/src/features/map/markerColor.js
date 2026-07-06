@@ -1,4 +1,4 @@
-import { createSetting } from '../settings/createSetting';
+import { createSetting } from '../../utils/createSetting';
 import { getStoredMarkerColor, setStoredMarkerColor } from '../../api/client';
 import { hexToHsv } from '../../utils/color';
 import { MARKER_COLOR, LOCATE_BLUE } from './mapStyle';

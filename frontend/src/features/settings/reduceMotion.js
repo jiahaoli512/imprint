@@ -1,4 +1,4 @@
-import { createSetting } from './createSetting';
+import { createSetting } from '../../utils/createSetting';
 import { getStoredReduceMotion, setStoredReduceMotion } from '../../api/client';
 
 // Reflect the current value onto <html> so the CSS rule takes effect.

@@ -1,4 +1,4 @@
-import { pointInGeometry } from '../map/discovery';
+import { pointInGeometry } from '../map/geometry';
 
 // Overall [minLng, minLat, maxLng, maxLat] bbox of a feature's geometry, memoized
 // on the feature. A single-rectangle reject: cheaper than pointInGeometry's
