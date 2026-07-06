@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, List, LayoutDashboard } from 'lucide-react';
 import LogoutButton from '../../components/LogoutButton';
@@ -8,6 +9,14 @@ import SettingsButton from '../settings/SettingsButton';
 // The fixed top-of-page controls on a profile: a context-aware Back button plus,
 // in admin view, the admin nav (waitlist / dashboard / logout) and the "viewing
 // as admin" badge. Extracted from UserProfile so the page body stays readable.
+//
+// Portaled to <body> on purpose: the profile page wrapper (.auth-page) runs the
+// pageEnter animation with `both` fill mode, which leaves a `transform` on the
+// container. A transformed ancestor becomes the containing block for its
+// position:fixed descendants, so a toolbar rendered inside it scrolls away with
+// the page instead of staying pinned to the viewport (and never returns until a
+// re-render clears it). Portaling out of that subtree keeps `fixed` = viewport.
+// Same rationale as ScrollToTopButton.
 export default function ProfileToolbar({ username, isAdminView, isMe }) {
   const navigate = useNavigate();
 
@@ -17,7 +26,7 @@ export default function ProfileToolbar({ username, isAdminView, isMe }) {
     else navigate(-1);
   };
 
-  return (
+  return createPortal(
     <>
       {isAdminView && (
         <div className="profile-admin-badge">
@@ -45,6 +54,7 @@ export default function ProfileToolbar({ username, isAdminView, isMe }) {
           </>
         )}
       </div>
-    </>
+    </>,
+    document.body
   );
 }
