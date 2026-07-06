@@ -896,6 +896,8 @@ footer {
    modal). A bottom fade + nudging chevron overlays the *peeking* next row — so the
    fully-visible rows' labels stay crisp — and hides once you reach the end. */
 .badge-scroll-region { position: relative; min-height: 0; }
+.badge-nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+.badge-nav-arrow:disabled:hover { color: var(--muted); background: var(--surface2); }
 .badge-scroll-hint {
   position: absolute;
   left: 0;
@@ -956,12 +958,20 @@ footer {
 .badge-chip:hover { color: var(--text); }
 .badge-chip.is-active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
 
-/* Carousel: the viewport is the (vertical) scroller and clips the horizontal
-   travel; the inner .badge-track is a flex row of one page at rest, or two pages
-   (current + neighbour) mid-transition, translated in px by BadgesModal — dragged
-   with the finger while swiping, then eased to the snap point. */
-.badge-slide-viewport {
-  overflow-x: hidden; /* clip the horizontal page travel */
+/* Carousel: every category is a .badge-page mounted side-by-side in the .badge-track
+   strip; the .badge-carousel viewport clips it and the track is translated by the
+   page index (dragged with the finger while swiping, then eased to the snap). Each
+   page is its own vertical scroller, so paging is a pure GPU transform. */
+.badge-carousel {
+  overflow: hidden; /* clip the off-screen pages; pages scroll themselves */
+}
+.badge-track {
+  display: flex;
+  will-change: transform;
+}
+.badge-page {
+  flex: 0 0 auto; /* width is set inline (100/count %) so the strip is count×100% wide */
+  min-width: 0;   /* let the grid inside shrink */
   overflow-y: auto;
   overscroll-behavior: contain; /* don't chain scroll to the locked page (see Modal.jsx) */
   /* Hard cap at ~2 rows + a thin peek that the fade fully masks. Tune this if the
@@ -970,13 +980,9 @@ footer {
   scrollbar-width: thin;
   scrollbar-color: var(--muted) transparent;
 }
-.badge-slide-viewport::-webkit-scrollbar { width: 8px; }
-.badge-slide-viewport::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-.badge-slide-viewport::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-.badge-track { display: flex; }
-/* Each page fills the viewport width; two of them make the track 200% wide (the
-   viewport clips the off-screen one). min-width:0 lets the grid inside shrink. */
-.badge-page { flex: 0 0 100%; min-width: 0; }
+.badge-page::-webkit-scrollbar { width: 8px; }
+.badge-page::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.badge-page::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 /* Shown when a category has no badges yet (e.g. Passports). Min-height keeps the
    modal from collapsing/jumping when paging to an empty category. */
@@ -1125,7 +1131,7 @@ footer {
   .badge-grid { gap: 8px; }
   .badge-card { width: 96px; gap: 8px; padding: 4px; }
   .badge-medallion { width: 92px; height: 92px; margin-bottom: 15px; }
-  .badge-slide-viewport { max-height: 330px; } /* ~2 rows of the smaller mobile cards */
+  .badge-page { max-height: 330px; } /* ~2 rows of the smaller mobile cards */
   .badge-halo { inset: -10px; }
   .badge-ring { padding: 2px; }
   .badge-disc { width: 82px; height: 82px; box-shadow: inset 0 0 0 1px rgba(244,239,230,0.06), inset 0 2px 10px rgba(0,0,0,0.5), 0 8px 22px rgba(0,0,0,0.5); }
