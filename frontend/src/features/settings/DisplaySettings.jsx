@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { QUALITY_ORDER, QUALITY_LABEL, DEFAULT_QUALITY, useMapQuality } from '../map/mapQuality';
 import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/basemap';
 import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
@@ -34,31 +35,62 @@ function Segmented({ order, labelOf, value, onChange, defaultValue }) {
   );
 }
 
-// Preset color swatches plus a color-wheel input for any custom hex. The active
-// color is highlighted; the wheel both reflects the current color and sets a
-// custom one. `value` is a lowercase "#rrggbb".
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+// Preset color swatches (centered, wrapping) above a custom-color row: a color
+// wheel plus a hex text field you can type into directly — no click needed to
+// enter an RGB/hex value. `value` is a lowercase "#rrggbb".
 function ColorPicker({ presets, value, onChange }) {
+  // Local text state so a partially-typed hex (e.g. "#3") doesn't get coerced to
+  // the default mid-edit; only a complete, valid hex is committed upstream.
+  const [hexText, setHexText] = useState(value);
+  // Reflect swatch/wheel changes back into the text field (the field is otherwise
+  // the source of truth while typing).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setHexText(value), [value]);
+
+  const onHexInput = (t) => {
+    setHexText(t);
+    if (HEX_RE.test(t)) onChange(t.toLowerCase());
+  };
+
   return (
     <div className="color-picker">
-      {presets.map((c) => (
-        <button
-          key={c}
-          type="button"
-          className={`color-swatch${c === value ? ' active' : ''}`}
-          style={{ background: c }}
-          aria-label={`Point color ${c}`}
-          aria-pressed={c === value}
-          onClick={() => onChange(c)}
-        />
-      ))}
-      <label className="color-swatch color-wheel" title="Custom color">
+      <div className="color-swatches">
+        {presets.map((c) => (
+          <button
+            key={c}
+            type="button"
+            className={`color-swatch${c === value ? ' active' : ''}`}
+            style={{ background: c }}
+            aria-label={`Point color ${c}`}
+            aria-pressed={c === value}
+            onClick={() => onChange(c)}
+          />
+        ))}
+      </div>
+      <div className="color-custom">
+        <label className="color-swatch color-wheel" title="Open color picker">
+          <input
+            type="color"
+            value={value}
+            onChange={(e) => onHexInput(e.target.value)}
+            aria-label="Custom point color"
+          />
+        </label>
         <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          aria-label="Custom point color"
+          type="text"
+          className="color-hex-input"
+          value={hexText}
+          onChange={(e) => onHexInput(e.target.value)}
+          spellCheck={false}
+          autoCapitalize="none"
+          autoCorrect="off"
+          maxLength={7}
+          placeholder="#rrggbb"
+          aria-label="Custom color hex code"
         />
-      </label>
+      </div>
     </div>
   );
 }
