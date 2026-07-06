@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import { hexToRgb } from '../../utils/color';
 
 // Map geometry + palette + marker icons, shared by MapView and MapCard. The
 // presentation concern, split out of the old mapUtils grab-bag.
@@ -8,11 +9,8 @@ export const MARKER_COLOR = '#e2a156';      // saved markers (and accent)
 export const MARKER_EDIT_COLOR = '#e2685a'; // markers/errors while editing
 export const LOCATE_BLUE = '#5aa9e6';       // the "locate me" dot/highlight
 
-// "#rrggbb" → "r,g,b" for building an rgba() glow from an arbitrary marker color.
-function hexToRgb(hex) {
-  const n = parseInt(hex.slice(1), 16);
-  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
-}
+// A translucent "r,g,b,a" glow string from a "#rrggbb" marker color.
+const glow = (hex, a) => { const { r, g, b } = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; };
 
 // Builds the saved-marker DOM pin for a given color. The marker color is a
 // per-device setting (see markerColor.js), so the icon is generated per color
@@ -23,7 +21,7 @@ export function makePinIcon(color = MARKER_COLOR) {
   if (!icon) {
     icon = L.divIcon({
       className: '',
-      html: `<div style="width:10px;height:10px;background:${color};border:2px solid #0b0e13;border-radius:50%;box-shadow:0 0 4px rgba(${hexToRgb(color)},0.25)"></div>`,
+      html: `<div style="width:10px;height:10px;background:${color};border:2px solid #0b0e13;border-radius:50%;box-shadow:0 0 4px ${glow(color, 0.25)}"></div>`,
       iconSize: [10, 10],
       iconAnchor: [5, 5],
     });

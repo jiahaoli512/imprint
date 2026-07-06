@@ -1,5 +1,6 @@
 import { createSetting } from '../settings/createSetting';
 import { getStoredMarkerColor, setStoredMarkerColor } from '../../api/client';
+import { hexToHsv } from '../../utils/color';
 import { MARKER_COLOR, LOCATE_BLUE } from './mapStyle';
 
 // Per-device marker (point) color. Users pick one of the presets below or any
@@ -29,23 +30,10 @@ const RAINBOW_PRESETS = [
   '#ff00ff', // magenta
 ];
 
-// Hue angle (0–360) of a "#rrggbb", for spectral ordering.
-function hueOf(hex) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-  if (d === 0) return 0;
-  let h;
-  if (max === r) h = ((g - b) / d) % 6;
-  else if (max === g) h = (b - r) / d + 2;
-  else h = (r - g) / d + 4;
-  h *= 60;
-  return h < 0 ? h + 360 : h;
-}
-
 // Brand + rainbow swatches, ordered by hue so the imprint colors slot into their
 // spectral positions and the overall row still reads as a rainbow.
-export const MARKER_PRESETS = [...IMPRINT_PRESETS, ...RAINBOW_PRESETS].sort((a, b) => hueOf(a) - hueOf(b));
+export const MARKER_PRESETS = [...IMPRINT_PRESETS, ...RAINBOW_PRESETS]
+  .sort((a, b) => hexToHsv(a).h - hexToHsv(b).h);
 
 const HEX_RE = /^#[0-9a-f]{6}$/;
 

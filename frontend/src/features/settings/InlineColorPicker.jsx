@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { hexToHsv, hsvToHex, hsvToRgb, rgbToHsv, clamp } from './color';
+import { hexToHsv, hsvToHex, hsvToRgb, rgbToHsv, clamp } from '../../utils/color';
+import { useSyncedState } from '../../utils/useSyncedState';
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -11,16 +12,16 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 // stable through grayscale — dragging value to black doesn't lose the hue.
 export default function InlineColorPicker({ value, onChange }) {
   const [hsv, setHsv] = useState(() => hexToHsv(value));
-  const [hexText, setHexText] = useState(value);
+  const [hexText, setHexText] = useSyncedState(value);
   const svRef = useRef(null);
   const hueRef = useRef(null);
 
   // Reflect an external change (e.g. a preset swatch click) into the local HSV,
-  // unless it already renders to the same color (our own edits, mid-drag).
+  // unless it already renders to the same color (our own edits, mid-drag). The
+  // hex field re-syncs on its own via useSyncedState.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (hsvToHex(hsv) !== value) setHsv(hexToHsv(value));
-    setHexText(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 

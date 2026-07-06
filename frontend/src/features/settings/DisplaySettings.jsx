@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
 import { QUALITY_ORDER, QUALITY_LABEL, DEFAULT_QUALITY, useMapQuality } from '../map/mapQuality';
 import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/basemap';
 import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
 import { usePointOpacity, MIN_OPACITY, MAX_OPACITY } from '../map/pointOpacity';
-import InlineColorPicker from './InlineColorPicker';
+import ColorPicker from './ColorPicker';
+import OpacityControl from './OpacityControl';
 import { useReduceMotion } from './reduceMotion';
 import ScrollHint from '../../components/ScrollHint';
 
@@ -34,82 +34,6 @@ function Segmented({ order, labelOf, value, onChange, defaultValue }) {
           {key === defaultValue && <span className="quality-seg-tag">Recommended</span>}
         </button>
       ))}
-    </div>
-  );
-}
-
-// Centered, wrapping preset swatches above an always-expanded custom color picker
-// (drag / RGB / hex). `value` is a lowercase "#rrggbb".
-function ColorPicker({ presets, value, onChange }) {
-  return (
-    <div className="color-picker">
-      <div className="color-swatches">
-        {presets.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className={`color-swatch${c === value ? ' active' : ''}`}
-            // Glow tinted by the swatch color, mirroring the map pin's colored halo.
-            style={{ background: c, boxShadow: `0 0 9px 1px ${c}b3` }}
-            aria-label={`Point color ${c}`}
-            aria-pressed={c === value}
-            onClick={() => onChange(c)}
-          />
-        ))}
-      </div>
-      <InlineColorPicker value={value} onChange={onChange} />
-    </div>
-  );
-}
-
-// A slider paired with an editable number field (type a percentage directly) and
-// a reset-to-0% button. `onChange` clamps, so out-of-range typed values snap in.
-function OpacityControl({ value, onChange, min, max }) {
-  const [text, setText] = useState(String(value));
-  // Reflect slider/reset changes into the field (it's the source of truth while
-  // typing, so only sync from outside).
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setText(String(value)), [value]);
-
-  const onText = (t) => {
-    setText(t);
-    const n = parseInt(t, 10);
-    if (Number.isFinite(n)) onChange(n);
-  };
-
-  return (
-    <div className="settings-slider-row">
-      <input
-        type="range"
-        className="settings-slider"
-        min={min}
-        max={max}
-        step={1}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        aria-label="Point opacity"
-      />
-      <div className="settings-num-wrap">
-        <input
-          type="number"
-          className="settings-num"
-          min={min}
-          max={max}
-          value={text}
-          onChange={(e) => onText(e.target.value)}
-          onBlur={() => setText(String(value))}
-          aria-label="Point opacity percent"
-        />
-        <span className="settings-num-suffix">%</span>
-      </div>
-      <button
-        type="button"
-        className="settings-reset"
-        onClick={() => onChange(0)}
-        disabled={value === 0}
-      >
-        Reset
-      </button>
     </div>
   );
 }

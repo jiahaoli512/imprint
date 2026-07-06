@@ -1,5 +1,6 @@
-// Pure color-space conversions for the inline color picker. Hex is "#rrggbb",
-// rgb channels are 0–255, hsv is { h: 0–360, s: 0–1, v: 0–1 }.
+// Pure color-space conversions shared across the app (the inline color picker,
+// the map's pin glow, and marker-preset ordering). Hex is "#rrggbb", rgb channels
+// are 0–255, hsv is { h: 0–360, s: 0–1, v: 0–1 }.
 
 export const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
