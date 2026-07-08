@@ -86,6 +86,11 @@ export const setStoredMarkerColor = (c) => localStorage.setItem('imprint_marker_
 export const getStoredPointOpacity = () => localStorage.getItem('imprint_point_opacity');
 export const setStoredPointOpacity = (t) => localStorage.setItem('imprint_point_opacity', String(t));
 
+// Per-device marker (point) shape — 'dot' or 'pin'. Validation/default live in
+// pointShape.js; here we only read/write the raw string.
+export const getStoredPointShape = () => localStorage.getItem('imprint_point_shape');
+export const setStoredPointShape = (s) => localStorage.setItem('imprint_point_shape', s);
+
 // Per-device "reduce motion" preference — the single control for disabling
 // animations (there is no hard prefers-reduced-motion CSS override; see index.css).
 // Stored as '1' (on) / '0' (off); when the user hasn't chosen yet, default to the

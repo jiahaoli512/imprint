@@ -2,6 +2,7 @@ import { QUALITY_ORDER, QUALITY_LABEL, DEFAULT_QUALITY, useMapQuality } from '..
 import { BASEMAP_ORDER, BASEMAPS, DEFAULT_BASEMAP, useBasemap } from '../map/basemap';
 import { MARKER_PRESETS, useMarkerColor } from '../map/markerColor';
 import { usePointOpacity, MIN_OPACITY, MAX_OPACITY } from '../map/pointOpacity';
+import { POINT_SHAPE_ORDER, POINT_SHAPE_LABEL, DEFAULT_POINT_SHAPE, usePointShape } from '../map/pointShape';
 import ColorPicker from './ColorPicker';
 import OpacityControl from './OpacityControl';
 import { useReduceMotion } from './reduceMotion';
@@ -43,6 +44,7 @@ export default function DisplaySettings() {
   const [quality, setQuality] = useMapQuality();
   const [basemap, setBasemap] = useBasemap();
   const [markerColor, setMarkerColor] = useMarkerColor();
+  const [pointShape, setPointShape] = usePointShape();
   const [pointOpacity, setPointOpacity] = usePointOpacity();
   const [reduceMotion, setReduceMotion] = useReduceMotion();
 
@@ -58,6 +60,10 @@ export default function DisplaySettings() {
 
       <Setting title="Point color" description="The color of your markers on the map. Pick a preset or choose a custom color.">
         <ColorPicker presets={MARKER_PRESETS} value={markerColor} onChange={setMarkerColor} />
+      </Setting>
+
+      <Setting title="Point shape" description="The shape of your markers on the map.">
+        <Segmented order={POINT_SHAPE_ORDER} labelOf={(s) => POINT_SHAPE_LABEL[s]} value={pointShape} onChange={setPointShape} defaultValue={DEFAULT_POINT_SHAPE} />
       </Setting>
 
       <Setting title="Point opacity" description="How solid your markers look. 0% is the default; +100% is fully opaque, -100% fully transparent.">

@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  makePinIcon, pinIconEdit, LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_EDIT_COLOR,
+  makeDotIcon, makePinIcon, pinIconEdit, LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_EDIT_COLOR,
 } from './mapStyle';
 import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker, FlyToLocation, InvalidateOnResize } from './mapComponents';
 import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
 import { BASEMAPS, useBasemap } from './basemap';
 import { useMarkerColor } from './markerColor';
 import { usePointOpacity, opacityFromPercent } from './pointOpacity';
+import { usePointShape } from './pointShape';
 
 // Most DOM pins we'll ever mount at once — a safety ceiling on top of the
 // screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
@@ -36,6 +37,8 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
   const [markerColor] = useMarkerColor();
   const [opacityPercent] = usePointOpacity();
   const opacity = opacityFromPercent(opacityPercent);
+  const [pointShape] = usePointShape();
+  const iconFor = pointShape === 'pin' ? makePinIcon : makeDotIcon;
   const [version, setVersion] = useState(0);
   useMapEvents({
     moveend() { setVersion((v) => v + 1); },
@@ -93,7 +96,7 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
     <Marker
       key={i}
       position={markers[i]}
-      icon={editing ? pinIconEdit : makePinIcon(markerColor)}
+      icon={editing ? pinIconEdit : iconFor(markerColor)}
       opacity={editing ? 1 : opacity}
       eventHandlers={editing ? {
         click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
