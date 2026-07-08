@@ -59,7 +59,7 @@ export default function DisplaySettings() {
       </Setting>
 
       <Setting title="Point color" description="The color of your markers on the map. Pick a preset or choose a custom color.">
-        <ColorPicker presets={MARKER_PRESETS} value={markerColor} onChange={setMarkerColor} />
+        <ColorPicker presets={MARKER_PRESETS} value={markerColor} onChange={setMarkerColor} shape={pointShape} />
       </Setting>
 
       <Setting title="Point shape" description="The shape of your markers on the map. 'Low' map quality always display dot points.">

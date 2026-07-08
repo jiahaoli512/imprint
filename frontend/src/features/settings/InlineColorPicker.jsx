@@ -11,7 +11,7 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 //
 // HSV is kept as local state (not derived from the hex each render) so hue stays
 // stable through grayscale — dragging value to black doesn't lose the hue.
-export default function InlineColorPicker({ value, onChange }) {
+export default function InlineColorPicker({ value, onChange, shape }) {
   const [hsv, setHsv] = useState(() => hexToHsv(value));
   const [hexText, setHexText] = useSyncedState(value);
   const svRef = useRef(null);
@@ -84,7 +84,7 @@ export default function InlineColorPicker({ value, onChange }) {
       </div>
 
       <div className="ipick-row">
-        <span className="ipick-preview" style={{ background: previewHex, boxShadow: `0 0 10px 1px ${previewHex}b3` }} />
+        <span className={`ipick-preview${shape === 'pin' ? ' pin' : ''}`} style={{ background: previewHex, boxShadow: `0 0 10px 1px ${previewHex}b3` }} />
         <div ref={hueRef} className="ipick-hue" onPointerDown={onHueDown} onPointerMove={onHueMove}>
           <div className="ipick-thumb ipick-hue-thumb" style={{ left: `${(hsv.h / 360) * 100}%`, background: hueColor }} />
         </div>
