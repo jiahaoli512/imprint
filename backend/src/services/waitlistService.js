@@ -14,6 +14,20 @@ async function normalizePositions() {
   );
 }
 
+// The single source of truth for "can this email register right now": approved
+// on the waitlist AND no account exists yet. Shared by checkWaitlist (the
+// pre-auth signup probe) and verificationService's signup-code eligibility
+// gate, which used to reimplement this rule independently — a second copy
+// that could silently drift from this one and let a verification code be
+// issued to (or withheld from) an email inconsistently with what signup
+// itself allows.
+async function isEligibleToRegister(email) {
+  const entry = await Waitlist.findOne({ email }, 'approved');
+  if (!entry || !entry.approved) return false;
+  const existingUser = await User.findOne({ email }, '_id');
+  return !existingUser;
+}
+
 async function joinWaitlist(email, name) {
   checkRequired('Email', email);
   checkLength('email', email);
@@ -52,9 +66,7 @@ async function countWaitlist() {
 async function checkWaitlist(email) {
   checkRequired('Email', email);
   email = normalizeEmail(email);
-  const entry = await Waitlist.findOne({ email });
-  const existingUser = entry?.approved ? await User.findOne({ email }) : null;
-  const canRegister = !!entry && entry.approved && !existingUser;
+  const canRegister = await isEligibleToRegister(email);
   return { status: canRegister ? 'approved' : 'unavailable' };
 }
 
@@ -90,4 +102,7 @@ async function deleteEntry(id) {
   await normalizePositions();
 }
 
-module.exports = { joinWaitlist, listWaitlist, countWaitlist, checkWaitlist, reorderWaitlist, approveEntry, deleteEntry };
+module.exports = {
+  joinWaitlist, listWaitlist, countWaitlist, checkWaitlist, reorderWaitlist, approveEntry, deleteEntry,
+  isEligibleToRegister,
+};
