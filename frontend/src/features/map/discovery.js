@@ -5,6 +5,7 @@
 // percentage is the discovered cell area over the region's true area.
 import { continentContaining, oceanAt, CONTINENT_BBOX, inBBox } from './geo';
 import { pointInGeometry, polygonAreaM2 } from './geometry';
+import { fetchNominatim } from './nominatim';
 
 const M_PER_DEG = 111320; // metres per degree of latitude (≈ constant)
 
@@ -56,7 +57,6 @@ const STATIC_AREA_KM2 = {
 // can't grow it without limit.
 const geometryCache = new Map();
 const GEOMETRY_CACHE_MAX = 200;
-const NOMINATIM_TIMEOUT_MS = 8000;
 
 function cacheGeometry(key, value) {
   geometryCache.set(key, value);
@@ -104,19 +104,11 @@ export async function fetchRegionGeometry(lat, lng, level) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}` +
     `&zoom=${zoom}&polygon_geojson=1&polygon_threshold=0.01&addressdetails=1&accept-language=en`;
 
-  // Bound the request and treat a non-2xx (e.g. 429 rate limit) or non-JSON body
-  // as a failure rather than letting res.json() throw an opaque error. We throw
-  // so useDiscovery can show its error state; failures aren't cached.
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), NOMINATIM_TIMEOUT_MS);
-  let data;
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`Nominatim ${res.status}`);
-    data = await res.json();
-  } finally {
-    clearTimeout(timer);
-  }
+  // fetchNominatim bounds the request and treats a non-2xx (e.g. 429 rate
+  // limit) or non-JSON body as a failure rather than letting res.json() throw
+  // an opaque error. We let it throw here so useDiscovery can show its error
+  // state; failures aren't cached.
+  const data = await fetchNominatim(url);
 
   const geometry = data?.geojson && /Polygon$/.test(data.geojson.type) ? data.geojson : null;
   const name = data?.name || data?.display_name?.split(',')[0] || '';

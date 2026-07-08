@@ -1,4 +1,5 @@
 import { CONTINENT } from './geo';
+import { fetchNominatim } from './nominatim';
 
 // Zoom → place-naming concern: maps a zoom level to a place granularity, picks
 // the right name field from a reverse-geocode result, and calls Nominatim. Split
@@ -24,11 +25,18 @@ export function pickName(addr, level) {
   return addr.city || addr.town || addr.village || addr.hamlet || addr.county || '';
 }
 
+// Used by RegionDetector on every pan/zoom to drive the toolbar's live place
+// label — so a failure here must resolve to null, not throw, or the caller's
+// `await` would hang the label update / surface an unhandled rejection (unlike
+// discovery.js's fetchRegionGeometry, which deliberately DOES throw so its
+// caller can show an explicit error state).
 export async function reverseGeocode(lat, lng) {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&addressdetails=1`
-  );
-  const data = await res.json();
-  if (data.error) return null;
-  return data.address || null;
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&addressdetails=1`;
+  try {
+    const data = await fetchNominatim(url);
+    if (data.error) return null;
+    return data.address || null;
+  } catch {
+    return null; // timed out, rate-limited, or otherwise failed — leave unnamed
+  }
 }
