@@ -9,8 +9,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private var scrollObservation: NSKeyValueObservation?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        registerCustomPlugins()
         enableWebInspector()
         return true
+    }
+
+    // Local (non-npm) Capacitor plugins aren't auto-discovered the way
+    // cap-sync-installed ones are — Capacitor's iOS bridge only auto-wires
+    // plugins that `cap sync` explicitly linked in. A plugin like
+    // KeychainStoragePlugin, added directly to this target, has to be handed
+    // to the bridge manually or JS-side registerPlugin() calls resolve to
+    // "plugin is not implemented on ios". Do that once at launch, via the same
+    // CAPBridgeViewController reference enableWebInspector() below also uses.
+    private var pluginsRegistered = false
+    private func registerCustomPlugins() {
+        guard !pluginsRegistered,
+              let bridgeVC = window?.rootViewController as? CAPBridgeViewController else { return }
+        _ = bridgeVC.view // force the view (and bridge) to load if it hasn't already
+        bridgeVC.bridge?.registerPluginInstance(KeychainStoragePlugin())
+        pluginsRegistered = true
     }
 
     // Since iOS 16.4, WKWebView.isInspectable defaults to false for every build
