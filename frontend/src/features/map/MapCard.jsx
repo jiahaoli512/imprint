@@ -1,6 +1,7 @@
 import { Eye, Pencil, Trash2, LocateFixed, Maximize2, Minimize2 } from 'lucide-react';
 import MapView from './MapView';
 import { LOCATE_BLUE } from './mapStyle';
+import { useBasemap } from './basemap';
 
 // The shared map panel used by both the user dashboard and the admin dashboards:
 // a window-chrome toolbar (mode toggle when editable, region label, clear/locate
@@ -14,6 +15,7 @@ export default function MapCard({
   userLocation, locating, onLocate, showLocate = false,
   expandable = false, expanded = false, onToggleExpand,
 }) {
+  const [basemap] = useBasemap();
   return (
     <div className={`dashboard-map-card${expanded ? ' expanded' : ''}`}>
       <div className="dashboard-toolbar">
@@ -62,7 +64,7 @@ export default function MapCard({
         </div>
       </div>
 
-      <div className={`dashboard-map-wrap${editing ? ' editing' : ''}${expanded ? ' expanded' : ''}`}>
+      <div className={`dashboard-map-wrap basemap-${basemap}${editing ? ' editing' : ''}${expanded ? ' expanded' : ''}`}>
         <MapView
           displayMarkers={displayMarkers}
           editing={editing}

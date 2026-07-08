@@ -2240,14 +2240,26 @@ footer {
 .dashboard-map-card.expanded { width: 100%; }
 .dashboard-map-wrap.expanded { height: calc(100vh - 200px); }
 
-/* Amber grid overlay */
+/* Grid + glow overlay tint — amber by default (Imprint Dark), blue for the
+   Imprint Light basemap. Set as variables so both overlays swap together and
+   MapCard only has to toggle a basemap class. */
+.dashboard-map-wrap {
+  --map-grid: rgba(226,161,86,0.035);
+  --map-glow: rgba(226,161,86,0.07);
+}
+.dashboard-map-wrap.basemap-light {
+  --map-grid: rgba(90,169,230,0.05);
+  --map-glow: rgba(90,169,230,0.10);
+}
+
+/* Grid overlay */
 .dashboard-map-wrap::before {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(226,161,86,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(226,161,86,0.035) 1px, transparent 1px);
+    linear-gradient(var(--map-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--map-grid) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 500;
@@ -2258,7 +2270,7 @@ footer {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 35% 45%, rgba(226,161,86,0.07) 0%, transparent 65%);
+  background: radial-gradient(ellipse at 35% 45%, var(--map-glow) 0%, transparent 65%);
   pointer-events: none;
   z-index: 501;
 }
