@@ -1,4 +1,4 @@
-# Imprint (v2.6) *Updated Jul 5, 2026*
+# Imprint (v2.6) *Updated Jul 8, 2026*
 
 How much of the world have you seen?
 
@@ -28,7 +28,7 @@ Imprint maps every place you've ever been - turning your travels into a living p
 - **Locate me** — a one‑shot "where am I" control (web and mobile) that drops a blue location circle and flies to street‑level zoom
 - **Enlarge map** — a web‑only toggle that grows the map to fill the content area (header/footer untouched)
 - **Passive tracking (mobile)** — opt‑in background location that records a point roughly every 100 m of movement and passively builds your map; new places become markers, thinned to a sparse 100 m trail rather than a continuous tube. On the web a static notice explains it's mobile‑only.
-- **Badges** — an achievement gallery on every profile (opened from a "Badges" button), organised into swipeable categories with a slide animation, position dots, and a per‑category earned count + percentage. Categories: **Account milestones** (animated medallions awarded by account age — Account Created → One Year, computed client‑side from `createdAt`), **Passports** (a flag medallion per country, tinted by continent), and **Passports (United States)** (the 50 states + D.C. with a red/white/blue theme). Large categories get a name search; Passports adds a multi‑select continent filter; all categories share an Unlocked / Locked / All status filter. Earned badges animate (breathe, spinning ring, sparkle, ribbon tails); locked ones are grayed. Long names truncate, and a scroll‑to‑top button appears on long lists. Mobile compacts the grid to ~3 per row.
+- **Badges** — an achievement gallery on every profile (opened from a "Badges" button), organised into categories paged through a wrap‑around carousel: arrows, dots, and touch swipe (drags with your finger and snaps on release; looping past the first/last category eases through a hidden clone rather than jumping). Each category's title, completion count, search/filter controls, and badge grid slide together as one page, with badges aligned to a consistent position across categories. Categories: **Account milestones** (animated medallions awarded by account age — Account Created → One Year, computed client‑side from `createdAt`), **Passports** (a flag medallion per country, tinted by continent), and **Passports (United States)** (the 50 states + D.C. with a red/white/blue theme). Large categories get a name search; Passports adds a multi‑select continent filter; all categories share an Unlocked / Locked / All status filter. Earned badges animate (breathe, spinning ring, sparkle, ribbon tails); locked ones are grayed. Long names truncate, and a scroll‑to‑top button + "more below" hint appear on long lists. Mobile compacts the grid to ~3 per row.
 - **Friends** — send/accept/reject friend requests (a single directed edge; reject is a hard delete that frees a re‑request). Profiles show a friend count and your relationship; the friend list is visible to the owner and friends only. A user's markers/badges are gated to the owner, admins, and **friends**, so badges show as locked on a non‑friend's profile. Each request emails the recipient (first name only), rate‑limited to 30/hour
 - **Notifications & activity** — a header notification bell (own dashboard + profile) drops down two sections: pending friend **requests** and an **activity** feed (e.g. "@x accepted your friend request"), newest‑first with relative timestamps. The badge counts pending requests plus unseen activity (unseen tracked client‑side). The activity feed is a source registry — adding a new activity type is one source function + one renderer
 - **Settings** — a gear next to the bell opens a tabbed modal (Display · Account · Notifications · Privacy; only Display is implemented). **Display** exposes five per‑device preferences: **Map Quality**, **Map Base Style** (Dark / Light / Streets, all CARTO; dark default; tiles swap live), **Point Color** (the marker color — brand + rainbow presets plus an always‑expanded HSV picker with drag / RGB / hex entry; points re‑color live), **Point Opacity** (a −100%…+100% slider; +100% fully opaque, −100% transparent, 0 = default), and **Reduce Motion** (force‑disables animations/transitions, applied before first paint). All persist per device, unsynced to the account
@@ -50,10 +50,13 @@ backend/
                    #   activityService, markerService, adminService, ...)
     constants/     # shared vocabularies (friendship status/edge/action)
     middleware/    # auth, adminAuth, userOrAdmin, jwt (Bearer parse +
-                   #   session-freshness), rateLimit, sanitize, handle
+                   #   session-freshness), rateLimit, sanitize, handle,
+                   #   corsPolicy (origin allowlist matching)
     models/        # Mongoose schemas (User, Waitlist, MapMarkers, Location,
                    #   FriendRequest, EmailVerification)
-    utils/         # validate, email, token (JWT sign/verify seam),
+    utils/         # validate (generic string checks + name/username),
+                   #   validatePassword, validateDob, validateCode, validateGeo,
+                   #   cooldowns, email, token (JWT sign/verify seam),
                    #   markerGeometry, names, httpError
 frontend/
   src/
@@ -74,15 +77,24 @@ frontend/
                        #   useNotifications, activityRenderers), ProfileToolbar
     features/settings/ # settings modal + per-device stores (SettingsModal,
                        #   DisplaySettings, createSetting, reduceMotion)
-    features/badges/   # badges modal + carousel (BadgesModal, Badge) and a
-                       #   category registry (categories/: accountAge, countries,
-                       #   statesUS) — add a category = a new file + one line
-    features/admin/    # waitlist + users tables and their hooks (usePagination)
+    features/badges/   # BadgesModal (shared filter state) + BadgePage (one
+                       #   category's title/filters/grid, owns its own scroll
+                       #   state) + useSlideCarousel (wrap-around swipe/arrows/
+                       #   dots, JS rAF tween) and a category registry
+                       #   (categories/: accountAge, countries, statesUS) —
+                       #   add a category = a new file + one line
+    features/admin/    # waitlist + users tables and their hooks
+                       #   (useSearchAndPaginate, useDragReorder)
     utils/         # validateName, fullName, passwordRules, csv, formatDate, retry,
-                   #   useForm, useAsync, useDismiss, useDebouncedCallback
+                   #   useForm, useAsync, useDismiss, useDebouncedCallback,
+                   #   scrollEdges, number (clamp), useSearchAndPaginate
     assets/        # static assets (state-flags/ — US state/territory SVGs)
-    api/client.js  # single API layer + session/token helpers (only file touching storage)
-  ios/             # Capacitor iOS project
+    api/client.js  # single API layer + session/token helpers (only file touching
+                   #   storage; native session token is Keychain-backed, see below)
+  ios/
+    App/App/KeychainStoragePlugin.swift  # local Capacitor plugin — iOS Keychain
+                                          #   get/set/remove, backing the native
+                                          #   session token (no npm dependency)
 ```
 
 ## Getting started
@@ -153,6 +165,10 @@ Some behaviors are intentionally platform‑specific (e.g. the search bar positi
 
 Background location uses `@capacitor-community/background-geolocation` and is **native‑only** — it requests "Always" location permission and records a point about every 100 m of movement. Uploaded points are stored as raw history and passively turned into map markers, thinned so no two markers sit within 100 m of each other (a sparse trail, not a continuous tube). On the web the feature is unsupported; the dashboard shows a static "Location Tracking: OFF" notice instead.
 
+### Session storage (Keychain)
+
+On native, the session token is stored in the **iOS Keychain**, not `localStorage` — WKWebView's `localStorage` is an unencrypted file in the app sandbox, readable via a jailbreak or a forensic/backup device extraction, unlike the Keychain. It's backed by a small local Capacitor plugin (`KeychainStoragePlugin.swift`, using iOS's `Security` framework directly) rather than a third‑party dependency, since every free npm Keychain plugin was CocoaPods‑only and this project's iOS setup is pure Swift Package Manager. The Keychain API is async, so the token is mirrored in memory (never written back to `localStorage`) and hydrated once at app boot before the first render. The web app is unaffected — it still uses plain `localStorage`.
+
 ## Admin dashboard
 
 Open the **Admin** link in the site footer (web only) and enter `ADMIN_PASSWORD`. Authentication is verified **server‑side**, which returns a short‑lived admin JWT used for all admin API calls. From the dashboard you can approve/reorder/delete waitlist entries, view registered users (with name and date of birth), and edit any user's map or profile. A user session and an admin session are mutually exclusive — logging in as one clears the other.
@@ -162,6 +178,7 @@ Open the **Admin** link in the site footer (web only) and enter `ADMIN_PASSWORD`
 The backend enforces security server‑side (not just in the UI):
 
 - **Authentication** — JWT for users and admins (HS256 pinned on both sign and verify, in a single token seam); protected routes require a valid token, and profile edits require ownership (or admin)
+- **Native session storage** — on iOS, the session token is stored in the Keychain (not `localStorage`, which is an unencrypted, forensically‑extractable file on native); see [Session storage (Keychain)](#session-storage-keychain)
 - **Session revocation** — user tokens carry a `tv` claim checked against the account's `tokenVersion` on every authenticated request; a password reset bumps the version, invalidating every previously‑issued token (including a stolen one) while returning a fresh token so the resetting client stays signed in
 - **Email verification** — signup and password reset require a 6‑char code emailed to the address, enforced **server‑side** (bcrypt‑hashed at rest, 30‑min TTL, 5‑attempt cap via atomic `$inc`, resend cooldown); skipping the verify UI still fails. Ineligible emails get a uniform response (no enumeration)
 - **Admin auth** — the admin password is validated server‑side in constant time; the panel uses a signed admin JWT, never a client‑side password check. The client‑side admin flag is cosmetic — every admin route still verifies the admin JWT
