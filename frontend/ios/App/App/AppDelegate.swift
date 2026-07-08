@@ -22,6 +22,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         guard let rootView = self.window?.rootViewController?.view,
               let webView = findWKWebView(in: rootView) else { return }
 
+        // Since iOS 16.4, WKWebView.isInspectable defaults to false for every
+        // build (debug included) — Safari's Web Inspector shows the device but
+        // "No inspectable contents" until this is explicitly opted in. Debug-only
+        // so a release build never exposes this.
+        #if DEBUG
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
+        #endif
+
         let appBg = UIColor(red: 8/255, green: 12/255, blue: 20/255, alpha: 1)
         webView.backgroundColor = appBg
         webView.scrollView.backgroundColor = appBg
