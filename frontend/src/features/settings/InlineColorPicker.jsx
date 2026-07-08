@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { hexToHsv, hsvToHex, hsvToRgb, rgbToHsv, clamp } from '../../utils/color';
+import { hexToHsv, hsvToHex, hsvToRgb, rgbToHsv } from '../../utils/color';
+import { clamp } from '../../utils/number';
 import { useSyncedState } from '../../utils/useSyncedState';
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
