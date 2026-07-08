@@ -1,12 +1,67 @@
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
 export const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+
+const isNative = Capacitor.isNativePlatform();
+const TOKEN_KEY = 'imprint_token';
+
+// Bridges to KeychainStoragePlugin.swift (ios/App/App/) — a small local native
+// plugin, not a third-party package (no free, SPM-native, Capacitor-7-compatible
+// Keychain plugin existed; every option was CocoaPods-only, which this project's
+// pure-SPM iOS setup doesn't have). Only ever resolved on native; there is no web
+// implementation, since getToken()/setToken() below never call it off-native.
+const KeychainStorage = isNative ? registerPlugin('KeychainStorage') : null;
+
+// The session token used to live in plain localStorage on every platform. On the
+// native app that's a real exposure: WKWebView's localStorage is an unencrypted
+// SQLite file in the app sandbox (not the iOS Keychain), readable via a jailbreak
+// or a forensic/backup extraction of the device — either hands over the live
+// 7-day session token, a full account takeover with no password needed. On
+// native, persist it in the Keychain instead; web keeps the existing plain
+// localStorage path unchanged (browser-side session storage is an accepted,
+// different threat model this app doesn't otherwise harden against).
+//
+// The Keychain API is async, but getToken() is read synchronously on every
+// request to build its Authorization header. Bridge that with an in-memory
+// mirror: hydrateAuth() (called once at boot — see main.jsx) does the one async
+// Keychain read and populates it; every read/write after that goes through the
+// mirror synchronously, with writes fired through to the Keychain in the
+// background. The mirror itself only ever lives in JS memory, never written back
+// to localStorage — persisting nothing in the exposed store defeats the point.
+let tokenCache = null;
+let hydrated = !isNative; // web has no async hydration step to wait on
+
+export async function hydrateAuth() {
+  if (!isNative || hydrated) return;
+  try {
+    const { value } = await KeychainStorage.getItem({ key: TOKEN_KEY });
+    tokenCache = value ?? null;
+  } catch (err) {
+    console.error('[keychain] Failed to read token from Keychain:', err.message);
+    tokenCache = null;
+  }
+  hydrated = true;
+}
 
 export const getUsername = () => localStorage.getItem('imprint_username');
 export const setUsername = (u) => localStorage.setItem('imprint_username', u);
-export const getToken = () => localStorage.getItem('imprint_token');
-export const setToken = (t) => localStorage.setItem('imprint_token', t);
+
+export const getToken = () => (isNative ? tokenCache : localStorage.getItem(TOKEN_KEY));
+export const setToken = (t) => {
+  if (!isNative) { localStorage.setItem(TOKEN_KEY, t); return; }
+  tokenCache = t;
+  KeychainStorage.setItem({ key: TOKEN_KEY, value: t }).catch((err) =>
+    console.error('[keychain] Failed to persist token to Keychain:', err.message));
+};
+
 export const clearSession = () => {
   localStorage.removeItem('imprint_username');
-  localStorage.removeItem('imprint_token');
+  if (isNative) {
+    tokenCache = null;
+    KeychainStorage.removeItem({ key: TOKEN_KEY }).catch(() => {});
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
 };
 
 // Per-device map render-quality preference. Validation against the known tiers
