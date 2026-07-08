@@ -2145,10 +2145,10 @@ footer {
    one square corner, rotated -45deg. The glow (inline box-shadow) is symmetric,
    so it's untouched. Hover/active must re-include the rotation or the transitions
    would snap the pin back to an axis-aligned square. */
-.color-swatch.pin,
-.ipick-preview.pin { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
-.color-swatch.pin:hover  { transform: rotate(-45deg) scale(1.15); }
-.color-swatch.pin:active { transform: rotate(-45deg) scale(0.94); }
+.color-swatch.pin-shape,
+.ipick-preview.pin-shape { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+.color-swatch.pin-shape:hover  { transform: rotate(-45deg) scale(1.15); }
+.color-swatch.pin-shape:active { transform: rotate(-45deg) scale(0.94); }
 /* The inline picker preview is a glowing point too. */
 .ipick-preview { border-color: var(--bg) !important; }
 

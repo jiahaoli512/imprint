@@ -12,7 +12,7 @@ export default function ColorPicker({ presets, value, onChange, shape }) {
           <button
             key={c}
             type="button"
-            className={`color-swatch${pin ? ' pin' : ''}${c === value ? ' active' : ''}`}
+            className={`color-swatch${pin ? ' pin-shape' : ''}${c === value ? ' active' : ''}`}
             // Glow tinted by the swatch color, mirroring the map pin's colored halo.
             style={{ background: c, boxShadow: `0 0 9px 1px ${c}b3` }}
             aria-label={`Point color ${c}`}
