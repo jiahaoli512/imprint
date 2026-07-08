@@ -1,7 +1,7 @@
 // "Passports (United States)" — one badge per U.S. state/territory, using the
 // SVG flags in src/assets/state-flags (provided in /flags). Same layout as the
 // Passports category but with a uniform red/white/blue medallion theme and no
-// region filter. All locked for now (visited detection is a later feature).
+// region filter (states don't carry a `continent`).
 
 // Vite resolves each SVG to a bundled URL at build time, keyed by file path.
 const flagUrls = import.meta.glob('../../../assets/state-flags/*.svg', {
@@ -68,6 +68,10 @@ export const statesUSCategory = {
   id: 'states-us',
   title: 'Passports (United States)',
   subtitle: "Stamps for the U.S. states you've visited.",
+  // Static shape of this category — see countries.js for why this is
+  // precomputed once rather than derived from getBadges()'s output.
+  badgeCount: BADGES.length,
+  continents: [], // states don't carry a continent
   // A state unlocks when the viewer's markers include one inside its boundary —
   // ctx.visitedStates is the resolved Set (see useVisitedStates). Null/absent
   // (still loading, or no markers) → all locked.

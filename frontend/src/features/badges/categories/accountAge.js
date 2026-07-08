@@ -26,6 +26,10 @@ export const accountAgeCategory = {
   id: 'account-age',
   title: 'Account Milestone badges',
   subtitle: 'Awarded automatically as the account reaches each age milestone.',
+  // Static shape of this category — see countries.js for why this is
+  // precomputed once rather than derived from getBadges()'s output.
+  badgeCount: TIERS.length,
+  continents: [], // no continent field on this category's badges
   getBadges({ user }) {
     const created = user?.createdAt ? new Date(user.createdAt).getTime() : NaN;
     const ageDays = Number.isNaN(created) ? -1 : (Date.now() - created) / DAY_MS;
