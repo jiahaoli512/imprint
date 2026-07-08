@@ -1,7 +1,7 @@
 const Location = require('../models/Location');
 const httpError = require('../utils/httpError');
 const { addMarkersFromPoints } = require('./markerService');
-const { isValidLocationPoint } = require('../utils/validate');
+const { isValidLocationPoint } = require('../utils/validateGeo');
 
 const MAX_BATCH = 200;
 

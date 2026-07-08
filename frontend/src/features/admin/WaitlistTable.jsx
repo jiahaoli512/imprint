@@ -1,20 +1,17 @@
-import { useState } from 'react';
 import { Users, Download, Trash2, GripVertical, CheckCircle, Clock } from 'lucide-react';
 import { useDragReorder } from './useDragReorder';
 import { formatDate } from '../../utils/formatDate';
-import { matchesQuery } from '../../utils/matchesQuery';
-import { usePagination } from '../../utils/usePagination';
+import { useSearchAndPaginate } from '../../utils/useSearchAndPaginate';
 import Pagination from './Pagination';
 
 const PAGE_SIZE = 25;
 
 export default function WaitlistTable({ entries, loading, error, approvingId, onApprove, onDelete, onReorder, onExport }) {
-  const [search, setSearch] = useState('');
   const { getRowProps } = useDragReorder(onReorder);
 
   const approvedCount = entries.filter((e) => e.approved).length;
-  const filtered = entries.filter((e) => matchesQuery(search, e.email, e.name));
-  const { page, setPage, pageCount, start, visible } = usePagination(filtered, PAGE_SIZE);
+  const { search, onSearchChange, filtered, page, setPage, pageCount, start, visible } =
+    useSearchAndPaginate(entries, (e) => [e.email, e.name], PAGE_SIZE);
 
   // Drag-reorder only when unfiltered: while searching, the visible row index no
   // longer matches the full-list position, so dragging would reorder the wrong
@@ -42,7 +39,7 @@ export default function WaitlistTable({ entries, loading, error, approvingId, on
           className="admin-search"
           placeholder="Search by name or email…"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+          onChange={(e) => onSearchChange(e.target.value)}
         />
       )}
 

@@ -1,10 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
+import { clamp } from '../../utils/number';
 
 const SWIPE_THRESHOLD = 50; // px of horizontal drag before a swipe commits to the next/prev page
 const AXIS_LOCK = 8;        // px of movement before a touch gesture is read as horizontal vs vertical
 const SLIDE_MS = 340;       // page-slide tween duration
 
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const easeOutCubic = (p) => 1 - Math.pow(1 - p, 3);
 
 // Drives a horizontal, wrap-around carousel of `count` equal-width pages: arrows/

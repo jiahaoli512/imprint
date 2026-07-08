@@ -43,6 +43,11 @@ export const countriesCategory = {
   id: 'countries',
   title: 'Passports',
   subtitle: "Stamps for the countries you've visited.",
+  // Static shape of this category, computed once here rather than derived by
+  // callers re-scanning getBadges()'s output on every render (badge count and
+  // continents never change — only `earned` varies with ctx).
+  badgeCount: BADGES.length,
+  continents: [...new Set(BADGES.map((b) => b.continent).filter(Boolean))].sort(),
   // A country unlocks when the viewer's markers include one inside its boundary —
   // ctx.visitedCountries is the resolved Set of ISO numeric codes. Null/absent
   // (still loading, or no markers) → all locked.

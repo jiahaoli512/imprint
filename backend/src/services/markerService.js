@@ -1,5 +1,5 @@
 const MapMarkers = require('../models/MapMarkers');
-const { validatePoints } = require('../utils/validate');
+const { validatePoints } = require('../utils/validateGeo');
 const { createProximityGrid, MARKER_SPACING_M } = require('../utils/markerGeometry');
 const { findUserByUsername } = require('./userLookup');
 const { assertCanViewOwnerData } = require('./friendService');

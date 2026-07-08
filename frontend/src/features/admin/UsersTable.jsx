@@ -1,20 +1,17 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, Map, UserCircle } from 'lucide-react';
 import { formatDate } from '../../utils/formatDate';
 import { fullName } from '../../utils/fullName';
-import { matchesQuery } from '../../utils/matchesQuery';
-import { usePagination } from '../../utils/usePagination';
+import { useSearchAndPaginate } from '../../utils/useSearchAndPaginate';
 import Pagination from './Pagination';
 
 const PAGE_SIZE = 25;
 
 export default function UsersTable({ users, loading = false, error = '' }) {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
 
-  const filtered = users.filter((u) => matchesQuery(search, u.email, fullName(u)));
-  const { page, setPage, pageCount, start, visible } = usePagination(filtered, PAGE_SIZE);
+  const { search, onSearchChange, filtered, page, setPage, pageCount, start, visible } =
+    useSearchAndPaginate(users, (u) => [u.email, fullName(u)], PAGE_SIZE);
 
   return (
     <div className="admin-section">
@@ -39,7 +36,7 @@ export default function UsersTable({ users, loading = false, error = '' }) {
             className="admin-search"
             placeholder="Search by email or name…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            onChange={(e) => onSearchChange(e.target.value)}
           />
           <div className="admin-table-wrap">
             <table className="admin-table">

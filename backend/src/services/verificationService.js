@@ -1,11 +1,12 @@
 const bcrypt = require('bcryptjs');
 const EmailVerification = require('../models/EmailVerification');
-const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const httpError = require('../utils/httpError');
-const { normalizeEmail, checkRequired, validateVerificationCode } = require('../utils/validate');
+const { normalizeEmail, checkRequired } = require('../utils/validate');
+const { validateVerificationCode } = require('../utils/validateCode');
 const { generateCode } = require('../utils/code');
 const { sendVerificationEmail } = require('../utils/email');
+const { isEligibleToRegister } = require('./waitlistService');
 
 const CODE_TTL_MS = 30 * 60 * 1000;     // code (and post-verify window) lifetime: 30 min
 const RESEND_COOLDOWN_MS = 60 * 1000;   // min gap between sends to one email
@@ -18,14 +19,10 @@ const BCRYPT_ROUNDS = 10;               // codes are short-lived + attempt-cappe
 const INVALID_CODE = () => httpError(400, 'Invalid or expired code. Please request a new one.');
 
 // --- eligibility predicates (per purpose) -----------------------------------
-// Signup: an approved waitlist entry exists AND no account yet (mirrors
-// waitlistService.checkWaitlist so a code is never issued to an ineligible email).
-async function eligibleForSignup(email) {
-  const entry = await Waitlist.findOne({ email }, 'approved');
-  if (!entry || !entry.approved) return false;
-  const existingUser = await User.findOne({ email }, '_id');
-  return !existingUser;
-}
+// Signup: waitlistService.isEligibleToRegister is the single source of truth
+// (approved waitlist entry AND no account yet), so a code is never issued to
+// an email signup itself would reject.
+const eligibleForSignup = isEligibleToRegister;
 // Reset: an account with this email exists.
 async function eligibleForReset(email) {
   return !!(await User.findOne({ email }, '_id'));
