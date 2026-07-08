@@ -888,15 +888,19 @@ footer {
    fully-visible rows' labels stay crisp — and hides once you reach the end. Both
    overlays anchor to .badge-page-grid-wrap (the active page's grid only; a
    non-active/clone page doesn't render them). */
-/* Anchor the badges to Passports' position while splitting a shorter
-   category's leftover space evenly above AND below the filters+grid block
-   (margin: auto 0 on both sides), rather than dumping it all as one gap above
-   the filters — so a sparse category (e.g. no search box) doesn't look
-   lopsided, with room breathing under the badges too. The header stays put at
-   the top either way (it's a separate sibling above this block, not part of
-   the space-splitting). Passports itself has no leftover so both margins
-   resolve to 0 and it's unchanged. */
-.badge-page-body { display: flex; flex-direction: column; margin: auto 0; min-height: 0; }
+/* Anchor the badges to a consistent Y across every category: margin-top:auto
+   absorbs however much leftover space THIS category's own header/filters leave
+   (Passports' — the tallest — resolves to 0), so the block's BOTTOM edge always
+   lands at exactly (page height − margin-bottom), a fixed offset — regardless of
+   how tall this category's own header happens to be. A *proportional* split
+   (margin: auto 0, tried previously) instead divides that leftover in relation
+   to each category's own header height, so any subtle text-wrapping difference
+   between categories' subtitles (more likely at mobile's narrower width) shifted
+   the split point and put badges at a slightly different Y per category — this
+   fixed margin-bottom avoids that dependency entirely while still leaving a
+   small breathing gap under the badges. The header stays put at the top either
+   way (a separate sibling above this block). */
+.badge-page-body { display: flex; flex-direction: column; margin-top: auto; margin-bottom: 24px; min-height: 0; }
 .badge-page-grid-wrap { position: relative; min-height: 0; }
 .badge-scroll-hint {
   position: absolute;
