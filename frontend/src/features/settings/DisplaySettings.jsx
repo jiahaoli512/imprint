@@ -62,7 +62,7 @@ export default function DisplaySettings() {
         <ColorPicker presets={MARKER_PRESETS} value={markerColor} onChange={setMarkerColor} />
       </Setting>
 
-      <Setting title="Point shape" description="The shape of your markers on the map.">
+      <Setting title="Point shape" description="The shape of your markers on the map. 'Low' map quality always display dot points.">
         <Segmented order={POINT_SHAPE_ORDER} labelOf={(s) => POINT_SHAPE_LABEL[s]} value={pointShape} onChange={setPointShape} defaultValue={DEFAULT_POINT_SHAPE} />
       </Setting>
 
