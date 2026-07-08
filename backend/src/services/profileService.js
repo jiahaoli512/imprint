@@ -1,8 +1,9 @@
 const User = require('../models/User');
 const {
-  checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername,
-  cleanName, validateDateOfBirth, COOLDOWN_DAYS, daysUntil,
+  checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
 } = require('../utils/validate');
+const { validateDateOfBirth } = require('../utils/validateDob');
+const { COOLDOWN_DAYS, daysUntil } = require('../utils/cooldowns');
 const httpError = require('../utils/httpError');
 const { findUserByUsername } = require('./userLookup');
 const { friendSummaryFor } = require('./friendService');

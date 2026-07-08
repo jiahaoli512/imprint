@@ -1,6 +1,8 @@
 const httpError = require('./httpError');
 
-// Field length limits, shared between validation and schema definitions.
+// Field length limits, shared between validation and schema definitions. Kept
+// as one table (rather than split per validator file) since checkLength needs
+// a single place to look up any field's cap regardless of domain.
 const LIMITS = {
   email:     254, // RFC 5321
   password:  200, // bcrypt only uses first 72 bytes; cap to avoid wasteful hashing
@@ -66,20 +68,6 @@ function validateUsername(username) {
     throw httpError(400, 'Username must be 3–20 characters: letters, numbers, underscores.');
 }
 
-// Edit cooldown windows, in days. Username changes at most once a month, names
-// at most once a week. Enforced per-user via the User.*ChangedAt timestamps.
-const COOLDOWN_DAYS = { username: 30, name: 7 };
-
-// Whole days remaining before `lastChangedAt` clears a `days`-long cooldown
-// (0 when eligible, or when there's no prior change). Used to gate self-service
-// edits and to build the "try again in N day(s)" message.
-function daysUntil(lastChangedAt, days) {
-  if (!lastChangedAt) return 0;
-  const elapsedMs = Date.now() - new Date(lastChangedAt).getTime();
-  const remainingMs = days * 24 * 60 * 60 * 1000 - elapsedMs;
-  return remainingMs <= 0 ? 0 : Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
-}
-
 // Throws a 400 error if `value` is a string longer than the limit for `field`.
 function checkLength(field, value) {
   if (value == null) return;
@@ -116,120 +104,8 @@ function checkNameChars(label, value, { allowSpaces = false } = {}) {
   }
 }
 
-// --- date of birth -----------------------------------------------------------
-const MIN_AGE = 18;
-
-// Whole years between `dob` and today.
-function ageFromDob(dob) {
-  const today = new Date();
-  const birth = new Date(dob);
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  return age;
-}
-
-// True if `s` (a "YYYY-MM-DD" string) is a real calendar date — i.e. the day/
-// month didn't silently roll over. `new Date("2006-02-30")` yields Mar 2, so a
-// plausible-looking impossible date would otherwise pass. Rejects 2/30, 6/31, …
-function isRealCalendarDate(s) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s).trim());
-  if (!m) return false;
-  const y = +m[1], mo = +m[2], d = +m[3];
-  const dt = new Date(Date.UTC(y, mo - 1, d));
-  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
-}
-
-// Throws a 400 unless `dateOfBirth` is a real calendar date (no month/day
-// rollover) with a 4-digit year and an age of at least MIN_AGE. Keeps the signup
-// age gate next to the other validators rather than inline in the service.
-function validateDateOfBirth(dateOfBirth) {
-  if (!isRealCalendarDate(dateOfBirth))
-    throw httpError(400, 'Please enter a valid date of birth.');
-  const year = +String(dateOfBirth).slice(0, 4);
-  if (year < 1000 || year > 9999)
-    throw httpError(400, 'Please enter a valid 4-digit birth year.');
-  if (ageFromDob(dateOfBirth) < MIN_AGE)
-    throw httpError(400, `You must be at least ${MIN_AGE} years old.`);
-}
-
-// --- email verification code -------------------------------------------------
-// Mirrors the alphabet/length in utils/code.js. Kept as a literal here (rather
-// than importing code.js) so validate.js stays dependency-free. Accepts the code
-// after the caller has uppercased it.
-const VERIFICATION_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
-
-// Throws a 400 unless `code` is a well-formed 6-char verification code. The
-// service uppercases before calling, so input casing doesn't matter to the user.
-function validateVerificationCode(code) {
-  if (typeof code !== 'string' || !VERIFICATION_CODE_RE.test(code))
-    throw httpError(400, 'Enter the 6-character code from your email.');
-}
-
-// --- geographic coordinate validation ---------------------------------------
-// Shared by the marker (saved [lat,lng] arrays) and location (tracked point
-// objects) write paths so coordinate sanity lives in one place.
-const MAX_POINTS = 50000; // hard cap on a saved marker array (the 100kb body limit caps lower)
-
-function inRange(lat, lng) {
-  return Number.isFinite(lat) && Number.isFinite(lng) &&
-    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-}
-
-// Throws 400 unless `pair` is a finite, in-range [lat, lng] tuple.
-function validateCoordPair(pair) {
-  if (!Array.isArray(pair) || pair.length < 2 || !inRange(pair[0], pair[1]))
-    throw httpError(400, 'Each marker must be a valid [lat, lng] coordinate.');
-}
-
-// Validates a marker array ([[lat,lng], ...]): an array within the count cap of
-// finite, in-range pairs. Returns the array for convenient chaining.
-function validatePoints(points, { max = MAX_POINTS } = {}) {
-  if (!Array.isArray(points)) throw httpError(400, 'points must be an array.');
-  if (points.length > max) throw httpError(400, `Too many points (max ${max}).`);
-  points.forEach(validateCoordPair);
-  return points;
-}
-
-// True if a tracked-location object has finite, in-range coordinates. Returns a
-// boolean (not a throw) so the batch ingest can drop bad points individually.
-function isValidLocationPoint(p) {
-  return !!p && inRange(p.lat, p.lng);
-}
-
-// Password policy — mirrors the rules enforced in the Signup UI so the API
-// can't be used to bypass them.
-const SPECIAL_RE = /[~`!@#$%^&*()\-_+=[\]{}|\\;:"<>,.\/?]/;
-
-function checkPassword(password) {
-  if (typeof password !== 'string')
-    throw httpError(400, 'Password is required.');
-  if (password.length < 12)
-    throw httpError(400, 'Password must be at least 12 characters.');
-  if (!/[A-Z]/.test(password))
-    throw httpError(400, 'Password must contain an uppercase letter.');
-  if (!/[a-z]/.test(password))
-    throw httpError(400, 'Password must contain a lowercase letter.');
-  if (!/[0-9]/.test(password))
-    throw httpError(400, 'Password must contain a number.');
-  // Special character required, but not as the first or last character.
-  if (!SPECIAL_RE.test(password.slice(1, -1)))
-    throw httpError(400, 'Password must contain a special character (not at the start or end).');
-}
-
-// Full validation of a password input: presence, the max-length cap (LIMITS,
-// which checkPassword doesn't enforce), then the strength policy. One entry point
-// so signup and password reset validate identically.
-function validatePassword(password) {
-  checkRequired('Password', password);
-  checkLength('password', password);
-  checkPassword(password);
-}
-
 module.exports = {
-  LIMITS, checkLength, checkNoSpaces, checkNameChars, checkEmail, checkPassword, validatePassword,
+  LIMITS, checkLength, checkNoSpaces, checkNameChars, checkEmail,
   checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
-  COOLDOWN_DAYS, daysUntil, NAME_RE, NAME_SPACES_RE, USERNAME_RE,
-  validateDateOfBirth, validateVerificationCode,
-  validatePoints, validateCoordPair, isValidLocationPoint, MAX_POINTS,
+  NAME_RE, NAME_SPACES_RE, USERNAME_RE,
 };

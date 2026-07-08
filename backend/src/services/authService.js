@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Waitlist = require('../models/Waitlist');
-const { checkLength, checkRequired, validatePassword, normalizeEmail } = require('../utils/validate');
+const { checkLength, checkRequired, normalizeEmail } = require('../utils/validate');
+const { validatePassword } = require('../utils/validatePassword');
 const httpError = require('../utils/httpError');
 const { toAuthResult } = require('./userSerializers');
 const { assertEmailVerified, consumeVerification } = require('./verificationService');

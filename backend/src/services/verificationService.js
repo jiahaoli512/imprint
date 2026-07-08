@@ -3,7 +3,8 @@ const EmailVerification = require('../models/EmailVerification');
 const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const httpError = require('../utils/httpError');
-const { normalizeEmail, checkRequired, validateVerificationCode } = require('../utils/validate');
+const { normalizeEmail, checkRequired } = require('../utils/validate');
+const { validateVerificationCode } = require('../utils/validateCode');
 const { generateCode } = require('../utils/code');
 const { sendVerificationEmail } = require('../utils/email');
 
