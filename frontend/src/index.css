@@ -888,7 +888,14 @@ footer {
    fully-visible rows' labels stay crisp — and hides once you reach the end. Both
    overlays anchor to .badge-page-grid-wrap (the active page's grid only; a
    non-active/clone page doesn't render them). */
-.badge-page-grid-wrap { position: relative; min-height: 0; }
+/* Push the grid box to the BOTTOM of the (stretched) page. Every page is
+   stretched to Passports' height (the tallest category — see .badge-track), and
+   the grid box is a fixed height, so bottom-aligning it means every category's
+   badges land at the exact same Y as Passports' badges. For a shorter category
+   the leftover space becomes a gap above the grid; the header/filters stay put
+   at the top. Passports itself has no leftover, so margin-top:auto resolves to 0
+   and it's unchanged. */
+.badge-page-grid-wrap { position: relative; min-height: 0; margin-top: auto; }
 .badge-scroll-hint {
   position: absolute;
   left: 0;
@@ -979,39 +986,20 @@ footer {
      short category's grid is instead solved without reintroducing that. */
 }
 .badge-page-grid {
-  /* flex-basis (not a plain height) is the target size for Passports — the
-     tallest category, and the one that therefore defines the page's overall
-     stretched height (see .badge-track). flex-grow:1 then lets every OTHER
-     category's grid consume whatever extra room its shorter header leaves
-     within that same stretched page height, growing past this basis to fill
-     all the way down to Passports' own bottom edge — instead of stopping at a
-     flat cap and leaving a bare gap underneath. The header/filters above stay
-     exactly where they were; only the grid's own size adapts. Explicit px (not
-     `auto`) keeps this deterministic across browsers — an `auto` basis here is
-     what caused the "more below" hint to misbehave on web for the largest
-     categories previously. */
-  flex: 1 1 400px;
-  min-height: 0; /* let it actually scroll instead of growing to fit all content */
+  /* A fixed-height box (~2 rows) with the rest scrolling internally — the source
+     of the "more below" blur + down-arrow. Note the grid's parent
+     (.badge-page-grid-wrap) is NOT a flex container, so this must be a real
+     `height`, not a flex-basis (which would be ignored, collapsing the box to
+     its content and losing the scroll cap). */
+  height: 400px;
   overflow-y: auto;
   overscroll-behavior: contain; /* don't chain scroll to the locked page (see Modal.jsx) */
-  display: flex;
-  flex-direction: column;
   scrollbar-width: thin;
   scrollbar-color: var(--muted) transparent;
 }
 .badge-page-grid::-webkit-scrollbar { width: 8px; }
 .badge-page-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .badge-page-grid::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-/* Centers a short category's badges (or its "no badges"/"no matches" message)
-   vertically within the fixed-height box above via the auto-margin trick,
-   rather than `align-items: center` on the flex column — that combination with
-   `overflow: auto` clips and strands the top of any content that DOES overflow
-   the box (scrolling can't reach a negative offset), which the tall categories
-   (Passports, US States) need to do routinely. Auto margins center only when
-   there's room to spare and fall back to normal top-aligned flow (0 margin) the
-   moment content is taller than the box, so scrolling stays unaffected. */
-.badge-page-grid > .badge-grid,
-.badge-page-grid > .badge-empty { margin: auto 0; }
 
 /* Shown when a category has no badges yet (e.g. Passports). Min-height keeps the
    modal from collapsing/jumping when paging to an empty category. */
@@ -1160,7 +1148,7 @@ footer {
   .badge-grid { gap: 8px; }
   .badge-card { width: 96px; gap: 8px; padding: 4px; }
   .badge-medallion { width: 92px; height: 92px; margin-bottom: 15px; }
-  .badge-page-grid { flex-basis: 330px; } /* ~2 rows of the smaller mobile cards */
+  .badge-page-grid { height: 330px; } /* ~2 rows of the smaller mobile cards */
   .badge-halo { inset: -10px; }
   .badge-ring { padding: 2px; }
   .badge-disc { width: 82px; height: 82px; box-shadow: inset 0 0 0 1px rgba(244,239,230,0.06), inset 0 2px 10px rgba(0,0,0,0.5), 0 8px 22px rgba(0,0,0,0.5); }
