@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import Badge from './Badge';
+import { getScrollEdges } from '../../utils/scrollEdges';
 
 const FILTERABLE_MIN = 12; // show search + continent filter past this many badges
 const isNative = Capacitor.isNativePlatform();
@@ -13,14 +14,15 @@ const isNative = Capacitor.isNativePlatform();
 // rather than exposing the DOM node for a parent to manage; `active` is the only
 // thing the carousel needs to tell it.
 //
-// `query`/`status`/`selected` are the shared filter state (lifted to the parent
-// so it can reset on navigation); only the active page applies them for real —
-// every other page (a clone, or a neighbour glimpsed mid-swipe) shows its own
-// unfiltered badges with controls at their reset defaults, since a page always
-// opens fresh once it becomes active.
+// `filters` is the shared filter state (lifted to the parent so it can reset on
+// navigation) and `filterActions` its handlers — bundled as two collaborators
+// rather than seven flat props so this signature doesn't have to change if a
+// future filter dimension (e.g. a sort order) is added. Only the active page
+// applies `filters` for real — every other page (a clone, or a neighbour
+// glimpsed mid-swipe) shows its own unfiltered badges with controls at their
+// reset defaults, since a page always opens fresh once it becomes active.
 export default function BadgePage({
-  category, ctx, active, showArrows, onPrev, onNext,
-  query, status, selected, onQueryChange, onStatusChange, onSelectAllContinents, onToggleContinent,
+  category, ctx, active, showArrows, onPrev, onNext, filters, filterActions,
 }) {
   const gridRef = useRef(null);
   const [showTop, setShowTop] = useState(false); // scroll-to-top affordance
@@ -32,9 +34,9 @@ export default function BadgePage({
   const filterable = category.badgeCount > FILTERABLE_MIN;
   const continents = category.continents;
 
-  const q = active ? query : '';
-  const sel = active ? selected : [];
-  const st = active ? status : 'all';
+  const q = active ? filters.query : '';
+  const sel = active ? filters.selected : [];
+  const st = active ? filters.status : 'all';
   const statusOk = (b) => st === 'all' || (st === 'unlocked' ? b.earned : !b.earned);
   const vis = active
     ? badges.filter((b) =>
@@ -60,8 +62,7 @@ export default function BadgePage({
     el.scrollTop = 0; // each category opens at the top of its own list
     const update = () => {
       setShowTop(el.scrollTop > 240);
-      const canScroll = el.scrollHeight - el.clientHeight > 4;
-      const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+      const { canScroll, atEnd } = getScrollEdges(el);
       setShowHint(canScroll && !atEnd);
     };
     update();
@@ -69,7 +70,7 @@ export default function BadgePage({
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
-  }, [active, query, status, selected]);
+  }, [active, filters.query, filters.status, filters.selected]);
 
   const scrollToTop = () => gridRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -106,7 +107,7 @@ export default function BadgePage({
               <input
                 className="badge-search"
                 value={q}
-                onChange={(e) => onQueryChange(e.target.value)}
+                onChange={(e) => filterActions.onQueryChange(e.target.value)}
                 placeholder={`Search ${category.title.toLowerCase()}…`}
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -120,7 +121,7 @@ export default function BadgePage({
                 <button
                   key={val}
                   className={`badge-chip ${st === val ? 'is-active' : ''}`}
-                  onClick={() => onStatusChange(val)}
+                  onClick={() => filterActions.onStatusChange(val)}
                 >
                   {label}
                 </button>
@@ -132,7 +133,7 @@ export default function BadgePage({
               <div className="badge-chips">
                 <button
                   className={`badge-chip ${sel.length === 0 ? 'is-active' : ''}`}
-                  onClick={onSelectAllContinents}
+                  onClick={filterActions.onSelectAllContinents}
                 >
                   All
                 </button>
@@ -140,7 +141,7 @@ export default function BadgePage({
                   <button
                     key={c}
                     className={`badge-chip ${sel.includes(c) ? 'is-active' : ''}`}
-                    onClick={() => onToggleContinent(c)}
+                    onClick={() => filterActions.onToggleContinent(c)}
                   >
                     {c}
                   </button>

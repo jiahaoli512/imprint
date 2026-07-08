@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { getScrollEdges } from '../utils/scrollEdges';
 
 // Wraps a scrollable element (the child gets `className`, so it owns the
 // max-height + overflow) and overlays a bottom fade + a nudging chevron so it's
@@ -13,9 +14,8 @@ export default function ScrollHint({ className = '', wrapClassName = '', childre
     const el = ref.current;
     if (!el) return undefined;
     const update = () => {
-      const scrollable = el.scrollHeight - el.clientHeight > 4;
-      const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
-      setShow(scrollable && !atEnd);
+      const { canScroll, atEnd } = getScrollEdges(el);
+      setShow(canScroll && !atEnd);
     };
     update();
     el.addEventListener('scroll', update, { passive: true });

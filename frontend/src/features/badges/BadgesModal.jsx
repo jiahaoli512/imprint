@@ -66,6 +66,16 @@ export default function BadgesModal({ user, markers, onClose }) {
     });
   };
 
+  // Bundled into two collaborators (state + actions) rather than passed to
+  // BadgePage as flat props — see BadgePage.jsx for why.
+  const filters = { query, status, selected };
+  const filterActions = {
+    onQueryChange: setQuery,
+    onStatusChange: setStatus,
+    onSelectAllContinents: () => setSelected([]),
+    onToggleContinent: toggleContinent,
+  };
+
   return (
     <Modal onClose={onClose} icon={false} closable className="modal-badges">
       <div className="badge-carousel" ref={viewportRef}>
@@ -84,13 +94,8 @@ export default function BadgesModal({ user, markers, onClose }) {
                 showArrows={count > 1}
                 onPrev={() => go(-1)}
                 onNext={() => go(1)}
-                query={query}
-                status={status}
-                selected={selected}
-                onQueryChange={setQuery}
-                onStatusChange={setStatus}
-                onSelectAllContinents={() => setSelected([])}
-                onToggleContinent={toggleContinent}
+                filters={filters}
+                filterActions={filterActions}
               />
             </div>
           ))}
