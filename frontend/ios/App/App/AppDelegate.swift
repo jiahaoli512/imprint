@@ -9,10 +9,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private var scrollObservation: NSKeyValueObservation?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        enableWebInspector()
         return true
     }
 
+    // Since iOS 16.4, WKWebView.isInspectable defaults to false for every build
+    // (debug included) — Safari's Web Inspector shows the device but "No
+    // inspectable contents" until this is explicitly opted in. Set it as early
+    // as possible (launch, not 0.5s after the app is already active and the
+    // WebView has already loaded) via CAPBridgeViewController's own typed
+    // `.webView` property — the storyboard's root view controller is Capacitor's
+    // CAPBridgeViewController, so this is a direct, reliable reference, unlike
+    // the recursive subview search setupScrollObserver below uses for its own
+    // (unrelated) purpose. Debug-only so a release build never exposes this.
+    // Accessing `.view` forces the view (and so the WebView) to load if it
+    // hasn't already, so this doesn't depend on view-loading timing either.
+    private func enableWebInspector() {
+        #if DEBUG
+        if #available(iOS 16.4, *),
+           let bridgeVC = window?.rootViewController as? CAPBridgeViewController {
+            _ = bridgeVC.view
+            bridgeVC.webView?.isInspectable = true
+        }
+        #endif
+    }
+
     func applicationDidBecomeActive(_ application: UIApplication) {
+        enableWebInspector()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.setupScrollObserver()
         }
@@ -21,16 +44,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private func setupScrollObserver() {
         guard let rootView = self.window?.rootViewController?.view,
               let webView = findWKWebView(in: rootView) else { return }
-
-        // Since iOS 16.4, WKWebView.isInspectable defaults to false for every
-        // build (debug included) — Safari's Web Inspector shows the device but
-        // "No inspectable contents" until this is explicitly opted in. Debug-only
-        // so a release build never exposes this.
-        #if DEBUG
-        if #available(iOS 16.4, *) {
-            webView.isInspectable = true
-        }
-        #endif
 
         let appBg = UIColor(red: 8/255, green: 12/255, blue: 20/255, alpha: 1)
         webView.backgroundColor = appBg
@@ -60,6 +73,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillResignActive(_ application: UIApplication) {}
     func applicationDidEnterBackground(_ application: UIApplication) {}
     func applicationWillEnterForeground(_ application: UIApplication) {
+        enableWebInspector()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.setupScrollObserver()
         }
