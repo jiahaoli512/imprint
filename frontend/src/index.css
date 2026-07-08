@@ -888,14 +888,16 @@ footer {
    fully-visible rows' labels stay crisp — and hides once you reach the end. Both
    overlays anchor to .badge-page-grid-wrap (the active page's grid only; a
    non-active/clone page doesn't render them). */
-/* Push the grid box to the BOTTOM of the (stretched) page. Every page is
-   stretched to Passports' height (the tallest category — see .badge-track), and
-   the grid box is a fixed height, so bottom-aligning it means every category's
-   badges land at the exact same Y as Passports' badges. For a shorter category
-   the leftover space becomes a gap above the grid; the header/filters stay put
-   at the top. Passports itself has no leftover, so margin-top:auto resolves to 0
-   and it's unchanged. */
-.badge-page-grid-wrap { position: relative; min-height: 0; margin-top: auto; }
+/* Push the filters + grid block to the BOTTOM of the (stretched) page. Every
+   page is stretched to Passports' height (the tallest category — see
+   .badge-track), and the grid box is a fixed height, so bottom-aligning the
+   block means every category's badges land at the same Y as Passports' badges
+   AND the filters sit directly above them (like Passports) rather than up under
+   the header. For a shorter category the leftover space becomes a gap between
+   the header (which stays put at the top) and this block; Passports has no
+   leftover so margin-top:auto resolves to 0 and it's unchanged. */
+.badge-page-body { display: flex; flex-direction: column; margin-top: auto; min-height: 0; }
+.badge-page-grid-wrap { position: relative; min-height: 0; }
 .badge-scroll-hint {
   position: absolute;
   left: 0;

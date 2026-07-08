@@ -152,76 +152,86 @@ export default function BadgesModal({ user, markers, onClose }) {
           )}
         </div>
 
-        {badges.length > 0 && (
-          <div className="badge-filters">
-            {filterable && (
-              <input
-                className="badge-search"
-                value={q}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={`Search ${cat.title.toLowerCase()}…`}
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                style={isNative ? { fontSize: '16px' } : undefined}
-              />
-            )}
-            {/* Lock status — shown for every category. */}
-            <div className="badge-chips">
-              {[['all', 'All'], ['unlocked', 'Unlocked'], ['locked', 'Locked']].map(([val, label]) => (
-                <button
-                  key={val}
-                  className={`badge-chip ${st === val ? 'is-active' : ''}`}
-                  onClick={() => setStatus(val)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {/* Region filter — only when the category's badges carry continents
-                (Passports). Categories without them (e.g. US states) skip it. */}
-            {continents.length > 0 && (
+        {/* Filters + grid share a bottom-aligned block so the filters sit right
+            above the badges (like Passports) rather than up under the header —
+            the leftover space for a shorter category becomes a gap between the
+            header (which stays put) and this block. */}
+        <div className="badge-page-body">
+          {badges.length > 0 && (
+            <div className="badge-filters">
+              {filterable && (
+                <input
+                  className="badge-search"
+                  value={q}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={`Search ${cat.title.toLowerCase()}…`}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  style={isNative ? { fontSize: '16px' } : undefined}
+                />
+              )}
+              {/* Lock status — shown for every category. */}
               <div className="badge-chips">
-                <button
-                  className={`badge-chip ${sel.length === 0 ? 'is-active' : ''}`}
-                  onClick={() => setSelected([])}
-                >
-                  All
-                </button>
-                {continents.map((c) => (
+                {[['all', 'All'], ['unlocked', 'Unlocked'], ['locked', 'Locked']].map(([val, label]) => (
                   <button
-                    key={c}
-                    className={`badge-chip ${sel.includes(c) ? 'is-active' : ''}`}
-                    onClick={() => toggleContinent(c, continents)}
+                    key={val}
+                    className={`badge-chip ${st === val ? 'is-active' : ''}`}
+                    onClick={() => setStatus(val)}
                   >
-                    {c}
+                    {label}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-
-        <div className="badge-page-grid-wrap">
-          <div className="badge-page-grid" ref={(el) => { gridRefs.current[i] = el; }}>
-            {badges.length === 0 ? (
-              <div className="badge-empty">No badges in this category yet — coming soon.</div>
-            ) : vis.length > 0 ? (
-              <div className="badge-grid">{vis.map((b) => <Badge key={b.key} badge={b} />)}</div>
-            ) : (
-              <div className="badge-empty">No matches.</div>
-            )}
-          </div>
-          {active && showTop && (
-            <button className="icon-btn badge-scrolltop" onClick={scrollToTop} aria-label="Scroll to top">
-              <ChevronUp size={20} />
-            </button>
-          )}
-          {active && (
-            <div className={`badge-scroll-hint${showHint ? '' : ' badge-scroll-hint-hidden'}`} aria-hidden="true">
-              <ChevronDown size={20} />
+              {/* Region filter — only when the category's badges carry continents
+                  (Passports). Categories without them (e.g. US states) skip it. */}
+              {continents.length > 0 && (
+                <div className="badge-chips">
+                  <button
+                    className={`badge-chip ${sel.length === 0 ? 'is-active' : ''}`}
+                    onClick={() => setSelected([])}
+                  >
+                    All
+                  </button>
+                  {continents.map((c) => (
+                    <button
+                      key={c}
+                      className={`badge-chip ${sel.includes(c) ? 'is-active' : ''}`}
+                      onClick={() => toggleContinent(c, continents)}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
+
+          <div className="badge-page-grid-wrap">
+            <div className="badge-page-grid" ref={(el) => { gridRefs.current[i] = el; }}>
+              {badges.length === 0 ? (
+                <div className="badge-empty">No badges in this category yet — coming soon.</div>
+              ) : vis.length > 0 ? (
+                <div className="badge-grid">{vis.map((b) => <Badge key={b.key} badge={b} />)}</div>
+              ) : (
+                <div className="badge-empty">No matches.</div>
+              )}
+            </div>
+            {active && showTop && (
+              <button className="icon-btn badge-scrolltop" onClick={scrollToTop} aria-label="Scroll to top">
+                <ChevronUp size={20} />
+              </button>
+            )}
+            {/* Rendered on EVERY page (not just the active one) so the bottom fade
+                is already present on the incoming page mid-swipe, masking its
+                peeking rows instead of popping in once the page becomes active.
+                The active page still hides it at the end of its scroll (showHint);
+                non-active pages always show it (they're reset to the top, and over
+                a short category's empty box it fades surface→surface = invisible). */}
+            <div className={`badge-scroll-hint${(active ? showHint : true) ? '' : ' badge-scroll-hint-hidden'}`} aria-hidden="true">
+              <ChevronDown size={20} />
+            </div>
+          </div>
         </div>
       </>
     );
