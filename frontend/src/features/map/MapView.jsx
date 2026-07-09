@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
@@ -21,6 +21,14 @@ const SCREEN_CELL_PX = 14;
 const DOT_RADIUS = 5;
 const DOT_WEIGHT = 1;
 const DOT_BORDER = '#0b0e13';
+// Pins revealed per animation frame during a full rebuild (mount / quality
+// switch / a bulk marker-set change — e.g. admin switching users). Matches the
+// low/medium/high cap: benchmarked ~11ms to mount 500 DOM pins, comfortably
+// under one 60fps frame. Below this chunk size a rebuild never spans a frame
+// boundary, so low/medium/high (cap 500) always reveal in one shot; only
+// ultra (2000) and max (4000) actually ramp, in ~4/~8 frames instead of one
+// ~76ms/~250ms blocking task.
+const REVEAL_CHUNK = 500;
 
 // Renders the trail pins, thinned per the active quality `cfg`:
 //   cfg.cull → only markers in the padded viewport
@@ -92,8 +100,64 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
     // the map's live bounds/zoom after a move or zoom.
   }, [markers, version, map, cfg]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reveal large marker sets over a few animation frames instead of mounting
+  // them all in one blocking task. A *full* rebuild (as opposed to React just
+  // diffing in one appended marker — cheap already, since `indices` keeps
+  // stable original-index keys) only happens on mount, a quality-tier switch,
+  // or a bulk marker-set swap (e.g. admin switching to a different user's
+  // map) — so the ramp is keyed on `cfg`/bulk-`markers`-jumps, NOT on every
+  // `indices` recompute, or an ordinary appended point mid-ramp would restart
+  // it and stall the reveal.
+  const [revealTo, setRevealTo] = useState(Infinity);
+  // Sentinels (not the real initial cfg/length) so the very first render also
+  // counts as a "change" and gets ramped — e.g. a returning user whose saved
+  // quality is already ultra/max loading straight into a large map, which is
+  // exactly the unchunked-rebuild case this is meant to fix.
+  const [prevCfg, setPrevCfg] = useState(null);
+  const [prevMarkersLen, setPrevMarkersLen] = useState(-1);
+  // Reset the ramp target during render (React's documented pattern for
+  // resetting state in response to a prop change — refs can't be read during
+  // render, so the "previous value" trackers are state too) rather than in an
+  // effect: an effect that calls setState synchronously in its body just
+  // forces an extra cascading render for no benefit here.
+  const tierChanged = prevCfg !== cfg;
+  const bulkJump = Math.abs(markers.length - prevMarkersLen) > REVEAL_CHUNK;
+  if (tierChanged || bulkJump) {
+    setPrevCfg(cfg);
+    setPrevMarkersLen(markers.length);
+    const target = indices.length <= REVEAL_CHUNK ? Infinity : REVEAL_CHUNK;
+    if (revealTo !== target) setRevealTo(target);
+  }
+  // The actual ramp: an effect that subscribes to `revealTo` and advances it
+  // one chunk per animation frame — the setState here happens inside the rAF
+  // callback (an external-system event), not synchronously in the effect body.
+  useEffect(() => {
+    if (revealTo === Infinity || revealTo >= indices.length) return;
+    const raf = requestAnimationFrame(() => {
+      setRevealTo((n) => {
+        const next = n + REVEAL_CHUNK;
+        return next < indices.length ? next : Infinity;
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [revealTo, indices.length]);
+  const visibleIndices = revealTo === Infinity || indices.length <= revealTo ? indices : indices.slice(0, revealTo);
+
+  // Stable per-index click handlers so edit-mode markers don't get their
+  // native listeners torn down and reattached (react-leaflet's useEventHandlers
+  // effect keys off object identity) on every unrelated re-render — e.g.
+  // tweaking Point color/opacity while editing, which re-renders this
+  // component but doesn't change who should be removable. Built once per
+  // `indices`/`onRemove` change (the same trigger as a real marker rebuild),
+  // not on every render.
+  const handlersByIndex = useMemo(() => {
+    const map = new Map();
+    for (const i of indices) map.set(i, { click(e) { L.DomEvent.stopPropagation(e); onRemove(i); } });
+    return map;
+  }, [indices, onRemove]);
+
   if (cfg.marker === 'circle') {
-    return indices.map((i) => (
+    return visibleIndices.map((i) => (
       <CircleMarker
         key={i}
         center={markers[i]}
@@ -103,22 +167,18 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
           fillColor: editing ? MARKER_EDIT_COLOR : markerColor,
           fillOpacity: editing ? 1 : opacity, opacity: editing ? 1 : opacity,
         }}
-        eventHandlers={editing ? {
-          click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
-        } : undefined}
+        eventHandlers={editing ? handlersByIndex.get(i) : undefined}
       />
     ));
   }
 
-  return indices.map((i) => (
+  return visibleIndices.map((i) => (
     <Marker
       key={i}
       position={markers[i]}
       icon={editing ? pinIconEdit : iconFor(markerColor)}
       opacity={editing ? 1 : opacity}
-      eventHandlers={editing ? {
-        click(e) { L.DomEvent.stopPropagation(e); onRemove(i); },
-      } : undefined}
+      eventHandlers={editing ? handlersByIndex.get(i) : undefined}
     />
   ));
 }
