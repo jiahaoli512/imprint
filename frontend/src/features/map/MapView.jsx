@@ -11,13 +11,6 @@ import { useMarkerColor } from './markerColor';
 import { usePointOpacity, opacityFromPercent } from './pointOpacity';
 import { usePointShape } from './pointShape';
 
-// Most DOM pins we'll ever mount at once — a safety ceiling on top of the
-// screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
-// canvas vectors, which scale + snap), but rebuilding the DOM layer is the map's
-// costliest per-pan work and it grows super-linearly: benchmarked ~11ms to
-// (re)mount 500 pins vs ~27ms for 1000 (and ~76ms for 2000). 500 stays under one
-// 60fps frame while the screen-cell dedup makes the visual difference marginal.
-const MAX_RENDERED_PINS = 500;
 // Fraction to grow the viewport when culling, so a small pan doesn't reveal an
 // edge with no pins before the next recompute.
 const VIEWPORT_PAD = 0.25;
@@ -32,7 +25,7 @@ const DOT_BORDER = '#0b0e13';
 // Renders the trail pins, thinned per the active quality `cfg`:
 //   cfg.cull → only markers in the padded viewport
 //   cfg.grid → one pin per SCREEN_CELL_PX screen cell (overlapping points → one)
-//   cfg.cap  → stride down to MAX_RENDERED_PINS as a backstop
+//   cfg.cap  → stride down to at most cfg.cap pins as a backstop
 //   cfg.marker 'dom' → constant-size pin icons; 'circle' → canvas CircleMarkers
 // Lives inside MapContainer so it can project lat/lng to screen pixels.
 function MarkerLayer({ markers, editing, onRemove, cfg }) {
@@ -89,9 +82,8 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
       }
       kept.push(i);
     }
-    if (!cfg.cap) return kept;
     // Backstop: if a fully-explored area still fills the view, stride to the cap.
-    const stride = Math.max(1, Math.ceil(kept.length / MAX_RENDERED_PINS));
+    const stride = Math.max(1, Math.ceil(kept.length / cfg.cap));
     if (stride === 1) return kept;
     const thinned = [];
     for (let k = 0; k < kept.length; k += stride) thinned.push(kept[k]);
