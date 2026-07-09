@@ -17,12 +17,24 @@ import { getStoredMapQuality, setStoredMapQuality } from '../../api/client';
 // smoothness for coverage but stay bounded, so a heavily-tracked map can never
 // mount tens of thousands of nodes and freeze the tab (what an uncapped 'max'
 // did). Nothing is ever uncapped.
+//
+// cull is on for every DOM/circle tier (including ultra/max): with it off, the
+// cap's stride sample was computed over the ENTIRE marker set regardless of
+// what's on screen, so zooming in cropped onto a fixed global sample instead of
+// showing everything nearby — the cap never "let go" as you zoomed in, unlike
+// low/medium/high. With cull on, the viewport-filtered set naturally shrinks
+// below the cap once you're zoomed in enough, so every tier converges to 100%
+// completeness at high zoom, same as the base tiers. The cost (recomputing on
+// a real pan, not just a swap-in-place append) is spread across frames by
+// MarkerLayer's reveal ramp, keyed generically on the mounted-count jumping by
+// more than a chunk — covering a tier switch, a bulk marker swap, AND now a
+// pan into/out of a denser area — not on any specific cause.
 export const QUALITY = {
-  low:    { marker: 'circle', cap: 500,  cull: true,  grid: true },
-  medium: { marker: 'dom',    cap: 500,  cull: true,  grid: true },
-  high:   { marker: 'dom',    cap: 500,  cull: true,  grid: false },
-  ultra:  { marker: 'dom',    cap: 2000, cull: false, grid: false },
-  max:    { marker: 'dom',    cap: 4000, cull: false, grid: false },
+  low:    { marker: 'circle', cap: 500,  cull: true, grid: true },
+  medium: { marker: 'dom',    cap: 500,  cull: true, grid: true },
+  high:   { marker: 'dom',    cap: 500,  cull: true, grid: false },
+  ultra:  { marker: 'dom',    cap: 2000, cull: true, grid: false },
+  max:    { marker: 'dom',    cap: 4000, cull: true, grid: false },
 };
 
 // Order shown in the picker (ascending fidelity) and human labels.

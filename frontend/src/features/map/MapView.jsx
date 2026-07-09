@@ -101,47 +101,36 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
   }, [markers, version, map, cfg]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reveal large marker sets over a few animation frames instead of mounting
-  // them all in one blocking task. A *full* rebuild (as opposed to React just
-  // diffing in one appended marker — cheap already, since `indices` keeps
-  // stable original-index keys) only happens on mount, a quality-tier switch,
-  // or a bulk marker-set swap (e.g. admin switching to a different user's
-  // map) — so the ramp is keyed on `cfg`/bulk-`markers`-jumps, NOT on every
-  // `indices` recompute, or an ordinary appended point mid-ramp would restart
-  // it and stall the reveal.
-  const [revealTo, setRevealTo] = useState(Infinity);
-  // Sentinels (not the real initial cfg/length) so the very first render also
-  // counts as a "change" and gets ramped — e.g. a returning user whose saved
-  // quality is already ultra/max loading straight into a large map, which is
-  // exactly the unchunked-rebuild case this is meant to fix.
-  const [prevCfg, setPrevCfg] = useState(null);
-  const [prevMarkersLen, setPrevMarkersLen] = useState(-1);
-  // Reset the ramp target during render (React's documented pattern for
-  // resetting state in response to a prop change — refs can't be read during
-  // render, so the "previous value" trackers are state too) rather than in an
-  // effect: an effect that calls setState synchronously in its body just
-  // forces an extra cascading render for no benefit here.
-  const tierChanged = prevCfg !== cfg;
-  const bulkJump = Math.abs(markers.length - prevMarkersLen) > REVEAL_CHUNK;
-  if (tierChanged || bulkJump) {
-    setPrevCfg(cfg);
-    setPrevMarkersLen(markers.length);
-    const target = indices.length <= REVEAL_CHUNK ? Infinity : REVEAL_CHUNK;
-    if (revealTo !== target) setRevealTo(target);
+  // them all in one blocking task. Rather than special-casing WHY `indices`
+  // changed (mount, tier switch, bulk marker-set swap, or — now that cull is
+  // on for every DOM tier — panning into a denser area), key the ramp purely
+  // on how much the target grew: a jump of more than one chunk ramps up from
+  // wherever we already are (never re-hiding markers already shown); anything
+  // else (a shrink, e.g. panning to a sparser area, or an ordinary small
+  // append) applies immediately, since removing markers — or diffing in one
+  // more via `indices`'s stable original-index keys — is cheap regardless.
+  const [revealCount, setRevealCount] = useState(0);
+  const [lastTarget, setLastTarget] = useState(-1); // sentinel: first render always "changes"
+  // Adjust state during render (React's documented pattern for resetting
+  // state in response to a prop change) rather than in an effect — an effect
+  // that calls setState synchronously in its body just forces an extra
+  // cascading render for no benefit here.
+  if (indices.length !== lastTarget) {
+    const grew = indices.length - lastTarget > REVEAL_CHUNK;
+    setLastTarget(indices.length);
+    setRevealCount(grew ? Math.min(indices.length, Math.max(revealCount, REVEAL_CHUNK)) : indices.length);
   }
-  // The actual ramp: an effect that subscribes to `revealTo` and advances it
+  // The actual ramp: an effect that subscribes to `revealCount` and advances it
   // one chunk per animation frame — the setState here happens inside the rAF
   // callback (an external-system event), not synchronously in the effect body.
   useEffect(() => {
-    if (revealTo === Infinity || revealTo >= indices.length) return;
+    if (revealCount >= indices.length) return;
     const raf = requestAnimationFrame(() => {
-      setRevealTo((n) => {
-        const next = n + REVEAL_CHUNK;
-        return next < indices.length ? next : Infinity;
-      });
+      setRevealCount((c) => Math.min(indices.length, c + REVEAL_CHUNK));
     });
     return () => cancelAnimationFrame(raf);
-  }, [revealTo, indices.length]);
-  const visibleIndices = revealTo === Infinity || indices.length <= revealTo ? indices : indices.slice(0, revealTo);
+  }, [revealCount, indices.length]);
+  const visibleIndices = indices.length <= revealCount ? indices : indices.slice(0, revealCount);
 
   // Stable per-index click handlers so edit-mode markers don't get their
   // native listeners torn down and reattached (react-leaflet's useEventHandlers
