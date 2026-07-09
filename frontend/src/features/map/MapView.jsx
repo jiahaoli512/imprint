@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
@@ -13,8 +13,11 @@ import { usePointShape } from './pointShape';
 
 // Most DOM pins we'll ever mount at once — a safety ceiling on top of the
 // screen-grid dedup below. Constant-size marker icons zoom smoothly (unlike
-// canvas vectors, which scale + snap), but thousands of DOM nodes lag.
-const MAX_RENDERED_PINS = 1000;
+// canvas vectors, which scale + snap), but rebuilding the DOM layer is the map's
+// costliest per-pan work and it grows super-linearly: benchmarked ~11ms to
+// (re)mount 500 pins vs ~27ms for 1000 (and ~76ms for 2000). 500 stays under one
+// 60fps frame while the screen-cell dedup makes the visual difference marginal.
+const MAX_RENDERED_PINS = 500;
 // Fraction to grow the viewport when culling, so a small pan doesn't reveal an
 // edge with no pins before the next recompute.
 const VIEWPORT_PAD = 0.25;
@@ -40,9 +43,32 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
   const [pointShape] = usePointShape();
   const iconFor = pointShape === 'pin' ? makePinIcon : makeDotIcon;
   const [version, setVersion] = useState(0);
+  // The thinned set only changes when the view changes *enough* to alter culling
+  // or the screen-cell dedup — but rebuilding the DOM marker layer is the map's
+  // costliest per-interaction work (~27ms for 1000 pins vs ~0.1ms to let Leaflet
+  // just reposition the ones already mounted). So we don't recompute on every
+  // move: bump `version` only when the zoom changes or the center pans past half
+  // the padded margin, which is still well within the slack `VIEWPORT_PAD`
+  // already renders beyond the viewport (so no blank edge appears). Tiers that
+  // neither cull nor dedup (ultra/max) don't depend on the view, so they never
+  // re-bump after the first compute.
+  const reactsToView = cfg.cull || cfg.grid;
+  const lastView = useRef(null);
+  const maybeRecompute = () => {
+    if (!reactsToView) return;
+    const zoom = map.getZoom();
+    const c = map.project(map.getCenter(), zoom);
+    const size = map.getSize();
+    const threshold = Math.min(size.x, size.y) * VIEWPORT_PAD * 0.5;
+    const last = lastView.current;
+    if (!last || last.zoom !== zoom || Math.hypot(c.x - last.x, c.y - last.y) >= threshold) {
+      lastView.current = { zoom, x: c.x, y: c.y };
+      setVersion((v) => v + 1);
+    }
+  };
   useMapEvents({
-    moveend() { setVersion((v) => v + 1); },
-    zoomend() { setVersion((v) => v + 1); },
+    moveend() { maybeRecompute(); },
+    zoomend() { maybeRecompute(); },
   });
 
   // Original indices to mount (original index lets edit-mode removal target the
