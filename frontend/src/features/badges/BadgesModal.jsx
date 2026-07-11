@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
 import BadgePage from './BadgePage';
 import { BADGE_CATEGORIES } from './categories';
@@ -38,6 +38,12 @@ export default function BadgesModal({ user, markers, onClose }) {
   const [selected, setSelected] = useState([]); // selected continents; [] = All
   const [status, setStatus] = useState('all');  // all | unlocked | locked
   const [reduceMotion] = useReduceMotion();
+
+  // The country-flag coin (Badge.jsx's `fi fi-<code>`) needs flag-icons' CSS,
+  // which Vite bundles with every flag inlined as a data URI (~486kb) — too
+  // large to pay on every app load for a modal most sessions never open, so
+  // it's fetched here instead of imported globally in main.jsx.
+  useEffect(() => { import('flag-icons/css/flag-icons.min.css'); }, []);
 
   const { index, viewportRef, trackRef, slotCount, toSlot, goTo, step } =
     useSlideCarousel(count, { reduceMotion });
