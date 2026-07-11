@@ -1119,8 +1119,15 @@ footer {
   gap: 1px;
   box-shadow: inset 0 1px 1px rgba(255,255,255,0.28);
 }
-/* Flag coin (country badges): fill the round coin, covering the gradient. */
+/* Flag coin (country badges): fill the round coin, covering the gradient.
+   The compound `.fi` selector (flag-icons' own base class, which defaults to
+   width:1.333333em + background-size:contain) bumps specificity so this always
+   wins regardless of which stylesheet loads/reloads last — flag-icons' CSS is
+   now lazy-loaded when BadgesModal mounts (see BadgesModal.jsx), so it can land
+   in the cascade after index.css, and a plain `.badge-flag` rule of equal
+   specificity would lose that tie and shrink the flag to "contain" sizing. */
 .badge-flag { width: 100%; height: 100%; border-radius: 50%; background-size: cover; background-position: center; }
+.badge-flag.fi { width: 100%; background-size: cover; }
 .badge-coin-value { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1; color: var(--bg); }
 .badge-coin-unit { font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(11,14,19,0.72); }
 .badge-sparkle { position: absolute; top: 4px; right: 10px; width: 11px; height: 11px; }
