@@ -44,4 +44,9 @@ async function logLocations(userId, points) {
   return { inserted: docs.length, markersAdded };
 }
 
-module.exports = { logLocations };
+// Full raw location history, oldest first, for self-export.
+function getUserLocations(userId) {
+  return Location.find({ userId }).sort({ visitedAt: 1 }).lean();
+}
+
+module.exports = { logLocations, getUserLocations };

@@ -52,4 +52,34 @@ async function finishReset(email) {
   await consumeReset(email);
 }
 
-module.exports = { requestPasswordReset, verifyPasswordReset, resetPassword, finishReset };
+// Changes the password for an already-authenticated user, gated by re-entering the
+// current password (unlike resetPassword, which is gated by a verified email-code
+// challenge). Bumps tokenVersion like resetPassword does, so the response's fresh
+// token must be stored client-side or the caller gets logged out on its next request.
+// Deliberately never throws 401 here: the route is requireAuth-gated, so the
+// caller's Bearer token is already valid, and the frontend's request() helper
+// treats any 401 received alongside a token as "session expired" — clearing
+// the session and bouncing to /home. A wrong current password is a 400 (a bad
+// request body against a still-valid session), not an auth failure.
+async function changePassword(userId, currentPassword, newPassword) {
+  const user = await User.findById(userId).select('+passwordHash');
+  if (!user) throw httpError(400, 'Not authenticated.');
+  const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!ok) throw httpError(400, 'Current password is incorrect.');
+  validatePassword(newPassword);
+  user.passwordHash = await bcrypt.hash(newPassword, 12);
+  user.tokenVersion += 1;
+  await user.save();
+  return toAuthResult(user);
+}
+
+// Revokes every existing session (including the caller's) by bumping tokenVersion.
+// No fresh token is returned — this is a deliberate full sign-out, not a rotation.
+async function logoutAllDevices(userId) {
+  await User.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
+}
+
+module.exports = {
+  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset,
+  changePassword, logoutAllDevices,
+};

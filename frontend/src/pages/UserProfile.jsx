@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { User, Pencil, X, Check, Award } from 'lucide-react';
 import Modal from '../components/Modal';
@@ -35,6 +35,24 @@ export default function UserProfile() {
 
   // All edit-flow state/logic lives in the hook; this page just renders it.
   const edit = useProfileEdit({ user, setUser, username, isAdminView, updateUser });
+
+  // Settings > Account > "Edit Profile" navigates here with `autoEdit` state to
+  // land already in edit mode, instead of requiring a second click on the
+  // in-page button below. Only honored on your own profile (an autoEdit flag
+  // arriving on someone else's profile route is ignored); the state is cleared
+  // immediately after so a refresh or back-navigation doesn't re-trigger it.
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    // `user` isn't loaded yet on the first render (useUser resolves async) —
+    // edit.start() reads user.firstName/etc. directly, so it must wait for a
+    // loaded user rather than firing on that empty first pass.
+    if (location.state?.autoEdit && isMe && user) {
+      edit.start();
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, user]);
 
   const [showBadges, setShowBadges] = useState(false);
   const friends = useProfileFriends(user, setUser, { isMe });

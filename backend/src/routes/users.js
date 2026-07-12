@@ -5,9 +5,14 @@ const requireAdminAuth = require('../middleware/adminAuth');
 const requireUserOrAdmin = require('../middleware/userOrAdmin');
 const { authLimiter, codeRequestLimiter } = require('../middleware/rateLimit');
 const { registerUser, loginUser } = require('../services/authService');
-const { requestPasswordReset, verifyPasswordReset, resetPassword, finishReset } = require('../services/passwordResetService');
+const {
+  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset,
+  changePassword, logoutAllDevices,
+} = require('../services/passwordResetService');
 const { checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers } = require('../services/profileService');
 const { requestCode, verifyCode } = require('../services/verificationService');
+const { getUserLocations } = require('../services/locationService');
+const { getOwnMarkers } = require('../services/markerService');
 const { viewerContext } = require('../utils/viewer');
 
 router.post('/', authLimiter, handle(async (req, res) => {
@@ -48,6 +53,39 @@ router.post('/reset/password', requireAuth, handle(async (req, res) => {
 router.post('/reset/finish', requireAuth, handle(async (req, res) => {
   await finishReset(req.user.email);
   res.json({ ok: true });
+}));
+
+// Change password while already signed in, gated by re-entering the current
+// password (as opposed to reset/password's email-code-verified challenge).
+// Also bumps tokenVersion, so a fresh token is returned to keep this client
+// signed in.
+router.post('/password', requireAuth, handle(async (req, res) => {
+  res.json({ ok: true, ...await changePassword(req.user.id, req.body.currentPassword, req.body.newPassword) });
+}));
+
+// Deliberate full sign-out everywhere, including the caller — see
+// passwordResetService.logoutAllDevices. No fresh token: the client is
+// expected to clear its own session and redirect to login after this.
+router.post('/logout-all', requireAuth, handle(async (req, res) => {
+  await logoutAllDevices(req.user.id);
+  res.json({ ok: true });
+}));
+
+// Self-export of raw location history + map markers (Settings > Account >
+// Export Data). Locations have no other read endpoint (the map renders from
+// MapMarkers) — this is a self-service data download, not used for rendering.
+router.get('/export', requireAuth, handle(async (req, res) => {
+  const [locations, markers] = await Promise.all([
+    getUserLocations(req.user.id),
+    getOwnMarkers(req.user.id),
+  ]);
+  res.json({
+    ok: true,
+    locations: locations.map((l) => ({
+      lat: l.lat, lng: l.lng, accuracy: l.accuracy ?? '', visitedAt: l.visitedAt,
+    })),
+    markers, // [[lat,lng], ...], possibly empty
+  });
 }));
 
 router.post('/login', authLimiter, handle(async (req, res) => {

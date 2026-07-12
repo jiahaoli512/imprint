@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal';
 import DisplaySettings from './DisplaySettings';
+import AccountSettings from './AccountSettings';
 
 // Tabs across the top. Each entry carries its body `component`; a tab without one
 // renders the "Coming soon" placeholder. Adding a real Account / Notifications /
 // Privacy tab is just filling in `component` — no change to the render below.
 const TABS = [
   { id: 'display', label: 'Display', component: DisplaySettings },
-  { id: 'account', label: 'Account' },
+  { id: 'account', label: 'Account', component: AccountSettings },
   { id: 'notifications', label: 'Notifications' },
   { id: 'privacy', label: 'Privacy' },
 ];
@@ -34,7 +35,7 @@ export default function SettingsModal({ onClose }) {
         ))}
       </div>
 
-      {ActiveBody ? <ActiveBody /> : <p className="settings-placeholder">Coming soon.</p>}
+      {ActiveBody ? <ActiveBody onClose={onClose} /> : <p className="settings-placeholder">Coming soon.</p>}
     </Modal>
   );
 }

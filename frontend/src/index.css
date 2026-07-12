@@ -2045,6 +2045,11 @@ footer {
 .settings-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
 .settings-row-desc { font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.4; }
 
+/* Account tab: inline forms (Change Password) opened within a settings row. */
+.settings-inline-form { max-width: 320px; }
+.settings-inline-form-actions { display: flex; gap: 10px; }
+.settings-inline-form-actions .btn { flex: 1; }
+
 /* Range slider (point opacity). */
 .settings-slider-row { display: flex; align-items: center; gap: 12px; }
 .settings-slider {

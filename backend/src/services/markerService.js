@@ -26,6 +26,14 @@ async function getUserMarkers(username, { viewerId = null, isAdmin = false } = {
   return doc ? doc.points : [];
 }
 
+// Self-export lookup: the caller's own raw marker points, keyed directly by
+// userId. Unlike getUserMarkers, this skips the friend-visibility gate — it's
+// only ever called for the authenticated owner's own data (routes/users.js).
+async function getOwnMarkers(userId) {
+  const doc = await MapMarkers.findById(String(userId)).lean();
+  return doc ? doc.points : [];
+}
+
 async function saveUserMarkers(userId, points) {
   validatePoints(points);
   const doc = await MapMarkers.findByIdAndUpdate(
@@ -70,5 +78,5 @@ async function addMarkersFromPoints(userId, points) {
 }
 
 module.exports = {
-  getAdminMarkers, getUserMarkers, saveUserMarkers, saveUserMarkersByUsername, addMarkersFromPoints,
+  getAdminMarkers, getUserMarkers, getOwnMarkers, saveUserMarkers, saveUserMarkersByUsername, addMarkersFromPoints,
 };
