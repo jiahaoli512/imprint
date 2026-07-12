@@ -3,7 +3,7 @@ const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
 const requireAdminAuth = require('../middleware/adminAuth');
 const requireUserOrAdmin = require('../middleware/userOrAdmin');
-const { authLimiter, codeRequestLimiter } = require('../middleware/rateLimit');
+const { authLimiter, codeRequestLimiter, exportLimiter } = require('../middleware/rateLimit');
 const { registerUser, loginUser } = require('../services/authService');
 const {
   requestPasswordReset, verifyPasswordReset, resetPassword, finishReset,
@@ -58,8 +58,10 @@ router.post('/reset/finish', requireAuth, handle(async (req, res) => {
 // Change password while already signed in, gated by re-entering the current
 // password (as opposed to reset/password's email-code-verified challenge).
 // Also bumps tokenVersion, so a fresh token is returned to keep this client
-// signed in.
-router.post('/password', requireAuth, handle(async (req, res) => {
+// signed in. authLimiter (failures-only) guards this the same way it guards
+// every other credential check in this file — a valid Bearer token alone
+// shouldn't grant unlimited attempts at the account's real password.
+router.post('/password', requireAuth, authLimiter, handle(async (req, res) => {
   res.json({ ok: true, ...await changePassword(req.user.id, req.body.currentPassword, req.body.newPassword) });
 }));
 
@@ -74,18 +76,14 @@ router.post('/logout-all', requireAuth, handle(async (req, res) => {
 // Self-export of raw location history + map markers (Settings > Account >
 // Export Data). Locations have no other read endpoint (the map renders from
 // MapMarkers) — this is a self-service data download, not used for rendering.
-router.get('/export', requireAuth, handle(async (req, res) => {
+// exportLimiter guards the underlying query, which is capped but still
+// expensive for a heavily-tracked account (see locationService.getUserLocations).
+router.get('/export', requireAuth, exportLimiter, handle(async (req, res) => {
   const [locations, markers] = await Promise.all([
     getUserLocations(req.user.id),
     getOwnMarkers(req.user.id),
   ]);
-  res.json({
-    ok: true,
-    locations: locations.map((l) => ({
-      lat: l.lat, lng: l.lng, accuracy: l.accuracy ?? '', visitedAt: l.visitedAt,
-    })),
-    markers, // [[lat,lng], ...], possibly empty
-  });
+  res.json({ ok: true, locations, markers }); // markers: [[lat,lng], ...], possibly empty
 }));
 
 router.post('/login', authLimiter, handle(async (req, res) => {

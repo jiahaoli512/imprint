@@ -46,13 +46,17 @@ export default function UserProfile() {
   useEffect(() => {
     // `user` isn't loaded yet on the first render (useUser resolves async) —
     // edit.start() reads user.firstName/etc. directly, so it must wait for a
-    // loaded user rather than firing on that empty first pass.
-    if (location.state?.autoEdit && isMe && user) {
+    // loaded user rather than firing on that empty first pass. Also skip if
+    // already editing: start() unconditionally re-seeds the fields from the
+    // loaded user, which would silently discard any unsaved in-progress edit
+    // if this effect re-fires (e.g. Settings > Edit Profile clicked again
+    // while already mid-edit on this same page).
+    if (location.state?.autoEdit && isMe && user && !edit.editing) {
       edit.start();
       navigate(location.pathname, { replace: true, state: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state, user]);
+  }, [location.state, user, edit.editing]);
 
   const [showBadges, setShowBadges] = useState(false);
   const friends = useProfileFriends(user, setUser, { isMe });

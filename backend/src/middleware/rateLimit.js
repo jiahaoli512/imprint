@@ -63,4 +63,18 @@ const friendRequestLimiter = createLimiter({
   message: 'Too many friend requests. Please try again later.',
 });
 
-module.exports = { apiLimiter, authLimiter, contactLimiter, codeRequestLimiter, friendRequestLimiter };
+// Limiter for the self-service data export (Settings > Account > Export).
+// Unlike auth endpoints the abusable cost here isn't credential-guessing —
+// it's the underlying query (a user's full raw location history, unbounded)
+// — so this counts *successful* requests too, same rationale as
+// contactLimiter/codeRequestLimiter. Generous for real use (re-downloading a
+// few times) but stops a retry loop from repeatedly re-running that query.
+const exportLimiter = createLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: 'Too many export requests. Please try again later.',
+});
+
+module.exports = {
+  apiLimiter, authLimiter, contactLimiter, codeRequestLimiter, friendRequestLimiter, exportLimiter,
+};

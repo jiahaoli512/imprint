@@ -9,19 +9,7 @@ import { pauseTracking } from '../location/backgroundTracking';
 import { passwordValid } from '../../utils/passwordRules';
 import { useForm } from '../../utils/useForm';
 import { downloadCsv } from '../../utils/csv';
-
-// A labeled setting row: title + one-line description, then its control below.
-// Duplicated from DisplaySettings.jsx (same convention: each settings tab owns
-// its own copy rather than sharing one across files).
-function Setting({ title, description, children }) {
-  return (
-    <div className="settings-row">
-      <div className="settings-row-label">{title}</div>
-      <p className="settings-row-desc">{description}</p>
-      {children}
-    </div>
-  );
-}
+import Setting from './Setting';
 
 // Inline "change password while signed in" form, gated by re-entering the
 // current password (as opposed to the forgot-password flow's email-code
@@ -100,13 +88,14 @@ function LogoutAllModal({ onCancel }) {
 
   async function handleConfirm() {
     setLoading(true);
+    // Flush buffered points (needs the still-valid token) BEFORE revoking
+    // every session server-side — logoutAllDevices bumps tokenVersion, which
+    // invalidates this device's own token too, so calling it first would make
+    // the flush 401 (same ordering LogoutModal.jsx uses, for the same reason).
+    await pauseTracking();
     try {
       await api.logoutAllDevices();
     } finally {
-      // Pause passive tracking (flushes buffered points) before clearing the
-      // session — both need the still-valid token, so this must run before
-      // clearSession regardless of whether the request itself succeeded.
-      await pauseTracking();
       clearSession();
       navigate('/home');
     }

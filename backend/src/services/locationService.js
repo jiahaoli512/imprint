@@ -44,9 +44,25 @@ async function logLocations(userId, points) {
   return { inserted: docs.length, markersAdded };
 }
 
-// Full raw location history, oldest first, for self-export.
-function getUserLocations(userId) {
-  return Location.find({ userId }).sort({ visitedAt: 1 }).lean();
+// Hard cap on a self-export, mirroring MapMarkers' MAX_POINTS — passive
+// tracking logs a raw point roughly every 100m with no dedup (overlap
+// allowed), so a long-tracked account could otherwise return an unbounded,
+// event-loop-blocking response with no equivalent safeguard to marker saves.
+const MAX_EXPORT_LOCATIONS = 50000;
+
+// A user's raw location history for self-export, already shaped into the
+// response rows (kept here, not in the route, since field selection/defaults
+// are a service-layer concern). Oldest first; when the history exceeds the
+// cap, keeps the most recent MAX_EXPORT_LOCATIONS points rather than silently
+// truncating to the oldest (least useful) ones.
+async function getUserLocations(userId) {
+  const docs = await Location.find({ userId }, 'lat lng accuracy visitedAt -_id')
+    .sort({ visitedAt: -1 })
+    .limit(MAX_EXPORT_LOCATIONS)
+    .lean();
+  return docs.reverse().map((l) => ({
+    lat: l.lat, lng: l.lng, accuracy: l.accuracy ?? '', visitedAt: l.visitedAt,
+  }));
 }
 
 module.exports = { logLocations, getUserLocations };
