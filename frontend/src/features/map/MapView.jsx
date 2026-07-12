@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  makeDotIcon, makePinIcon, pinIconEdit, LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_EDIT_COLOR,
+  makeDotIcon, makePinIcon, pinIconEdit, borderFor, LOCATION_RADIUS_M, LOCATE_BLUE, MARKER_EDIT_COLOR,
 } from './mapStyle';
 import { InvalidateOnMount, MapClickHandler, RegionDetector, DiscoverySettleTracker, FlyToLocation, InvalidateOnResize } from './mapComponents';
 import { QUALITY, DEFAULT_QUALITY, useMapQuality } from './mapQuality';
@@ -20,7 +20,6 @@ const SCREEN_CELL_PX = 14;
 // CircleMarker dot geometry (the 'low' tier) — mirrors the 10px pin look.
 const DOT_RADIUS = 5;
 const DOT_WEIGHT = 1;
-const DOT_BORDER = '#0b0e13';
 // Pins revealed per animation frame during a full rebuild (mount / quality
 // switch / a bulk marker-set change — e.g. admin switching users). Matches the
 // low/medium/high cap: benchmarked ~11ms to mount 500 DOM pins, comfortably
@@ -36,12 +35,13 @@ const REVEAL_CHUNK = 500;
 //   cfg.cap  → stride down to at most cfg.cap pins as a backstop
 //   cfg.marker 'dom' → constant-size pin icons; 'circle' → canvas CircleMarkers
 // Lives inside MapContainer so it can project lat/lng to screen pixels.
-function MarkerLayer({ markers, editing, onRemove, cfg }) {
+function MarkerLayer({ markers, editing, onRemove, cfg, basemap }) {
   const map = useMap();
   const [markerColor] = useMarkerColor();
   const [opacityPercent] = usePointOpacity();
   const opacity = opacityFromPercent(opacityPercent);
   const [pointShape] = usePointShape();
+  const border = borderFor(basemap);
   const iconFor = pointShape === 'pin' ? makePinIcon : makeDotIcon;
   const [version, setVersion] = useState(0);
   // The thinned set only changes when the view changes *enough* to alter culling
@@ -152,7 +152,7 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
         center={markers[i]}
         radius={DOT_RADIUS}
         pathOptions={{
-          color: DOT_BORDER, weight: DOT_WEIGHT,
+          color: border, weight: DOT_WEIGHT,
           fillColor: editing ? MARKER_EDIT_COLOR : markerColor,
           fillOpacity: editing ? 1 : opacity, opacity: editing ? 1 : opacity,
         }}
@@ -165,7 +165,7 @@ function MarkerLayer({ markers, editing, onRemove, cfg }) {
     <Marker
       key={i}
       position={markers[i]}
-      icon={editing ? pinIconEdit : iconFor(markerColor)}
+      icon={editing ? pinIconEdit : iconFor(markerColor, border)}
       opacity={editing ? 1 : opacity}
       eventHandlers={editing ? handlersByIndex.get(i) : undefined}
     />
@@ -216,7 +216,7 @@ export default function MapView({ displayMarkers, editing, userLocation, onAddMa
           <Marker position={userLocation} icon={locationIcon} />
         </>
       )}
-      <MarkerLayer markers={displayMarkers} editing={editing} onRemove={onRemoveMarker} cfg={cfg} />
+      <MarkerLayer markers={displayMarkers} editing={editing} onRemove={onRemoveMarker} cfg={cfg} basemap={basemap} />
       <InvalidateOnMount />
     </MapContainer>
   );
