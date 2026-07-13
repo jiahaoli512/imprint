@@ -132,7 +132,10 @@ export default function AccountSettings({ ctx }) {
         )}
       </Setting>
 
-      <Setting title="Export your data" description="Download a CSV of your location history and map markers.">
+      <Setting
+        title="Export your data"
+        description="Download a CSV of your location history and map markers. Location history is every raw GPS point your device has logged; map markers are the thinned-out points actually shown on your map (one per ~100m, so nearby points aren't duplicated)."
+      >
         <button type="button" className="btn btn-ghost" onClick={handleExport} disabled={exporting}>
           <Download size={14} /> {exporting ? 'Preparing…' : 'Download CSV'}
         </button>

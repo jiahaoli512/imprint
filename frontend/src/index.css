@@ -2042,8 +2042,43 @@ footer {
 .settings-panel::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 /* Fade to the modal's surface (not the page bg) so there's no band. */
 .settings-scroll .scroll-hint { background: linear-gradient(transparent, var(--surface) 85%); }
+.settings-row-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
 .settings-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
-.settings-row-desc { font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.4; }
+
+/* The "?" help icon + its hover/tap tooltip, replacing the always-visible
+   description. `.settings-help` is the positioning context; `.icon-btn`
+   supplies the round-surface base, `.settings-help-btn` just sizes it down. */
+.settings-help { position: relative; display: flex; }
+.settings-help-btn { width: 18px; height: 18px; flex-shrink: 0; }
+.settings-help-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-2px);
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+  pointer-events: none;
+}
+/* Hover reveals it on desktop (no JS needed); `.open` is the tap-to-toggle
+   state for touch, where :hover doesn't apply. */
+.settings-help:hover .settings-help-tip,
+.settings-help-tip.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
 
 /* Account tab: inline forms (Change Password) opened within a settings row. */
 .settings-inline-form { max-width: 320px; }
