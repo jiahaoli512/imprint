@@ -7,17 +7,7 @@ import ColorPicker from './ColorPicker';
 import OpacityControl from './OpacityControl';
 import { useReduceMotion } from './reduceMotion';
 import ScrollHint from '../../components/ScrollHint';
-
-// A labeled setting row: title + one-line description, then its control below.
-function Setting({ title, description, children }) {
-  return (
-    <div className="settings-row">
-      <div className="settings-row-label">{title}</div>
-      <p className="settings-row-desc">{description}</p>
-      {children}
-    </div>
-  );
-}
+import Setting from './Setting';
 
 // A segmented picker (reuses the map-quality control styling): one button per
 // option, the current one highlighted, with an optional "Recommended" tag.

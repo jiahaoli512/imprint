@@ -135,13 +135,14 @@ async function removeFriend(userId, friendUsername) {
 }
 
 // Lists a user's friends (accepted edges), for the friend-count click-through.
-// Visibility: only the owner themselves or one of the owner's friends may see
-// the list — anyone else gets a 403 (so a stranger can't harvest the graph).
-async function listFriends(viewerId, ownerUsername) {
+// Visibility: only the owner themselves, an admin, or one of the owner's
+// friends may see the list — anyone else gets a 403 (so a stranger can't
+// harvest the graph).
+async function listFriends(viewerId, ownerUsername, { isAdmin = false } = {}) {
   const owner = await findUserByUsername(ownerUsername, '_id');
   const ownerId = owner._id;
 
-  await assertCanViewOwnerData(viewerId, ownerId, { message: 'Only friends can view this list.' });
+  await assertCanViewOwnerData(viewerId, ownerId, { isAdmin, message: 'Only friends can view this list.' });
 
   const edges = await FriendRequest.find(acceptedFriendshipsOf(ownerId))
     .populate('requester', PUBLIC_USER_FIELDS)

@@ -7,7 +7,9 @@ import { COOLDOWN_DAYS, daysUntil } from '../../utils/cooldowns';
 // Owns the profile edit flow so the page stays presentational: field state,
 // per-field validation, the confirm-before-save staging, the API write, and the
 // post-username-change navigation/stored-username update. `updateUser`/`setUser`
-// are injected so it works for both self and admin views.
+// are injected so it works for both self and admin views. `start`/`editing` are
+// public — a caller (e.g. arriving with "auto-enter edit mode" navigation
+// state) can trigger/observe them without this hook needing to know why.
 export function useProfileEdit({ user, setUser, username, isAdminView, updateUser }) {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
