@@ -10,7 +10,7 @@ import {
 } from '../api/client';
 import { isValidEmail, normalizeEmail } from '../utils/validateName';
 import { refreshGreeting } from '../utils/greeting';
-import { passwordValid } from '../utils/passwordRules';
+import { passwordValid, passwordsMatch as isPasswordsMatch } from '../utils/passwordRules';
 
 // Forgot-password flow: email → code → choice (change password / skip & log in)
 // → optional new password → dashboard. Reuses the same 6-char email-code
@@ -32,7 +32,7 @@ export default function ForgotPassword() {
   const [resetError, setResetError] = useState('');
 
   const allPassed = passwordValid(password);
-  const passwordsMatch = allPassed && confirmPassword.length > 0 && confirmPassword === password;
+  const passwordsMatch = isPasswordsMatch(password, confirmPassword);
 
   // Navigate to the right place once authenticated (dashboard, or profile setup
   // if this account never picked a username).

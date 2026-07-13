@@ -71,6 +71,11 @@ async function finishReset(email) {
 async function changePassword(userId, currentPassword, newPassword) {
   checkRequired('Current password', currentPassword);
   checkRequired('New password', newPassword);
+  // Fail fast on a malformed new password before the DB read + bcrypt.compare
+  // below — both real work, whereas this is a pure format check. setNewPassword
+  // re-validates its own newPassword argument too (it's also called directly
+  // by resetPassword), so this isn't relied on for correctness, only ordering.
+  validatePassword(newPassword);
   const user = await User.findById(userId).select('+passwordHash');
   // Defensive only, not the "wrong password" case the comment above is about:
   // requireAuth + userTokenFresh already guarantee the user exists for any

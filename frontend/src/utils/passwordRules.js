@@ -22,3 +22,10 @@ export const passwordValid = (p) => PW_RULES.every((r) => r.test(p));
 // Each rule annotated with whether the given password passes it — the shape the
 // PasswordChecklist renders. Keeps the "rules + pass state" derivation in one place.
 export const evaluatePassword = (p) => PW_RULES.map((r) => ({ ...r, passed: r.test(p) }));
+
+// True when a new-password + confirm pair are both a valid password AND equal
+// — the "ready to submit" gate shared by every "set a new password" form
+// (signup, forgot-password, change-password). Requires `p` to already be
+// valid so a confirm field that happens to equal an invalid `p` doesn't
+// read as a match.
+export const passwordsMatch = (p, confirm) => passwordValid(p) && confirm.length > 0 && confirm === p;

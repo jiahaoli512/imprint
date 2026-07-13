@@ -5,7 +5,7 @@ import PasswordInput from '../../components/PasswordInput';
 import PasswordChecklist from '../../components/PasswordChecklist';
 import ScrollHint from '../../components/ScrollHint';
 import { api, getUsername, setToken } from '../../api/client';
-import { passwordValid } from '../../utils/passwordRules';
+import { passwordValid, passwordsMatch } from '../../utils/passwordRules';
 import { useForm } from '../../utils/useForm';
 import { useAccountExport } from './useAccountExport';
 import { useLogoutAllDevices } from './useLogoutAllDevices';
@@ -38,7 +38,7 @@ function ChangePasswordForm({ onDone, changePassword = api.changePassword }) {
   );
 
   const allPassed = passwordValid(values.newPassword);
-  const passwordsMatch = allPassed && values.confirmPassword.length > 0 && values.confirmPassword === values.newPassword;
+  const matches = passwordsMatch(values.newPassword, values.confirmPassword);
 
   if (success) {
     return (
@@ -68,11 +68,11 @@ function ChangePasswordForm({ onDone, changePassword = api.changePassword }) {
         value={values.confirmPassword}
         onChange={setField('confirmPassword')}
         disabled={!allPassed}
-        extraClass={passwordsMatch ? 'auth-input-match' : ''}
+        extraClass={matches ? 'auth-input-match' : ''}
       />
       {error && <p className="auth-error">{error}</p>}
       <div className="settings-inline-form-actions">
-        <button type="submit" className="btn btn-primary" disabled={submitting || !passwordsMatch}>
+        <button type="submit" className="btn btn-primary" disabled={submitting || !matches}>
           {submitting ? 'Saving…' : 'Save password'}
         </button>
         <button type="button" className="btn btn-ghost" onClick={onDone} disabled={submitting}>Cancel</button>
