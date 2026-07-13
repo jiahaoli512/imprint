@@ -72,6 +72,12 @@ async function changePassword(userId, currentPassword, newPassword) {
   checkRequired('Current password', currentPassword);
   checkRequired('New password', newPassword);
   const user = await User.findById(userId).select('+passwordHash');
+  // Defensive only, not the "wrong password" case the comment above is about:
+  // requireAuth + userTokenFresh already guarantee the user exists for any
+  // request that reaches here, so this branch should be unreachable in
+  // practice (e.g. deleted between token-check and this read). Kept as a 400
+  // rather than a 401 for the same reason as below — it's still inside an
+  // authenticated request, not an auth failure the frontend should react to.
   if (!user) throw httpError(400, 'Not authenticated.');
   const ok = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!ok) throw httpError(400, 'Current password is incorrect.');

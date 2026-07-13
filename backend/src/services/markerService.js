@@ -16,22 +16,31 @@ async function getAdminMarkers() {
   return doc ? doc.points : [];
 }
 
-// A user's map, readable only by the owner, an admin, or one of the owner's
-// friends. Markers are auto-built from background location history, so a stranger
-// can't pull an arbitrary user's whereabouts (or their badge-derived data).
-async function getUserMarkers(username, { viewerId = null, isAdmin = false } = {}) {
-  const ownerId = await userIdForUsername(username);
+// The ownerId-keyed core: a user's map, readable only by the owner, an admin,
+// or one of the owner's friends (assertCanViewOwnerData already passes a
+// viewer viewing their own data for free). Markers are auto-built from
+// background location history, so a stranger can't pull an arbitrary user's
+// whereabouts (or their badge-derived data). Both username-keyed reads
+// (getUserMarkers) and the userId-keyed self-export (getOwnMarkers) funnel
+// through this one gate + fetch, rather than each re-implementing it.
+async function getMarkersFor(ownerId, { viewerId = null, isAdmin = false } = {}) {
   await assertCanViewOwnerData(viewerId, ownerId, { isAdmin, message: 'Only friends can view this map.' });
   const doc = await MapMarkers.findById(ownerId);
   return doc ? doc.points : [];
 }
 
-// Self-export lookup: the caller's own raw marker points, keyed directly by
-// userId. Unlike getUserMarkers, this skips the friend-visibility gate — it's
-// only ever called for the authenticated owner's own data (routes/users.js).
+// Public read path, keyed by username (what routes/markers.js has on hand).
+async function getUserMarkers(username, { viewerId = null, isAdmin = false } = {}) {
+  const ownerId = await userIdForUsername(username);
+  return getMarkersFor(ownerId, { viewerId, isAdmin });
+}
+
+// Self-export lookup (Settings > Account > Export Data): the caller viewing
+// their own map, keyed directly by userId — viewerId === ownerId passes
+// assertCanViewOwnerData's self-view check trivially, so this needs no
+// separate gate-skipping logic of its own.
 async function getOwnMarkers(userId) {
-  const doc = await MapMarkers.findById(String(userId)).lean();
-  return doc ? doc.points : [];
+  return getMarkersFor(userId, { viewerId: userId });
 }
 
 async function saveUserMarkers(userId, points) {

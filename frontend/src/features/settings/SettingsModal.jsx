@@ -35,7 +35,10 @@ export default function SettingsModal({ onClose }) {
         ))}
       </div>
 
-      {ActiveBody ? <ActiveBody onClose={onClose} /> : <p className="settings-placeholder">Coming soon.</p>}
+      {/* `ctx` (not individual props) so a future tab needing something new
+          (e.g. the signed-in user) is a field added to this one object, not a
+          renegotiation of every tab body's prop signature. */}
+      {ActiveBody ? <ActiveBody ctx={{ onClose }} /> : <p className="settings-placeholder">Coming soon.</p>}
     </Modal>
   );
 }

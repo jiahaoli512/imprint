@@ -65,8 +65,9 @@ const friendRequestLimiter = createLimiter({
 
 // Limiter for the self-service data export (Settings > Account > Export).
 // Unlike auth endpoints the abusable cost here isn't credential-guessing —
-// it's the underlying query (a user's full raw location history, unbounded)
-// — so this counts *successful* requests too, same rationale as
+// it's the underlying query: a user's full raw location history, capped at
+// locationService.MAX_EXPORT_LOCATIONS but still a full-collection scan/sort
+// per call — so this counts *successful* requests too, same rationale as
 // contactLimiter/codeRequestLimiter. Generous for real use (re-downloading a
 // few times) but stops a retry loop from repeatedly re-running that query.
 const exportLimiter = createLimiter({
@@ -75,6 +76,21 @@ const exportLimiter = createLimiter({
   message: 'Too many export requests. Please try again later.',
 });
 
+// Same policy as authLimiter (failures-only, same window/cap), but a
+// separate instance/bucket: authLimiter is mounted on login and both
+// verify-code endpoints, and express-rate-limit keys by IP across every
+// route sharing one instance — reusing authLimiter here would mean a few
+// failed *login* attempts eat into the budget for a legitimate
+// password-change attempt from the same IP, which is a confusing coupling
+// between two unrelated actions.
+const passwordChangeLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: 'Too many attempts, please try again later.',
+});
+
 module.exports = {
-  apiLimiter, authLimiter, contactLimiter, codeRequestLimiter, friendRequestLimiter, exportLimiter,
+  apiLimiter, authLimiter, contactLimiter, codeRequestLimiter, friendRequestLimiter,
+  exportLimiter, passwordChangeLimiter,
 };
