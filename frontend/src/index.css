@@ -2042,21 +2042,29 @@ footer {
 .settings-panel::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 /* Fade to the modal's surface (not the page bg) so there's no band. */
 .settings-scroll .scroll-hint { background: linear-gradient(transparent, var(--surface) 85%); }
-.settings-row-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+/* `.settings-row-head` (not `.settings-help`) is the tooltip's positioning
+   context — it spans the full row width, which is always <= the modal's
+   inner width, so centering the tip within it (rather than anchoring off
+   the "?" icon's own position, which drifts with title length) guarantees
+   the tip can never overflow the modal's left/right edges on any title
+   length or viewport, web or native. */
+.settings-row-head { position: relative; display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
 .settings-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
 
 /* The "?" help icon + its hover/tap tooltip, replacing the always-visible
-   description. `.settings-help` is the positioning context; `.icon-btn`
-   supplies the round-surface base, `.settings-help-btn` just sizes it down. */
-.settings-help { position: relative; display: flex; }
+   description. `.icon-btn` supplies the round-surface base, `.settings-help-btn`
+   just sizes it down. */
+.settings-help { display: flex; }
 .settings-help-btn { width: 18px; height: 18px; flex-shrink: 0; }
 .settings-help-tip {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
+  left: 50%;
   z-index: 5;
   width: max-content;
-  max-width: 260px;
+  /* Bounded by the row's own width (100%), so it never exceeds the modal's
+     inner width no matter how long the title is or how narrow the viewport. */
+  max-width: calc(100% - 8px);
   padding: 8px 10px;
   border-radius: 8px;
   background: var(--surface2);
@@ -2067,7 +2075,7 @@ footer {
   box-shadow: 0 6px 16px rgba(0,0,0,0.35);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-2px);
+  transform: translateX(-50%) translateY(-2px);
   transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
   pointer-events: none;
 }
@@ -2077,7 +2085,7 @@ footer {
 .settings-help-tip.open {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
 }
 
 /* Account tab: inline forms (Change Password) opened within a settings row. */
