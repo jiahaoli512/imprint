@@ -258,4 +258,38 @@ async function sendFriendAcceptedEmail(to, requesterName, accepterName) {
   });
 }
 
-module.exports = { sendApprovalEmail, sendVerificationEmail, sendContactEmail, sendFriendRequestEmail, sendFriendAcceptedEmail };
+// Delivers a self-service data export (Settings > Account > Export Data) as
+// two CSV attachments. Brevo takes attachment content base64-encoded, not
+// raw text — encode here, at the transport boundary, so callers just pass
+// plain CSV strings.
+async function sendExportEmail(to, { locationsCsv, markersCsv }) {
+  await sendEmail({
+    to: [{ email: to, name: to.split('@')[0] }],
+    subject: 'Your Imprint data export',
+    htmlContent: renderBrandedEmail({
+      eyebrow: 'Data export',
+      heading: 'Your data,<br>attached.',
+      body: `
+          <p style="margin:0 0 32px;font-size:16px;color:#6b7a99;line-height:1.7;">
+            As requested, here's a full export of your Imprint data — two CSV files attached to this email:
+          </p>
+
+          <div style="background:#161f30;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+            <p style="margin:0 0 8px;font-size:13px;color:#6b7a99;line-height:1.6;"><strong style="color:#f0f4ff;">imprint-locations.csv</strong> — every raw GPS point your device has logged.</p>
+            <p style="margin:0;font-size:13px;color:#6b7a99;line-height:1.6;"><strong style="color:#f0f4ff;">imprint-markers.csv</strong> — the thinned-out points actually shown on your map (one per ~100m).</p>
+          </div>
+
+          <p style="margin:0;font-size:13px;color:#6b7a99;line-height:1.6;">
+            If you didn't request this export, please secure your account and contact us.
+          </p>`,
+    }),
+    attachment: [
+      { name: 'imprint-locations.csv', content: Buffer.from(locationsCsv, 'utf8').toString('base64') },
+      { name: 'imprint-markers.csv', content: Buffer.from(markersCsv, 'utf8').toString('base64') },
+    ],
+  });
+}
+
+module.exports = {
+  sendApprovalEmail, sendVerificationEmail, sendContactEmail, sendFriendRequestEmail, sendFriendAcceptedEmail, sendExportEmail,
+};

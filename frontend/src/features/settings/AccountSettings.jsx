@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, LogOut } from 'lucide-react';
+import { Mail, LogOut } from 'lucide-react';
 import Modal from '../../components/Modal';
 import PasswordInput from '../../components/PasswordInput';
 import PasswordChecklist from '../../components/PasswordChecklist';
@@ -111,7 +111,7 @@ export default function AccountSettings({ ctx }) {
   const navigate = useNavigate();
   const [changingPassword, setChangingPassword] = useState(false);
   const [confirmingLogoutAll, setConfirmingLogoutAll] = useState(false);
-  const { exporting, exportError, handleExport } = useAccountExport();
+  const { exporting, exportError, exportSent, handleExport } = useAccountExport();
 
   function handleEditProfile() {
     onClose();
@@ -134,11 +134,15 @@ export default function AccountSettings({ ctx }) {
 
       <Setting
         title="Export your data"
-        description="Download a CSV of your location history and map markers. Location history is every raw GPS point your device has logged; map markers are the thinned-out points actually shown on your map (one per ~100m, so nearby points aren't duplicated)."
+        description="Email a CSV of your location history and map markers to your account's email address. Location history is every raw GPS point your device has logged; map markers are the thinned-out points actually shown on your map (one per ~100m, so nearby points aren't duplicated)."
       >
-        <button type="button" className="btn btn-ghost" onClick={handleExport} disabled={exporting}>
-          <Download size={14} /> {exporting ? 'Preparing…' : 'Download CSV'}
-        </button>
+        {exportSent ? (
+          <p className="auth-sub">Check your inbox — your export is on its way.</p>
+        ) : (
+          <button type="button" className="btn btn-ghost" onClick={handleExport} disabled={exporting}>
+            <Mail size={14} /> {exporting ? 'Sending…' : 'Email My Data'}
+          </button>
+        )}
         {exportError && <p className="auth-error">{exportError}</p>}
       </Setting>
 

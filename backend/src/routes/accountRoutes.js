@@ -6,8 +6,7 @@ const {
   requestPasswordReset, verifyPasswordReset, resetPassword, finishReset, changePassword,
 } = require('../services/passwordResetService');
 const { logoutAllDevices } = require('../services/sessionService');
-const { getUserLocations } = require('../services/locationService');
-const { getOwnMarkers } = require('../services/markerService');
+const { emailAccountExport } = require('../services/exportService');
 
 // Password + session management: forgot-password reset, change-password
 // while signed in, full sign-out, and self-service data export. Mounted at
@@ -60,16 +59,13 @@ router.post('/logout-all', requireAuth, handle(async (req, res) => {
 }));
 
 // Self-export of raw location history + map markers (Settings > Account >
-// Export Data). Locations have no other read endpoint (the map renders from
-// MapMarkers) — this is a self-service data download, not used for rendering.
+// Export Data), delivered as CSV attachments to the account's own email
+// rather than returned in the response — see exportService for why.
 // exportLimiter guards the underlying query — see locationService.getUserLocations
 // for why it's still worth limiting even though it's capped.
-router.get('/export', requireAuth, exportLimiter, handle(async (req, res) => {
-  const [locations, markers] = await Promise.all([
-    getUserLocations(req.user.id),
-    getOwnMarkers(req.user.id),
-  ]);
-  res.json({ ok: true, locations, markers }); // markers: [[lat,lng], ...], possibly empty
+router.post('/export', requireAuth, exportLimiter, handle(async (req, res) => {
+  await emailAccountExport(req.user.id, req.user.email);
+  res.json({ ok: true });
 }));
 
 module.exports = router;

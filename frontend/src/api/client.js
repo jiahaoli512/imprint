@@ -214,11 +214,12 @@ export const api = {
   finishReset:          ()             => request.post('/api/users/reset/finish', {}),
   // Account settings tab: change password while signed in (returns a fresh
   // token like resetPassword, since it also revokes existing sessions);
-  // full sign-out of every session including this one; a self-export dump.
+  // full sign-out of every session including this one; a self-export emailed
+  // to the account's own address (POST — it triggers a send, not just a read).
   changePassword:       (currentPassword, newPassword) =>
     request.post('/api/users/password', { currentPassword, newPassword }),
   logoutAllDevices:     ()             => request.post('/api/users/logout-all', {}),
-  exportAccountData:    ()             => request('/api/users/export'),
+  exportAccountData:    ()             => request.post('/api/users/export', {}),
   checkWaitlist:  (email)              => request(`/api/waitlist/check?email=${encodeURIComponent(email)}`),
   checkUsername:  (username)           => request(`/api/users/check-username?username=${encodeURIComponent(username)}`),
   setupProfile:   (body)               => request.patch('/api/users/profile', body),
