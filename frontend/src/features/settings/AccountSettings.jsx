@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import Modal from '../../components/Modal';
 import PasswordInput from '../../components/PasswordInput';
 import PasswordChecklist from '../../components/PasswordChecklist';
@@ -133,7 +134,7 @@ export default function AccountSettings({ ctx }) {
 
       <Setting title="Export your data" description="Download a CSV of your location history and map markers.">
         <button type="button" className="btn btn-ghost" onClick={handleExport} disabled={exporting}>
-          {exporting ? 'Preparing…' : 'Download CSV'}
+          <Download size={14} /> {exporting ? 'Preparing…' : 'Download CSV'}
         </button>
         {exportError && <p className="auth-error">{exportError}</p>}
       </Setting>
