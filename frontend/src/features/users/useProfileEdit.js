@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { setUsername as saveUsername } from '../../api/client';
 import { validateName, USERNAME_RE } from '../../utils/validateName';
 import { COOLDOWN_DAYS, daysUntil } from '../../utils/cooldowns';
@@ -7,14 +7,11 @@ import { COOLDOWN_DAYS, daysUntil } from '../../utils/cooldowns';
 // Owns the profile edit flow so the page stays presentational: field state,
 // per-field validation, the confirm-before-save staging, the API write, and the
 // post-username-change navigation/stored-username update. `updateUser`/`setUser`
-// are injected so it works for both self and admin views. Also owns *arriving*
-// already in edit mode (Settings > Account > Edit Profile navigates here with
-// `autoEdit` location state) — that's arrival mechanics tightly coupled to
-// `start`/`editing`, not profile-view rendering, so it lives here rather than
-// in the page component.
-export function useProfileEdit({ user, setUser, username, isAdminView, updateUser, isMe }) {
+// are injected so it works for both self and admin views. `start`/`editing` are
+// public — a caller (e.g. arriving with "auto-enter edit mode" navigation
+// state) can trigger/observe them without this hook needing to know why.
+export function useProfileEdit({ user, setUser, username, isAdminView, updateUser }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const [editing, setEditing] = useState(false);
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
@@ -30,27 +27,6 @@ export function useProfileEdit({ user, setUser, username, isAdminView, updateUse
     setError('');
     setEditing(true);
   }
-
-  // Consumes `autoEdit` navigation state to enter edit mode on arrival,
-  // instead of requiring a second click on the in-page "Edit Profile" button.
-  // Guarded on `user` (not loaded yet on the first render — start() reads
-  // user.firstName/etc. directly), `isMe` (ignore on someone else's profile),
-  // and `!editing` (a re-fire while already mid-edit would silently reset any
-  // unsaved fields via start()). Clears the state immediately after so a
-  // refresh or back-navigation doesn't re-trigger it.
-  useEffect(() => {
-    if (location.state?.autoEdit && isMe && user && !editing) {
-      // Legitimately reacting to an external signal (react-router's location
-      // state, set by a navigation from elsewhere) rather than computing
-      // render output — the case this lint rule doesn't cover, unlike the
-      // MarkerLayer reveal-ramp's "adjust state during render" pattern (see
-      // CLAUDE.md) which applies when a *render's own* derived state changes.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      start();
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state, user, editing]);
 
   function cancel() {
     setEditing(false);

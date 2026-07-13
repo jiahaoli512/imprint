@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { User, Pencil, X, Check, Award } from 'lucide-react';
 import Modal from '../components/Modal';
@@ -33,10 +33,28 @@ export default function UserProfile() {
 
   const { user, setUser, loading } = useUser(username, { fetcher: getUser, redirectOnNotFound: true });
 
-  // All edit-flow state/logic lives in the hook — including arriving already
-  // in edit mode via Settings > Account > Edit Profile — so this page just
-  // renders it.
-  const edit = useProfileEdit({ user, setUser, username, isAdminView, updateUser, isMe });
+  // All edit-flow state/logic lives in the hook; this page just renders it.
+  const edit = useProfileEdit({ user, setUser, username, isAdminView, updateUser });
+
+  // Settings > Account > "Edit Profile" navigates here with `autoEdit` state
+  // to land already in edit mode, instead of requiring a second click on the
+  // in-page button below. This is arrival *policy* (which navigations should
+  // trigger edit mode) — kept in the page rather than the hook, since it only
+  // needs the hook's already-public `start`/`editing`, not any internals.
+  // Guarded on `user` (not loaded yet on the first render — start() reads
+  // user.firstName/etc. directly), `isMe` (ignore on someone else's profile),
+  // and `!edit.editing` (a re-fire while already mid-edit would silently
+  // reset any unsaved fields via start()). Clears the state immediately
+  // after so a refresh or back-navigation doesn't re-trigger it.
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (location.state?.autoEdit && isMe && user && !edit.editing) {
+      edit.start();
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, user, edit.editing]);
 
   const [showBadges, setShowBadges] = useState(false);
   const friends = useProfileFriends(user, setUser, { isMe });

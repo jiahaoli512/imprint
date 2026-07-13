@@ -3,9 +3,9 @@ const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
 const { authLimiter, codeRequestLimiter, exportLimiter, passwordChangeLimiter } = require('../middleware/rateLimit');
 const {
-  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset,
-  changePassword, logoutAllDevices,
+  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset, changePassword,
 } = require('../services/passwordResetService');
+const { logoutAllDevices } = require('../services/sessionService');
 const { getUserLocations } = require('../services/locationService');
 const { getOwnMarkers } = require('../services/markerService');
 
@@ -52,8 +52,8 @@ router.post('/password', requireAuth, passwordChangeLimiter, handle(async (req, 
 }));
 
 // Deliberate full sign-out everywhere, including the caller — see
-// passwordResetService.logoutAllDevices. No fresh token: the client is
-// expected to clear its own session and redirect to login after this.
+// sessionService.logoutAllDevices. No fresh token: the client is expected
+// to clear its own session and redirect to login after this.
 router.post('/logout-all', requireAuth, handle(async (req, res) => {
   await logoutAllDevices(req.user.id);
   res.json({ ok: true });

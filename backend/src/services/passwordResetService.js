@@ -84,13 +84,6 @@ async function changePassword(userId, currentPassword, newPassword) {
   return setNewPassword({ _id: userId }, newPassword);
 }
 
-// Revokes every existing session (including the caller's) by bumping tokenVersion.
-// No fresh token is returned — this is a deliberate full sign-out, not a rotation.
-async function logoutAllDevices(userId) {
-  await User.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
-}
-
 module.exports = {
-  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset,
-  changePassword, logoutAllDevices,
+  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset, changePassword,
 };

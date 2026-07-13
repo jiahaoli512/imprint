@@ -4,11 +4,11 @@ import Modal from '../../components/Modal';
 import PasswordInput from '../../components/PasswordInput';
 import PasswordChecklist from '../../components/PasswordChecklist';
 import ScrollHint from '../../components/ScrollHint';
-import { api, getUsername, setToken, clearSession } from '../../api/client';
-import { pauseTracking } from '../location/backgroundTracking';
+import { api, getUsername, setToken } from '../../api/client';
 import { passwordValid } from '../../utils/passwordRules';
 import { useForm } from '../../utils/useForm';
 import { useAccountExport } from './useAccountExport';
+import { useLogoutAllDevices } from './useLogoutAllDevices';
 import Setting from './Setting';
 
 // Inline "change password while signed in" form, gated by re-entering the
@@ -83,26 +83,10 @@ function ChangePasswordForm({ onDone, changePassword = api.changePassword }) {
 
 // Confirmation modal for signing out every session (including this one) —
 // same shape as LogoutModal.jsx, since this is functionally "log out, but
-// everywhere". `logoutAllDevices` is injected the same way as
-// ChangePasswordForm's `changePassword`.
-function LogoutAllModal({ onCancel, logoutAllDevices = api.logoutAllDevices }) {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-
-  async function handleConfirm() {
-    setLoading(true);
-    // Flush buffered points (needs the still-valid token) BEFORE revoking
-    // every session server-side — logoutAllDevices bumps tokenVersion, which
-    // invalidates this device's own token too, so calling it first would make
-    // the flush 401 (same ordering LogoutModal.jsx uses, for the same reason).
-    await pauseTracking();
-    try {
-      await logoutAllDevices();
-    } finally {
-      clearSession();
-      navigate('/home');
-    }
-  }
+// everywhere". Orchestration (flush/revoke/clear/redirect) lives in
+// useLogoutAllDevices; this is just the confirm UI.
+function LogoutAllModal({ onCancel }) {
+  const { loading, handleConfirm } = useLogoutAllDevices();
 
   return (
     <Modal onClose={onCancel}>
@@ -135,11 +119,11 @@ export default function AccountSettings({ ctx }) {
 
   return (
     <ScrollHint wrapClassName="settings-scroll" className="settings-panel">
-      <Setting title="Edit profile" description="Jump to your profile with editing already turned on.">
+      <Setting title="Edit profile" description="Edit your name and username.">
         <button type="button" className="btn btn-primary" onClick={handleEditProfile}>Edit Profile</button>
       </Setting>
 
-      <Setting title="Change password" description="Update your password using your current one.">
+      <Setting title="Change password" description="Make updates your current password.">
         {changingPassword ? (
           <ChangePasswordForm onDone={() => setChangingPassword(false)} />
         ) : (
@@ -154,7 +138,7 @@ export default function AccountSettings({ ctx }) {
         {exportError && <p className="auth-error">{exportError}</p>}
       </Setting>
 
-      <Setting title="Log out of all devices" description="Sign out of every session, including this one.">
+      <Setting title="Log out of all devices" description="Sign out of EVERY session and device with your account, including this one.">
         <button type="button" className="btn btn-ghost" style={{ color: 'var(--error)' }} onClick={() => setConfirmingLogoutAll(true)}>
           Log Out Everywhere
         </button>
