@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download } from 'lucide-react';
+import { Download, LogOut } from 'lucide-react';
 import Modal from '../../components/Modal';
 import PasswordInput from '../../components/PasswordInput';
 import PasswordChecklist from '../../components/PasswordChecklist';
@@ -141,7 +141,7 @@ export default function AccountSettings({ ctx }) {
 
       <Setting title="Log out of all devices" description="Sign out of every session and device on your account, including this one.">
         <button type="button" className="btn btn-ghost" style={{ color: 'var(--error)' }} onClick={() => setConfirmingLogoutAll(true)}>
-          Log Out Everywhere
+          <LogOut size={15} /> Log Out Everywhere
         </button>
       </Setting>
 
