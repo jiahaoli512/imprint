@@ -2,21 +2,22 @@ import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal';
 import LogoMark from '../../components/LogoMark';
 import UserIdentity from './UserIdentity';
-import { api } from '../../api/client';
+import { friendsApiFor } from '../../api/client';
 import { useAsync } from '../../utils/useAsync';
 
 // Lists a user's friends, opened by clicking the friend count. Only reachable
-// when the viewer may see the list (the owner, or one of the owner's friends) —
-// the server enforces this too (403 otherwise). Each row links to that friend's
-// profile.
-export default function FriendsListModal({ username, isMe, onClose }) {
+// when the viewer may see the list (the owner, an admin, or one of the
+// owner's friends) — the server enforces this too (403 otherwise). Each row
+// links to that friend's profile.
+export default function FriendsListModal({ username, isMe, isAdminView, onClose }) {
   const navigate = useNavigate();
-  const { data, loading, error } = useAsync(() => api.getFriendsOf(username), [username]);
+  const { getFriendsOf } = friendsApiFor(isAdminView);
+  const { data, loading, error } = useAsync(() => getFriendsOf(username), [username]);
   const friends = Array.isArray(data) ? data : [];
 
   function go(u) {
     onClose();
-    navigate(`/${u}/profile`);
+    navigate(isAdminView ? `/admin/${u}/profile` : `/${u}/profile`);
   }
 
   return (

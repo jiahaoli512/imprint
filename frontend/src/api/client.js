@@ -233,6 +233,7 @@ export const api = {
   getActivity:          ()           => request('/api/activity'),
   respondFriendRequest: (id, action) => request.post(`/api/friends/requests/${encodeURIComponent(id)}/respond`, { action }),
   getFriendsOf:         (username)   => request(`/api/friends/of/${encodeURIComponent(username)}`),
+  adminGetFriendsOf:    (username)   => adminRequest(`/api/friends/of/${encodeURIComponent(username)}`),
   removeFriend:         (username)   => request.del(`/api/friends/${encodeURIComponent(username)}`),
 
   // Markers
@@ -288,4 +289,11 @@ export function markersApiFor(isAdminView, username) {
     load: isAdminView ? () => api.adminGetUserMarkers(username) : () => api.getMarkers(username),
     save: isAdminView ? (points) => api.adminSaveMarkers(username, points) : api.saveMarkers,
   };
+}
+
+// Resolve the friend-list call for the current view. Same reasoning as
+// markersApiFor: in admin view there's no user session, so the gated GET must
+// go out with the admin token or it 401s and the friends modal loads empty.
+export function friendsApiFor(isAdminView) {
+  return { getFriendsOf: isAdminView ? api.adminGetFriendsOf : api.getFriendsOf };
 }

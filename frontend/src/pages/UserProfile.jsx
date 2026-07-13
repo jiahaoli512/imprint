@@ -216,7 +216,7 @@ export default function UserProfile() {
         </div>
       </div>
       {showBadges && <BadgesModal user={user} markers={badgeMarkers} onClose={() => setShowBadges(false)} />}
-      {friends.showFriends && <FriendsListModal username={user.username} isMe={isMe} onClose={friends.closeFriends} />}
+      {friends.showFriends && <FriendsListModal username={user.username} isMe={isMe} isAdminView={isAdminView} onClose={friends.closeFriends} />}
       {edit.pendingSave && (
         <Modal onClose={edit.closePending}>
           <h2 className="modal-title">Save these changes?</h2>
