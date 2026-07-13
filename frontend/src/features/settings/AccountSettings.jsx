@@ -123,7 +123,7 @@ export default function AccountSettings({ ctx }) {
         <button type="button" className="btn btn-primary" onClick={handleEditProfile}>Edit Profile</button>
       </Setting>
 
-      <Setting title="Change password" description="Make updates your current password.">
+      <Setting title="Change password" description="Update your password using your current one.">
         {changingPassword ? (
           <ChangePasswordForm onDone={() => setChangingPassword(false)} />
         ) : (
@@ -138,7 +138,7 @@ export default function AccountSettings({ ctx }) {
         {exportError && <p className="auth-error">{exportError}</p>}
       </Setting>
 
-      <Setting title="Log out of all devices" description="Sign out of EVERY session and device with your account, including this one.">
+      <Setting title="Log out of all devices" description="Sign out of every session and device on your account, including this one.">
         <button type="button" className="btn btn-ghost" style={{ color: 'var(--error)' }} onClick={() => setConfirmingLogoutAll(true)}>
           Log Out Everywhere
         </button>
