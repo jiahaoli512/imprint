@@ -1,3 +1,5 @@
+const httpError = require('./httpError');
+
 // Self-service profile-edit cooldown windows, in days. Split out of validate.js:
 // this is rate-limiting/date math, not "is this input well-formed" validation —
 // a genuinely different concern that happened to accumulate in the same file.
@@ -15,4 +17,12 @@ function daysUntil(lastChangedAt, days) {
   return remainingMs <= 0 ? 0 : Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
 }
 
-module.exports = { COOLDOWN_DAYS, daysUntil };
+// Throws a 429 with the standard "try again in N day(s)" message if
+// `lastChangedAt` hasn't cleared its `days`-long cooldown yet. `label` names
+// the field in the message (e.g. "name", "username"). A no-op when eligible.
+function assertCooldownElapsed(lastChangedAt, days, label) {
+  const wait = daysUntil(lastChangedAt, days);
+  if (wait > 0) throw httpError(429, `You can change your ${label} again in ${wait} day${wait === 1 ? '' : 's'}.`);
+}
+
+module.exports = { COOLDOWN_DAYS, daysUntil, assertCooldownElapsed };

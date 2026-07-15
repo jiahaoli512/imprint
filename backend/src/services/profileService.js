@@ -3,7 +3,7 @@ const {
   checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName, escapeRegex,
 } = require('../utils/validate');
 const { validateDateOfBirth } = require('../utils/validateDob');
-const { COOLDOWN_DAYS, daysUntil } = require('../utils/cooldowns');
+const { COOLDOWN_DAYS, assertCooldownElapsed } = require('../utils/cooldowns');
 const httpError = require('../utils/httpError');
 const { findUserByUsername } = require('./userLookup');
 const { friendSummaryFor } = require('./friendService');
@@ -13,6 +13,15 @@ const { toProfileView } = require('./userSerializers');
 const PROFILE_FIELDS = 'username firstName lastName dateOfBirth createdAt usernameChangedAt nameChangedAt';
 const SEARCH_FIELDS = 'username firstName lastName -_id'; // client keys by username; _id stays internal
 const ADMIN_LIST_FIELDS = 'email username firstName lastName dateOfBirth createdAt';
+
+// Throws 409 if `username` belongs to a different account than the one
+// `notFilter` excludes — e.g. `{ email: { $ne: email } }` during setup
+// (before the account has a stable id to key off within this call) or
+// `{ _id: { $ne: user._id } }` for a later edit, once it does.
+async function assertUsernameAvailable(username, notFilter) {
+  const taken = await User.findOne({ username, ...notFilter });
+  if (taken) throw httpError(409, 'That username is already taken.');
+}
 
 async function checkUsername(username) {
   checkRequired('Username', username);
@@ -30,8 +39,7 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
   email = normalizeEmail(email);
   username = normalizeUsername(username);
 
-  const taken = await User.findOne({ username, email: { $ne: email } });
-  if (taken) throw httpError(409, 'That username is already taken.');
+  await assertUsernameAvailable(username, { email: { $ne: email } });
 
   await User.findOneAndUpdate(
     { email },
@@ -101,10 +109,7 @@ async function updateUserByUsername(username, { firstName, lastName, username: n
     const nextLast = cleanName(lastName);
     if (nextFirst === user.firstName && nextLast === user.lastName)
       throw httpError(400, 'Your new name must be different from your current name.');
-    if (!isAdmin) {
-      const wait = daysUntil(user.nameChangedAt, COOLDOWN_DAYS.name);
-      if (wait > 0) throw httpError(429, `You can change your name again in ${wait} day${wait === 1 ? '' : 's'}.`);
-    }
+    if (!isAdmin) assertCooldownElapsed(user.nameChangedAt, COOLDOWN_DAYS.name, 'name');
     user.firstName = nextFirst;
     user.lastName = nextLast;
     if (!isAdmin) user.nameChangedAt = new Date();
@@ -117,12 +122,8 @@ async function updateUserByUsername(username, { firstName, lastName, username: n
     const nextUsername = normalizeUsername(newUsername);
     if (nextUsername === user.username)
       throw httpError(400, 'Your new username must be different from your current username.');
-    const taken = await User.findOne({ username: nextUsername, _id: { $ne: user._id } });
-    if (taken) throw httpError(409, 'That username is already taken.');
-    if (!isAdmin) {
-      const wait = daysUntil(user.usernameChangedAt, COOLDOWN_DAYS.username);
-      if (wait > 0) throw httpError(429, `You can change your username again in ${wait} day${wait === 1 ? '' : 's'}.`);
-    }
+    await assertUsernameAvailable(nextUsername, { _id: { $ne: user._id } });
+    if (!isAdmin) assertCooldownElapsed(user.usernameChangedAt, COOLDOWN_DAYS.username, 'username');
     user.username = nextUsername;
     if (!isAdmin) user.usernameChangedAt = new Date();
     changed = true;
