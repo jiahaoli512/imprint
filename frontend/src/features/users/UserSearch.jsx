@@ -94,7 +94,12 @@ export default function UserSearch({ isAdminView, variant = 'block' }) {
           border: '1px solid var(--border)',
           borderRadius: '12px',
           overflow: 'hidden',
-          zIndex: 1000,
+          // Leaflet's own zoom control sits at z-index: 1000 too (its
+          // default), and — being a sibling that mounts later in the DOM,
+          // below the search bar in the dashboard layout — wins ties at
+          // equal z-index, painting over the dropdown. 1200 matches the
+          // notification bell's dropdown for consistency and clears it.
+          zIndex: 1200,
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         }}>
           {results.map(u => (
