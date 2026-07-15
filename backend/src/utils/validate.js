@@ -104,8 +104,19 @@ function checkNameChars(label, value, { allowSpaces = false } = {}) {
   }
 }
 
+// Escapes regex metacharacters so a value is matched literally instead of
+// interpreted — used wherever user input is dropped into a `$regex` query
+// (e.g. profileService.searchUsers matching name prefixes). Closes off
+// unanchored-wildcard-style injection (e.g. a query of `.*`) and lets values
+// that legitimately contain regex-special characters (a name with a `.` or
+// `+`, say) still match literally.
+const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
+function escapeRegex(value) {
+  return String(value).replace(REGEX_SPECIAL, '\\$&');
+}
+
 module.exports = {
   LIMITS, checkLength, checkNoSpaces, checkNameChars, checkEmail,
   checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
-  NAME_RE, NAME_SPACES_RE, USERNAME_RE,
+  NAME_RE, NAME_SPACES_RE, USERNAME_RE, escapeRegex,
 };

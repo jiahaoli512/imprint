@@ -1,11 +1,19 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { api } from '../api/client';
 import { isValidEmail } from '../utils/validateName';
 import MapMockup from './MapMockup';
+import AuthButtons from './AuthButtons';
 
 const isNative = Capacitor.isNativePlatform();
+
+// The id of the waitlist email input, shared with Nav.jsx: "Get Early
+// Access" focuses this field via document.getElementById rather than a
+// prop/context (Nav and Hero are unrelated siblings, both mounted only on
+// Home). Exporting the id here — where the input actually lives — means a
+// future rename breaks the Nav.jsx import, not a silently-dead
+// getElementById call for a string nobody kept in sync.
+export const WAITLIST_EMAIL_ID = 'waitlist-email';
 
 // The waitlist join form lives here (top of the page, always in view on
 // load) rather than at the bottom of the page — it's the primary
@@ -15,7 +23,6 @@ const isNative = Capacitor.isNativePlatform();
 // competing with Sign Up/Log In), matching the same isNative gate the
 // waitlist form used at the bottom.
 export default function Hero({ waitlistCount, onJoin }) {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
   const [msg, setMsg] = useState('');
@@ -58,16 +65,13 @@ export default function Hero({ waitlistCount, onJoin }) {
         portrait of your world. See your coverage, explore what's left, and share the journey.
       </p>
 
-      <div className="hero-auth-btns">
-        <button className="btn btn-primary" onClick={() => navigate('/signup')}>Sign Up</button>
-        <button className="btn btn-ghost" onClick={() => navigate('/login')}>Log In</button>
-      </div>
+      <AuthButtons />
 
       {!isNative && (
         <>
-          <form id="waitlist-form" className="hero-form" onSubmit={handleJoin}>
+          <form className="hero-form" onSubmit={handleJoin}>
             <input
-              id="waitlist-email"
+              id={WAITLIST_EMAIL_ID}
               type="email"
               placeholder="Not approved yet? Join the waitlist"
               value={email}

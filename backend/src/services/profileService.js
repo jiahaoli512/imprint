@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const {
-  checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName,
+  checkRequired, normalizeEmail, normalizeUsername, validateName, validateUsername, cleanName, escapeRegex,
 } = require('../utils/validate');
 const { validateDateOfBirth } = require('../utils/validateDob');
 const { COOLDOWN_DAYS, daysUntil } = require('../utils/cooldowns');
@@ -38,15 +38,6 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
     { firstName: cleanName(firstName), lastName: cleanName(lastName), username, dateOfBirth: new Date(dateOfBirth) }
   );
   return { username };
-}
-
-// Escapes regex metacharacters in user input so it's matched literally (a
-// name can legitimately contain `.`/`+`/etc. via NAME_RE's unicode-letter
-// class in rare scripts, and this also closes off unanchored-wildcard-style
-// injection like `.*`).
-const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
-function escapeRegex(s) {
-  return s.replace(REGEX_SPECIAL, '\\$&');
 }
 
 async function searchUsers(q) {
