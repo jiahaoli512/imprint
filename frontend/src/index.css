@@ -679,7 +679,12 @@ body {
 .feature-help-btn:disabled:hover { background: none; color: inherit; }
 .feature-help-tip {
   position: absolute;
-  top: calc(100% + 10px);
+  /* Flush against the icon (no gap) — a gap here would be a dead zone: since
+     .feature-help's own hoverable box is just the tiny icon (the tooltip is
+     absolutely positioned, out of flow, so it doesn't enlarge that box), any
+     empty space between icon and tooltip is "not hovering" anything, which
+     fires mouseleave the instant the cursor crosses it on the way down. */
+  top: 100%;
   left: 50%;
   z-index: 5;
   width: max-content;
@@ -697,7 +702,6 @@ body {
   visibility: hidden;
   transform: translateX(-50%) translateY(-2px);
   transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
-  pointer-events: none;
 }
 .feature-help:hover .feature-help-tip,
 .feature-help-tip.open {
