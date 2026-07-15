@@ -40,15 +40,37 @@ async function setupProfile(email, { firstName, lastName, username, dateOfBirth 
   return { username };
 }
 
+// Escapes regex metacharacters in user input so it's matched literally (a
+// name can legitimately contain `.`/`+`/etc. via NAME_RE's unicode-letter
+// class in rare scripts, and this also closes off unanchored-wildcard-style
+// injection like `.*`).
+const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
+function escapeRegex(s) {
+  return s.replace(REGEX_SPECIAL, '\\$&');
+}
+
 async function searchUsers(q) {
-  // Strip non-username chars (no regex injection possible — only [a-z0-9_]
-  // remain) and cap length. Username max is 20, so 30 is generous.
-  const clean = String(q || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
-  if (!clean) return [];
-  // Anchored prefix match: `^clean` is a left-rooted range the `username` index
-  // can serve, instead of an unanchored `$regex` that forces a full collection
-  // scan. usernames are stored lowercase, so no case-insensitive flag is needed.
-  return User.find({ username: { $regex: `^${clean}` } }, SEARCH_FIELDS).limit(8);
+  const trimmed = String(q || '').trim().slice(0, 30);
+  if (!trimmed) return [];
+
+  // Strip non-username chars for the username clause (no regex injection
+  // possible — only [a-z0-9_] remain). Anchored prefix match: `^clean` is a
+  // left-rooted range the `username` index can serve, instead of an
+  // unanchored `$regex` that forces a full collection scan. usernames are
+  // stored lowercase, so no case-insensitive flag is needed there.
+  const usernameClean = trimmed.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const nameSafe = escapeRegex(trimmed);
+
+  // firstName/lastName have no index, so these clauses are a collection
+  // scan regardless of anchoring — acceptable at this app's scale, same
+  // tradeoff already made for other unindexed lookups in this codebase.
+  const clauses = [
+    { firstName: { $regex: `^${nameSafe}`, $options: 'i' } },
+    { lastName: { $regex: `^${nameSafe}`, $options: 'i' } },
+  ];
+  if (usernameClean) clauses.push({ username: { $regex: `^${usernameClean}` } });
+
+  return User.find({ $or: clauses }, SEARCH_FIELDS).limit(8);
 }
 
 async function getUserByUsername(username) {
