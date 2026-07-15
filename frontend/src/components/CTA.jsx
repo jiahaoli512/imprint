@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
+import AuthButtons from './AuthButtons';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -7,8 +7,6 @@ const isNative = Capacitor.isNativePlatform();
 // view) — this bottom section is just a final sign-up/log-in nudge for
 // anyone who scrolled the whole page without converting up top.
 export default function CTA() {
-  const navigate = useNavigate();
-
   return (
     <section className="cta-section" id="cta">
       <div className="cta-glow" />
@@ -21,10 +19,7 @@ export default function CTA() {
       </h2>
       <p>Ready to start mapping your world?</p>
 
-      <div className="hero-auth-btns">
-        <button className="btn btn-primary" onClick={() => navigate('/signup')}>Sign Up</button>
-        <button className="btn btn-ghost" onClick={() => navigate('/login')}>Log In</button>
-      </div>
+      <AuthButtons />
 
       {!isNative && (
         <div className="cta-actions">

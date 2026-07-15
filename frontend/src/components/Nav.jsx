@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { Menu, X } from 'lucide-react';
 import { useDismiss } from '../utils/useDismiss';
+import { WAITLIST_EMAIL_ID } from './Hero';
 
 const REPO_URL = 'https://github.com/jiahaoli512/imprint';
 
@@ -25,7 +26,7 @@ const isNative = Capacitor.isNativePlatform();
 // out this field" bubble if it's still empty (a no-op if it already has a
 // value). A brief `.waitlist-highlight` class supplies the visual glow.
 function focusWaitlistField() {
-  const input = document.getElementById('waitlist-email');
+  const input = document.getElementById(WAITLIST_EMAIL_ID);
   if (!input) return;
   input.scrollIntoView({ behavior: 'smooth', block: 'center' });
   input.focus({ preventScroll: true });

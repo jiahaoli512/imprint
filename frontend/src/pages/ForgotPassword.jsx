@@ -2,15 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthShell from '../components/AuthShell';
 import CodeVerifyStep from '../components/CodeVerifyStep';
-import PasswordChecklist from '../components/PasswordChecklist';
-import PasswordInput from '../components/PasswordInput';
+import NewPasswordStep from '../components/NewPasswordStep';
 import {
   api, clearCodeCooldown,
   setToken, setUsername, clearAdminSession,
 } from '../api/client';
-import { isValidEmail, normalizeEmail } from '../utils/validateName';
+import { validateEmailInput } from '../utils/validateName';
 import { refreshGreeting } from '../utils/greeting';
-import { passwordValid, passwordsMatch as isPasswordsMatch } from '../utils/passwordRules';
 
 // Forgot-password flow: email → code → choice (change password / skip & log in)
 // → optional new password → dashboard. Reuses the same 6-char email-code
@@ -31,9 +29,6 @@ export default function ForgotPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetError, setResetError] = useState('');
 
-  const allPassed = passwordValid(password);
-  const passwordsMatch = isPasswordsMatch(password, confirmPassword);
-
   // Navigate to the right place once authenticated (dashboard, or profile setup
   // if this account never picked a username).
   function goAuthed() {
@@ -43,8 +38,8 @@ export default function ForgotPassword() {
 
   function handleEmailSubmit(e) {
     e.preventDefault();
-    const trimmed = normalizeEmail(email);
-    if (!isValidEmail(trimmed)) { setEmailError('Enter a valid email address.'); return; }
+    const { trimmed, error } = validateEmailInput(email);
+    if (error) { setEmailError(error); return; }
     setEmailError('');
     setEmail(trimmed);
     // CodeVerifyStep issues the reset code when it mounts (respecting the cooldown).
@@ -143,35 +138,20 @@ export default function ForgotPassword() {
 
       {/* ── New password step ── */}
       {step === 'password' && (
-        <>
-          <h1 className="auth-title">New Password</h1>
-          <p className="auth-sub">Choose a strong password.</p>
-          <div className="auth-form">
-            <PasswordInput
-              placeholder="New password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setConfirmPassword(''); }}
-            />
-
-            <PasswordChecklist password={password} />
-
-            <PasswordInput
-              placeholder="Confirm password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={!allPassed}
-              extraClass={passwordsMatch ? 'auth-input-match' : ''}
-            />
-
-            {resetError && <p className="auth-error">{resetError}</p>}
-
-            {passwordsMatch && (
-              <button className="btn btn-primary auth-submit" onClick={handleReset} disabled={loading}>
-                {loading ? 'Saving…' : 'Save & Continue'}
-              </button>
-            )}
-          </div>
-        </>
+        <NewPasswordStep
+          title="New Password"
+          subtitle="Choose a strong password."
+          passwordPlaceholder="New password"
+          password={password}
+          onPasswordChange={(v) => { setPassword(v); setConfirmPassword(''); }}
+          confirmPassword={confirmPassword}
+          onConfirmPasswordChange={setConfirmPassword}
+          error={resetError}
+        >
+          <button className="btn btn-primary auth-submit" onClick={handleReset} disabled={loading}>
+            {loading ? 'Saving…' : 'Save & Continue'}
+          </button>
+        </NewPasswordStep>
       )}
     </AuthShell>
   );

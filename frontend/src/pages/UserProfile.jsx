@@ -187,6 +187,14 @@ export default function UserProfile() {
                 <p className="profile-friends">{friendsLabel}</p>
               )}
               {!isMe && !isAdminView && (
+                // FriendButton seeds its `status` from `relationship` only
+                // once (useState initializer, no prop-sync effect), so its
+                // own optimistic updates aren't clobbered by a stale profile
+                // payload after an action. That means navigating from one
+                // user's profile to another's would otherwise reuse the same
+                // mounted instance and keep showing the *previous* user's
+                // relationship — `key={user.username}` forces a remount so
+                // it re-seeds from the new user's `relationship` instead.
                 <FriendButton
                   key={user.username}
                   username={user.username}

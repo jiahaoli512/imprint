@@ -172,7 +172,7 @@ body {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #0b0e13;
+  color: var(--bg);
 }
 
 .btn-primary:hover {
@@ -659,10 +659,10 @@ body {
   margin-bottom: 20px;
 }
 
-.icon-green  { background: rgba(52,201,174,0.14);  color: #34c9ae; }
+.icon-green  { background: rgba(52,201,174,0.14);  color: var(--accent2); }
 .icon-blue   { background: rgba(90,169,230,0.14);  color: #5aa9e6; }
 .icon-purple { background: rgba(155,109,194,0.14); color: #9b6dc2; }
-.icon-orange { background: rgba(226,161,86,0.14);  color: #e2a156; }
+.icon-orange { background: rgba(226,161,86,0.14);  color: var(--accent); }
 .icon-pink   { background: rgba(214,122,140,0.14); color: #d67a8c; }
 .icon-yellow { background: rgba(212,175,98,0.14);  color: #d4af62; }
 
@@ -672,18 +672,23 @@ body {
 
 /* The Milestones "?" icon plays a short hover-preview clip — see
    FeatureHelp in Features.jsx. The other cards' "?" icons are inert
-   placeholders (no tooltip attached) until they have real help content. */
-.feature-help { position: relative; display: flex; }
+   placeholders (no tooltip attached) until they have real help content.
+   `.feature-help-tip` is the tooltip's shared *look* only (chrome, color,
+   fade transition) — it's portaled to <body> (see FeatureHelp), so it's
+   never a descendant of `.feature-help` and can't be targeted by a
+   `.feature-help:hover` selector, and it carries no position of its own.
+   Each concrete variant (currently only `.has-video`) is responsible for
+   its own layout, so this base rule doesn't accumulate positioning
+   properties a future variant would just override anyway. */
+.feature-help { display: flex; }
 .feature-help-btn { width: 20px; height: 20px; flex-shrink: 0; }
 .feature-help-btn:disabled { opacity: 0.45; cursor: default; }
 .feature-help-btn:disabled:hover { background: none; color: inherit; }
 .feature-help-tip {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  z-index: 5;
-  width: max-content;
-  max-width: calc(100% - 8px);
+  /* High enough to clear the sticky nav (z-index: 100) and other page
+     chrome now that portaling to <body> puts it in the root stacking
+     context, not scoped inside its card anymore. */
+  z-index: 1000;
   padding: 10px 12px;
   border-radius: 10px;
   background: var(--surface2);
@@ -695,23 +700,29 @@ body {
   box-shadow: 0 10px 28px rgba(0,0,0,0.4);
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-50%) translateY(-2px);
-  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
-  pointer-events: none;
+  transition: opacity 0.12s ease, visibility 0.12s;
 }
-.feature-help:hover .feature-help-tip,
 .feature-help-tip.open {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
 }
 
-/* Milestones' tooltip plays a short clip instead of text — kept small
-   ("shouldn't take up too much space") regardless of the card's own width. */
+/* Milestones' tooltip plays a short clip near the cursor instead of showing
+   text below the icon — positioned via inline left/top (React state, see
+   FeatureHelp's positionAt) rather than any anchored CSS position, and
+   portaled to <body> specifically so `position: fixed` is genuinely
+   viewport-relative — nested inside .feature-card it would otherwise anchor
+   to the card, since :hover applies a transform there (its lift effect),
+   and a transformed ancestor becomes the containing block for any fixed
+   descendant. Kept small ("shouldn't take up too much space") regardless of
+   viewport width. `pointer-events: none` since it's a passive follower, not
+   something meant to be hovered itself. */
 .feature-help-tip.has-video {
+  position: fixed;
   width: 220px;
-  max-width: calc(100% - 8px);
+  max-width: calc(100vw - 16px);
   padding: 6px;
+  pointer-events: none;
 }
 .feature-help-tip.has-video video {
   display: block;
@@ -721,7 +732,7 @@ body {
      video has no intrinsic height yet (height:auto resolves against an
      unknown aspect ratio), so it renders collapsed to a sliver showing only
      the browser's tiny loading/play glyph instead of the actual frame. */
-  aspect-ratio: 324 / 300;
+  aspect-ratio: 660 / 610;
   border-radius: 8px;
   background: #000;
 }
@@ -812,8 +823,6 @@ body {
   height: 78px;
   display: block;
 }
-
-.store-icon { font-size: 22px; }
 
 /* ── FOOTER ── */
 footer {
@@ -1187,7 +1196,7 @@ footer {
   width: 124px;
   height: 124px;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 30%, var(--surface2) 0%, #141821 72%);
+  background: radial-gradient(circle at 50% 30%, var(--surface2) 0%, var(--surface) 72%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2707,7 +2716,7 @@ footer {
 .status-badge.pending {
   color: var(--muted);
   background: rgba(244,239,230,0.04);
-  border: 1px solid rgba(244,239,230,0.08);
+  border: 1px solid var(--border);
 }
 
 /* ── HAMBURGER / MOBILE NAV ── */

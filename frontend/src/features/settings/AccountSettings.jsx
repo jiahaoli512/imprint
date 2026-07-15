@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, LogOut } from 'lucide-react';
 import Modal from '../../components/Modal';
 import PasswordInput from '../../components/PasswordInput';
-import PasswordChecklist from '../../components/PasswordChecklist';
+import PasswordAndConfirmFields from '../../components/PasswordAndConfirmFields';
 import ScrollHint from '../../components/ScrollHint';
 import { api, getUsername, setToken } from '../../api/client';
 import { passwordValid, passwordsMatch } from '../../utils/passwordRules';
@@ -38,7 +38,6 @@ function ChangePasswordForm({ onDone, changePassword = api.changePassword }) {
     },
   );
 
-  const allPassed = passwordValid(values.newPassword);
   const matches = passwordsMatch(values.newPassword, values.confirmPassword);
 
   if (success) {
@@ -58,18 +57,13 @@ function ChangePasswordForm({ onDone, changePassword = api.changePassword }) {
         value={values.currentPassword}
         onChange={setField('currentPassword')}
       />
-      <PasswordInput
-        placeholder="New password"
-        value={values.newPassword}
-        onChange={setField('newPassword')}
-      />
-      <PasswordChecklist password={values.newPassword} />
-      <PasswordInput
-        placeholder="Confirm new password"
-        value={values.confirmPassword}
-        onChange={setField('confirmPassword')}
-        disabled={!allPassed}
-        extraClass={matches ? 'auth-input-match' : ''}
+      <PasswordAndConfirmFields
+        password={values.newPassword}
+        onPasswordChange={setField('newPassword')}
+        confirmPassword={values.confirmPassword}
+        onConfirmPasswordChange={setField('confirmPassword')}
+        passwordPlaceholder="New password"
+        confirmPlaceholder="Confirm new password"
       />
       {error && <p className="auth-error">{error}</p>}
       <div className="settings-inline-form-actions">

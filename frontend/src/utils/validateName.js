@@ -16,6 +16,17 @@ export function normalizeEmail(email) {
   return (email || '').trim().toLowerCase();
 }
 
+// Normalizes + format-validates an email typed into an auth flow's email
+// step (Signup, ForgotPassword both start with one). Returns the normalized
+// value and an error message ('' when valid) — what happens next (an API
+// call, a step transition, ...) differs per flow, so that stays with the
+// caller; this only covers the identical guard clause both previously
+// duplicated.
+export function validateEmailInput(email) {
+  const trimmed = normalizeEmail(email);
+  return { trimmed, error: isValidEmail(trimmed) ? '' : 'Enter a valid email address.' };
+}
+
 // Validates first/last name format. The caller is responsible for the "first
 // name required" check (its wording differs per form); this covers the shared
 // length/character rules. Returns an error message, or '' if valid.

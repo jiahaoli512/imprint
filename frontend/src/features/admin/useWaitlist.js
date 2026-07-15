@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api/client';
+import { useAsync } from '../../utils/useAsync';
 import { downloadCsv } from '../../utils/csv';
 
 // Owns waitlist data and all its mutations (approve, delete, reorder) plus CSV
-// export. Mutations apply optimistic updates and roll back / refetch on failure.
+// export. The initial load goes through useAsync, matching useUsers's
+// pattern, rather than hand-rolling the same fetch/loading/error effect.
+// Mutations then apply optimistic updates to `entries` — a local mutable
+// copy, since useAsync's own `data` is just whatever the last load resolved
+// and isn't meant to be mutated directly — rolling back / refetching on
+// failure.
 export function useWaitlist() {
+  const { data, loading, error: loadError } = useAsync(api.getWaitlist);
   const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [approvingId, setApprovingId] = useState(null);
+  const error = loadError ? (loadError.message || 'Failed to load waitlist.') : '';
 
   useEffect(() => {
-    api.getWaitlist()
-      .then(setEntries)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (data) setEntries(data);
+  }, [data]);
 
   async function approve(id) {
     setApprovingId(id);

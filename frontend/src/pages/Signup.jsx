@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import AuthShell from '../components/AuthShell';
 import ConfirmModal from '../components/ConfirmModal';
 import CodeVerifyStep from '../components/CodeVerifyStep';
-import PasswordChecklist from '../components/PasswordChecklist';
-import PasswordInput from '../components/PasswordInput';
+import NewPasswordStep from '../components/NewPasswordStep';
 import { api, clearCodeCooldown } from '../api/client';
-import { isValidEmail, normalizeEmail } from '../utils/validateName';
-import { passwordValid } from '../utils/passwordRules';
+import { validateEmailInput } from '../utils/validateName';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -27,9 +25,6 @@ export default function Signup() {
     }
   }, [step]);
 
-  const allPassed = passwordValid(password);
-  const passwordsMatch = allPassed && confirmPassword.length > 0 && confirmPassword === password;
-
   async function handleRegister() {
     setLoading(true);
     setRegisterError('');
@@ -47,11 +42,8 @@ export default function Signup() {
 
   async function handleEmailSubmit(e) {
     e.preventDefault();
-    const trimmed = normalizeEmail(email);
-    if (!isValidEmail(trimmed)) {
-      setEmailError('Enter a valid email address.');
-      return;
-    }
+    const { trimmed, error } = validateEmailInput(email);
+    if (error) { setEmailError(error); return; }
     setEmailError('');
     setLoading(true);
     try {
@@ -136,46 +128,28 @@ export default function Signup() {
 
         {/* ── Password step ── */}
         {step === 'password' && (
-          <>
-            <h1 className="auth-title">Create Password</h1>
-            <p className="auth-sub">Choose a strong password.</p>
-            <div className="auth-form">
-              <PasswordInput
-                placeholder="Password"
-                value={password}
-                onChange={e => { setPassword(e.target.value); setConfirmPassword(''); }}
-              />
-
-              <PasswordChecklist password={password} />
-
-              <PasswordInput
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                disabled={!allPassed}
-                extraClass={passwordsMatch ? 'auth-input-match' : ''}
-              />
-
-              {registerError && <p className="auth-error">{registerError}</p>}
-
-              {passwordsMatch && (
-                <>
-                  <p style={{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', margin: '4px 0 0' }}>
-                    By signing up, you agree to our{' '}
-                    <a href="/privacy" target="_blank" rel="noreferrer" className="auth-link">Privacy Policy</a>
-                    {' '}and Terms.
-                  </p>
-                  <button
-                    className="btn btn-primary auth-submit"
-                    onClick={() => setConfirmCreate(true)}
-                    disabled={loading}
-                  >
-                    {loading ? 'Creating account…' : 'Continue'}
-                  </button>
-                </>
-              )}
-            </div>
-          </>
+          <NewPasswordStep
+            title="Create Password"
+            subtitle="Choose a strong password."
+            password={password}
+            onPasswordChange={(v) => { setPassword(v); setConfirmPassword(''); }}
+            confirmPassword={confirmPassword}
+            onConfirmPasswordChange={setConfirmPassword}
+            error={registerError}
+          >
+            <p style={{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', margin: '4px 0 0' }}>
+              By signing up, you agree to our{' '}
+              <a href="/privacy" target="_blank" rel="noreferrer" className="auth-link">Privacy Policy</a>
+              {' '}and Terms.
+            </p>
+            <button
+              className="btn btn-primary auth-submit"
+              onClick={() => setConfirmCreate(true)}
+              disabled={loading}
+            >
+              {loading ? 'Creating account…' : 'Continue'}
+            </button>
+          </NewPasswordStep>
         )}
 
         {/* ── Done step ── */}
