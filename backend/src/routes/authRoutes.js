@@ -25,7 +25,8 @@ router.post('/verify-code', authLimiter, handle(async (req, res) => {
 }));
 
 router.post('/login', authLimiter, handle(async (req, res) => {
-  const result = await loginUser(req.body.email, req.body.password);
+  // `identifier` is an email address or a username — see authService.loginUser.
+  const result = await loginUser(req.body.identifier, req.body.password);
   res.json({ ok: true, ...result });
 }));
 
