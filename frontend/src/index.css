@@ -172,7 +172,7 @@ body {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #0b0e13;
+  color: var(--bg);
 }
 
 .btn-primary:hover {
@@ -659,10 +659,10 @@ body {
   margin-bottom: 20px;
 }
 
-.icon-green  { background: rgba(52,201,174,0.14);  color: #34c9ae; }
+.icon-green  { background: rgba(52,201,174,0.14);  color: var(--accent2); }
 .icon-blue   { background: rgba(90,169,230,0.14);  color: #5aa9e6; }
 .icon-purple { background: rgba(155,109,194,0.14); color: #9b6dc2; }
-.icon-orange { background: rgba(226,161,86,0.14);  color: #e2a156; }
+.icon-orange { background: rgba(226,161,86,0.14);  color: var(--accent); }
 .icon-pink   { background: rgba(214,122,140,0.14); color: #d67a8c; }
 .icon-yellow { background: rgba(212,175,98,0.14);  color: #d4af62; }
 
@@ -823,8 +823,6 @@ body {
   height: 78px;
   display: block;
 }
-
-.store-icon { font-size: 22px; }
 
 /* ── FOOTER ── */
 footer {
@@ -1198,7 +1196,7 @@ footer {
   width: 124px;
   height: 124px;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 30%, var(--surface2) 0%, #141821 72%);
+  background: radial-gradient(circle at 50% 30%, var(--surface2) 0%, var(--surface) 72%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2718,7 +2716,7 @@ footer {
 .status-badge.pending {
   color: var(--muted);
   background: rgba(244,239,230,0.04);
-  border: 1px solid rgba(244,239,230,0.08);
+  border: 1px solid var(--border);
 }
 
 /* ── HAMBURGER / MOBILE NAV ── */
