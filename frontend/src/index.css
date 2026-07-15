@@ -629,6 +629,9 @@ body {
 }
 
 .feature-card {
+  position: relative; /* containing block for .feature-help-tip, so it's
+                          bounded by the card's own width, not the icon's
+                          drifting position — same fix as the settings tooltip */
   flex: 1 1 300px;
   max-width: 340px;
   background: var(--surface);
@@ -663,8 +666,56 @@ body {
 .icon-pink   { background: rgba(214,122,140,0.14); color: #d67a8c; }
 .icon-yellow { background: rgba(212,175,98,0.14);  color: #d4af62; }
 
-.feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.3px; }
-.feature-card p  { font-size: 14px; color: var(--muted); line-height: 1.65; }
+.feature-card-head { display: flex; align-items: center; gap: 6px; }
+.feature-card h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 0; }
+
+/* "?" help icon + tooltip, replacing the always-visible description text —
+   same hover(desktop)/tap(touch) pattern as the settings tooltip
+   (Setting.jsx / .settings-help-tip). */
+.feature-help { position: relative; display: flex; }
+.feature-help-btn { width: 20px; height: 20px; flex-shrink: 0; }
+.feature-help-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 5;
+  width: max-content;
+  max-width: calc(100% - 8px);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-2px);
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+  pointer-events: none;
+}
+.feature-help:hover .feature-help-tip,
+.feature-help-tip.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Milestones' tooltip plays a short clip instead of text — kept small
+   ("shouldn't take up too much space") regardless of the card's own width. */
+.feature-help-tip.has-video {
+  width: 220px;
+  max-width: calc(100% - 8px);
+  padding: 6px;
+}
+.feature-help-tip.has-video video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
 
 /* ── HOW IT WORKS ── */
 .how-section {
