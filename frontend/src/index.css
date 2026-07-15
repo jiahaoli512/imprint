@@ -617,13 +617,20 @@ body {
   margin-bottom: 64px;
 }
 
+/* Flexbox (not CSS Grid) so a leftover card on its own row — e.g. a 4th
+   card after 3 fit per row — centers itself instead of hugging the left
+   edge under an empty track; grid's shared column tracks can't do that for
+   an unevenly-filled last row without column-count-specific breakpoints. */
 .features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 20px;
 }
 
 .feature-card {
+  flex: 1 1 300px;
+  max-width: 340px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
