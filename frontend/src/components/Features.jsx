@@ -64,7 +64,7 @@ function FeatureHelp({ title, video }) {
   // spot.
   function positionAt(clientX, clientY) {
     const w = tipRef.current?.offsetWidth ?? 220;
-    const h = tipRef.current?.offsetHeight ?? 204;
+    const h = tipRef.current?.offsetHeight ?? 203;
     let left = clientX + CURSOR_OFFSET;
     let top = clientY + CURSOR_OFFSET;
     if (left + w > window.innerWidth - EDGE_PAD) left = clientX - w - CURSOR_OFFSET;

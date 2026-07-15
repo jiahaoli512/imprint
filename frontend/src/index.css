@@ -732,7 +732,7 @@ body {
      video has no intrinsic height yet (height:auto resolves against an
      unknown aspect ratio), so it renders collapsed to a sliver showing only
      the browser's tiny loading/play glyph instead of the actual frame. */
-  aspect-ratio: 324 / 300;
+  aspect-ratio: 660 / 610;
   border-radius: 8px;
   background: #000;
 }
