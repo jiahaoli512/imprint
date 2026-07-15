@@ -1,12 +1,13 @@
-import { Gauge, Footprints, Users } from 'lucide-react';
+import { Gauge, Footprints, Trophy, Users } from 'lucide-react';
 
-// Narrowed to the three most representative features of the app: the live
-// discovery gauge, native passive tracking, and exploring other travelers'
-// profiles.
+// Narrowed to the four most representative features of the app: the live
+// discovery gauge, native passive tracking, the milestone badge gallery, and
+// exploring other travelers' profiles.
 const features = [
-  { icon: Gauge,      cls: 'icon-green',  title: 'Discovery Gauge',     desc: "A live gauge fills in as you move, showing the exact percentage you've uncovered." },
-  { icon: Footprints, cls: 'icon-blue',   title: 'Passive Tracking Milestones', desc: 'On the mobile app, Imprint quietly logs your trail in the background — your map builds itself and unlocks milestones as you go, no check-ins needed.' },
-  { icon: Users,      cls: 'icon-purple', title: 'Explore Travelers',   desc: 'Search for other explorers and visit their profiles and maps to see just how far they’ve roamed.' },
+  { icon: Gauge,      cls: 'icon-green',  title: 'Discovery Gauge',   desc: "A live gauge fills in as you move, showing the exact percentage you've uncovered." },
+  { icon: Footprints, cls: 'icon-blue',   title: 'Passive Tracking',  desc: 'On the mobile app, Imprint quietly logs your trail in the background. Just live your life — your map builds itself and marks your every journey; no check-ins needed.' },
+  { icon: Trophy,     cls: 'icon-yellow', title: 'Milestones',        desc: 'Flex to your friends with growing badge gallery, scroll through the endless categories Imprint offers.' },
+  { icon: Users,      cls: 'icon-purple', title: 'Explore Travelers', desc: 'Search for other explorers and visit their profiles and maps to see just how far they’ve roamed.' },
 ];
 
 export default function Features() {
