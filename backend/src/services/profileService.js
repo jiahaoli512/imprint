@@ -70,7 +70,7 @@ async function searchUsers(q) {
   ];
   if (usernameClean) clauses.push({ username: { $regex: `^${usernameClean}` } });
 
-  return User.find({ $or: clauses }, SEARCH_FIELDS).limit(8);
+  return User.find({ $or: clauses }, SEARCH_FIELDS).limit(5);
 }
 
 async function getUserByUsername(username) {
