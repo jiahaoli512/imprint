@@ -666,14 +666,17 @@ body {
 .icon-pink   { background: rgba(214,122,140,0.14); color: #d67a8c; }
 .icon-yellow { background: rgba(212,175,98,0.14);  color: #d4af62; }
 
-.feature-card-head { display: flex; align-items: center; gap: 6px; }
+.feature-card-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
 .feature-card h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 0; }
+.feature-card p  { font-size: 14px; color: var(--muted); line-height: 1.65; }
 
-/* "?" help icon + tooltip, replacing the always-visible description text —
-   same hover(desktop)/tap(touch) pattern as the settings tooltip
-   (Setting.jsx / .settings-help-tip). */
+/* The Milestones "?" icon plays a short hover-preview clip — see
+   FeatureHelp in Features.jsx. The other cards' "?" icons are inert
+   placeholders (no tooltip attached) until they have real help content. */
 .feature-help { position: relative; display: flex; }
 .feature-help-btn { width: 20px; height: 20px; flex-shrink: 0; }
+.feature-help-btn:disabled { opacity: 0.45; cursor: default; }
+.feature-help-btn:disabled:hover { background: none; color: inherit; }
 .feature-help-tip {
   position: absolute;
   top: calc(100% + 10px);
@@ -714,7 +717,13 @@ body {
   display: block;
   width: 100%;
   height: auto;
+  /* Reserves the right box shape before metadata loads — without this the
+     video has no intrinsic height yet (height:auto resolves against an
+     unknown aspect ratio), so it renders collapsed to a sliver showing only
+     the browser's tiny loading/play glyph instead of the actual frame. */
+  aspect-ratio: 324 / 300;
   border-radius: 8px;
+  background: #000;
 }
 
 /* ── HOW IT WORKS ── */

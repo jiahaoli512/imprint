@@ -5,7 +5,8 @@ import { useDismiss } from '../utils/useDismiss';
 // Narrowed to the four most representative features of the app: the live
 // discovery gauge, native passive tracking, the milestone badge gallery, and
 // exploring other travelers' profiles. Milestones carries a `video` — its "?"
-// tooltip plays a short clip instead of showing text, see FeatureHelp below.
+// plays a short clip on hover; the other three cards' "?" icons are inert
+// placeholders for now (see FeatureHelp's `placeholder` branch below).
 const features = [
   { icon: Gauge,      cls: 'icon-green',  title: 'Discovery Gauge',   desc: "A live gauge fills in as you move, showing the exact percentage you've uncovered." },
   { icon: Footprints, cls: 'icon-blue',   title: 'Passive Tracking',  desc: 'On the mobile app, Imprint quietly logs your trail in the background. Just live your life — your map builds itself and marks your every journey; no check-ins needed.' },
@@ -13,44 +14,43 @@ const features = [
   { icon: Users,      cls: 'icon-purple', title: 'Explore Travelers', desc: 'Search for other explorers and visit their profiles and maps to see just how far they’ve roamed.' },
 ];
 
-// The "?" help icon + its hover/tap tooltip, mirroring Setting.jsx's pattern
-// (hover reveals it on desktop; tap toggles it on touch/native, where there's
-// no hover) — descriptions move off the card face and into the tooltip. When
-// a card carries a `video` (currently just Milestones), the tooltip plays
-// that clip instead of text: it starts as soon as the tooltip opens and is
-// paused + rewound the instant it closes, so it only ever runs while
-// actually hovered/open, never idling in the background.
-function FeatureHelp({ title, desc, video }) {
+// The Milestones "?" icon plays a short clip on hover(desktop)/tap(touch),
+// mirroring Setting.jsx's hover/tap pattern — it starts as soon as the
+// tooltip opens and is paused + rewound the instant it closes, so it only
+// ever runs while actually hovered/open, never idling in the background.
+// Cards without a `video` render the same icon as an inert placeholder
+// (no tooltip, no listeners) until they have real help content.
+function FeatureHelp({ title, video }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   useDismiss(wrapRef, () => close(), { active: open, escape: true });
 
+  if (!video) {
+    return (
+      <div className="feature-help">
+        <button type="button" className="icon-btn feature-help-btn" aria-label={`About ${title}`} disabled>
+          <HelpCircle size={13} />
+        </button>
+      </div>
+    );
+  }
+
   function playClip() {
-    const v = videoRef.current;
-    if (v) v.play().catch(() => {});
+    videoRef.current?.play().catch(() => {});
   }
   function stopClip() {
     const v = videoRef.current;
     if (v) { v.pause(); v.currentTime = 0; }
   }
-
   function close() {
     setOpen(false);
-    if (video) stopClip();
-  }
-
-  function handleMouseEnter() {
-    setOpen(true);
-    if (video) playClip();
-  }
-  function handleMouseLeave() {
-    close();
+    stopClip();
   }
   function toggleTap() {
     setOpen((o) => {
       const next = !o;
-      if (video) { if (next) playClip(); else stopClip(); }
+      if (next) playClip(); else stopClip();
       return next;
     });
   }
@@ -59,8 +59,8 @@ function FeatureHelp({ title, desc, video }) {
     <div
       className="feature-help"
       ref={wrapRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => { setOpen(true); playClip(); }}
+      onMouseLeave={close}
     >
       <button
         type="button"
@@ -71,10 +71,8 @@ function FeatureHelp({ title, desc, video }) {
       >
         <HelpCircle size={13} />
       </button>
-      <div className={`feature-help-tip${open ? ' open' : ''}${video ? ' has-video' : ''}`} role="tooltip">
-        {video ? (
-          <video ref={videoRef} src={video} muted loop playsInline preload="none" />
-        ) : desc}
+      <div className={`feature-help-tip has-video${open ? ' open' : ''}`} role="tooltip">
+        <video ref={videoRef} src={video} muted loop playsInline preload="metadata" />
       </div>
     </div>
   );
@@ -94,8 +92,9 @@ export default function Features() {
             <div className={`feature-icon ${f.cls}`}><f.icon size={22} strokeWidth={2} /></div>
             <div className="feature-card-head">
               <h3>{f.title}</h3>
-              <FeatureHelp title={f.title} desc={f.desc} video={f.video} />
+              <FeatureHelp title={f.title} video={f.video} />
             </div>
+            <p>{f.desc}</p>
           </div>
         ))}
       </div>
