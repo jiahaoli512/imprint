@@ -18,6 +18,24 @@ import LogoMark from './LogoMark';
 
 const isNative = Capacitor.isNativePlatform();
 
+// "Get Early Access" used to jump to the (now-removed) waitlist form at the
+// bottom of the page via `#cta`. The form lives in Hero now, so instead of
+// scrolling anywhere, this brings the existing field into view, focuses it,
+// and — via reportValidity() — triggers the browser's native "Please fill
+// out this field" bubble if it's still empty (a no-op if it already has a
+// value). A brief `.waitlist-highlight` class supplies the visual glow.
+function focusWaitlistField() {
+  const input = document.getElementById('waitlist-email');
+  if (!input) return;
+  input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  input.focus({ preventScroll: true });
+  input.reportValidity();
+  input.classList.remove('waitlist-highlight');
+  void input.offsetWidth; // force reflow so re-adding the class restarts the animation
+  input.classList.add('waitlist-highlight');
+  input.addEventListener('animationend', () => input.classList.remove('waitlist-highlight'), { once: true });
+}
+
 export default function Nav() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -25,6 +43,12 @@ export default function Nav() {
 
   // Close the mobile drawer when tapping outside the nav or pressing Escape.
   useDismiss(navRef, () => setOpen(false), { active: open, escape: true });
+
+  function handleEarlyAccess(e) {
+    e.preventDefault();
+    setOpen(false);
+    focusWaitlistField();
+  }
 
   return (
     <nav ref={navRef} className={`nav${open ? ' nav-open' : ''}`}>
@@ -41,7 +65,7 @@ export default function Nav() {
         {isNative ? (
           <button className="btn btn-primary nav-cta" onClick={() => navigate('/login')}>Log In</button>
         ) : (
-          <a href="#cta" className="btn btn-primary nav-cta">Get Early Access</a>
+          <button className="btn btn-primary nav-cta" onClick={handleEarlyAccess}>Get Early Access</button>
         )}
         <a
           href={REPO_URL}
@@ -62,7 +86,7 @@ export default function Nav() {
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
           <a href="#stats">Stats</a>
-          <a href="#cta" className="btn btn-primary nav-drawer-cta">Get Early Access</a>
+          <button className="btn btn-primary nav-drawer-cta" onClick={handleEarlyAccess}>Get Early Access</button>
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="nav-drawer-github">
             <GithubIcon size={18} /> GitHub
           </a>

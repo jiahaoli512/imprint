@@ -31,6 +31,10 @@ export default function Hero({ waitlistCount, onJoin }) {
     setStatus('loading');
     try {
       await api.joinWaitlist({ email: trimmed });
+      // Deliberate pause (with the button still reading "Joining Waitlist…")
+      // so a near-instant response doesn't just flash past the loading state
+      // before landing on success.
+      await new Promise((resolve) => setTimeout(resolve, 900));
       // Deliberately doesn't surface the waitlist position — see joinWaitlist.
       setMsg("You're on the list! We'll email you when it's your turn.");
       setStatus('success');
@@ -61,8 +65,9 @@ export default function Hero({ waitlistCount, onJoin }) {
 
       {!isNative && (
         <>
-          <form className="hero-form" onSubmit={handleJoin}>
+          <form id="waitlist-form" className="hero-form" onSubmit={handleJoin}>
             <input
+              id="waitlist-email"
               type="email"
               placeholder="Not approved yet? Join the waitlist"
               value={email}
@@ -71,7 +76,7 @@ export default function Hero({ waitlistCount, onJoin }) {
               disabled={status === 'loading' || status === 'success'}
             />
             <button className="btn btn-ghost" type="submit" disabled={status === 'loading' || status === 'success'}>
-              {status === 'loading' ? 'Joining…' : 'Join the Waitlist'}
+              {status === 'loading' ? 'Joining Waitlist…' : 'Join the Waitlist'}
             </button>
           </form>
           {msg && <p className={`form-msg ${status}`}>{msg}</p>}

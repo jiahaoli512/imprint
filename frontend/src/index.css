@@ -310,6 +310,18 @@ body {
 
 .hero-form input::placeholder { color: var(--muted); }
 
+/* Nav's "Get Early Access" briefly glows this field into view instead of
+   scrolling to the (now-removed) bottom CTA — see Nav.jsx's
+   focusWaitlistField. Respects Reduce Motion via the global
+   [data-reduce-motion] rule, which zeroes all animations. */
+.hero-form input.waitlist-highlight {
+  animation: waitlist-pulse 1s ease;
+}
+@keyframes waitlist-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(226,161,86,0); }
+  50% { box-shadow: 0 0 0 6px rgba(226,161,86,0.35); }
+}
+
 .hero-form .btn {
   padding: 12px 24px;
   font-size: 14px;
