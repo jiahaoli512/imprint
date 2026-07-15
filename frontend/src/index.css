@@ -672,30 +672,23 @@ body {
 
 /* The Milestones "?" icon plays a short hover-preview clip — see
    FeatureHelp in Features.jsx. The other cards' "?" icons are inert
-   placeholders (no tooltip attached) until they have real help content. */
-/* No position:relative here — .feature-card is the tooltip's containing
-   block (see its comment). If .feature-help were also positioned, it would
-   win as the *nearer* positioned ancestor, and since its own box is just the
-   20x20 icon (the tip is absolute, so it doesn't grow it), the tip's
-   max-width: calc(100% - 8px) would resolve against ~20px instead of the
-   card's width — clamping it down to a sliver regardless of `width: 220px`.
-   This was the actual cause of the "tiny circle" bug. */
+   placeholders (no tooltip attached) until they have real help content.
+   `.feature-help-tip` is the tooltip's shared *look* only (chrome, color,
+   fade transition) — it's portaled to <body> (see FeatureHelp), so it's
+   never a descendant of `.feature-help` and can't be targeted by a
+   `.feature-help:hover` selector, and it carries no position of its own.
+   Each concrete variant (currently only `.has-video`) is responsible for
+   its own layout, so this base rule doesn't accumulate positioning
+   properties a future variant would just override anyway. */
 .feature-help { display: flex; }
 .feature-help-btn { width: 20px; height: 20px; flex-shrink: 0; }
 .feature-help-btn:disabled { opacity: 0.45; cursor: default; }
 .feature-help-btn:disabled:hover { background: none; color: inherit; }
 .feature-help-tip {
-  position: absolute;
-  /* Flush against the icon (no gap) — a gap here would be a dead zone: since
-     .feature-help's own hoverable box is just the tiny icon (the tooltip is
-     absolutely positioned, out of flow, so it doesn't enlarge that box), any
-     empty space between icon and tooltip is "not hovering" anything, which
-     fires mouseleave the instant the cursor crosses it on the way down. */
-  top: 100%;
-  left: 50%;
-  z-index: 5;
-  width: max-content;
-  max-width: calc(100% - 8px);
+  /* High enough to clear the sticky nav (z-index: 100) and other page
+     chrome now that portaling to <body> puts it in the root stacking
+     context, not scoped inside its card anymore. */
+  z-index: 1000;
   padding: 10px 12px;
   border-radius: 10px;
   background: var(--surface2);
@@ -707,22 +700,29 @@ body {
   box-shadow: 0 10px 28px rgba(0,0,0,0.4);
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-50%) translateY(-2px);
-  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+  transition: opacity 0.12s ease, visibility 0.12s;
 }
-.feature-help:hover .feature-help-tip,
 .feature-help-tip.open {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
 }
 
-/* Milestones' tooltip plays a short clip instead of text — kept small
-   ("shouldn't take up too much space") regardless of the card's own width. */
+/* Milestones' tooltip plays a short clip near the cursor instead of showing
+   text below the icon — positioned via inline left/top (React state, see
+   FeatureHelp's positionAt) rather than any anchored CSS position, and
+   portaled to <body> specifically so `position: fixed` is genuinely
+   viewport-relative — nested inside .feature-card it would otherwise anchor
+   to the card, since :hover applies a transform there (its lift effect),
+   and a transformed ancestor becomes the containing block for any fixed
+   descendant. Kept small ("shouldn't take up too much space") regardless of
+   viewport width. `pointer-events: none` since it's a passive follower, not
+   something meant to be hovered itself. */
 .feature-help-tip.has-video {
+  position: fixed;
   width: 220px;
-  max-width: calc(100% - 8px);
+  max-width: calc(100vw - 16px);
   padding: 6px;
+  pointer-events: none;
 }
 .feature-help-tip.has-video video {
   display: block;
