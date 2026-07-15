@@ -673,7 +673,14 @@ body {
 /* The Milestones "?" icon plays a short hover-preview clip — see
    FeatureHelp in Features.jsx. The other cards' "?" icons are inert
    placeholders (no tooltip attached) until they have real help content. */
-.feature-help { position: relative; display: flex; }
+/* No position:relative here — .feature-card is the tooltip's containing
+   block (see its comment). If .feature-help were also positioned, it would
+   win as the *nearer* positioned ancestor, and since its own box is just the
+   20x20 icon (the tip is absolute, so it doesn't grow it), the tip's
+   max-width: calc(100% - 8px) would resolve against ~20px instead of the
+   card's width — clamping it down to a sliver regardless of `width: 220px`.
+   This was the actual cause of the "tiny circle" bug. */
+.feature-help { display: flex; }
 .feature-help-btn { width: 20px; height: 20px; flex-shrink: 0; }
 .feature-help-btn:disabled { opacity: 0.45; cursor: default; }
 .feature-help-btn:disabled:hover { background: none; color: inherit; }
