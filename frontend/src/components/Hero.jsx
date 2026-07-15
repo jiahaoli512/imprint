@@ -1,8 +1,46 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { api } from '../api/client';
+import { isValidEmail } from '../utils/validateName';
 import MapMockup from './MapMockup';
 
-export default function Hero({ waitlistCount }) {
+const isNative = Capacitor.isNativePlatform();
+
+// The waitlist join form lives here (top of the page, always in view on
+// load) rather than at the bottom of the page — it's the primary
+// conversion action for a first-time visitor, so it shouldn't require
+// scrolling past the rest of the marketing content to find. Native is
+// unaffected (App Store review doesn't want an email-collection form
+// competing with Sign Up/Log In), matching the same isNative gate the
+// waitlist form used at the bottom.
+export default function Hero({ waitlistCount, onJoin }) {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState(null);
+  const [msg, setMsg] = useState('');
+
+  async function handleJoin(e) {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!isValidEmail(trimmed)) {
+      setMsg('Please enter a valid email address.');
+      setStatus('error');
+      return;
+    }
+    setStatus('loading');
+    try {
+      await api.joinWaitlist({ email: trimmed });
+      // Deliberately doesn't surface the waitlist position — see joinWaitlist.
+      setMsg("You're on the list! We'll email you when it's your turn.");
+      setStatus('success');
+      onJoin((n) => n + 1);
+      setEmail('');
+    } catch (err) {
+      setMsg(err.message);
+      setStatus('error');
+    }
+  }
 
   return (
     <section className="hero">
@@ -20,6 +58,25 @@ export default function Hero({ waitlistCount }) {
         <button className="btn btn-primary" onClick={() => navigate('/signup')}>Sign Up</button>
         <button className="btn btn-ghost" onClick={() => navigate('/login')}>Log In</button>
       </div>
+
+      {!isNative && (
+        <>
+          <form className="hero-form" onSubmit={handleJoin}>
+            <input
+              type="email"
+              placeholder="Not approved yet? Join the waitlist"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={status === 'loading' || status === 'success'}
+            />
+            <button className="btn btn-ghost" type="submit" disabled={status === 'loading' || status === 'success'}>
+              {status === 'loading' ? 'Joining…' : 'Join the Waitlist'}
+            </button>
+          </form>
+          {msg && <p className={`form-msg ${status}`}>{msg}</p>}
+        </>
+      )}
 
       <MapMockup />
 

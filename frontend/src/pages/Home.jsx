@@ -24,7 +24,7 @@ export default function Home() {
       <StatsRow />
       <Features />
       <HowItWorks />
-      <CTA onJoin={setWaitlistCount} />
+      <CTA />
       <ScrollToTopButton />
     </div>
   );
