@@ -54,7 +54,7 @@ export default function UsersTable({ users, loading = false, error = '' }) {
                 {filtered.length === 0 ? (
                   <tr><td colSpan={6} className="admin-state" style={{ padding: '24px', textAlign: 'center' }}>No results.</td></tr>
                 ) : visible.map((u, i) => (
-                  <tr key={u._id}>
+                  <tr key={u.email}>
                     <td className="muted col-num col-hide-mobile">{start + i + 1}</td>
                     <td>{u.email}</td>
                     <td className="muted col-hide-mobile">

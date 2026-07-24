@@ -12,7 +12,11 @@ const { toProfileView } = require('./userSerializers');
 // Field projections — define what each query exposes in one place.
 const PROFILE_FIELDS = 'username firstName lastName dateOfBirth createdAt usernameChangedAt nameChangedAt';
 const SEARCH_FIELDS = 'username firstName lastName -_id'; // client keys by username; _id stays internal
-const ADMIN_LIST_FIELDS = 'email username firstName lastName dateOfBirth createdAt';
+// -_id: this list is returned to the route as-is (no serializer reshapes
+// it), so the field projection is the only guard against leaking internal
+// fields — matching SEARCH_FIELDS's existing convention above. The admin
+// frontend keys its table rows by email instead.
+const ADMIN_LIST_FIELDS = 'email username firstName lastName dateOfBirth createdAt -_id';
 
 // Throws 409 if `username` belongs to a different account than the one
 // `notFilter` excludes — e.g. `{ email: { $ne: email } }` during setup
@@ -25,6 +29,11 @@ async function assertUsernameAvailable(username, notFilter) {
 
 async function checkUsername(username) {
   checkRequired('Username', username);
+  // Validate format/length before querying, matching setupProfile and
+  // updateUserByUsername below — the frontend already gates this client-side
+  // during normal typing, but this endpoint is reachable directly, and an
+  // unbounded string otherwise reaches the query unchecked.
+  validateUsername(username);
   const exists = await User.findOne({ username: normalizeUsername(username) });
   return { available: !exists };
 }
