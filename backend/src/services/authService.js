@@ -6,6 +6,7 @@ const { validatePassword } = require('../utils/validatePassword');
 const httpError = require('../utils/httpError');
 const { toAuthResult } = require('./userSerializers');
 const { assertEmailVerified, consumeVerification } = require('./verificationService');
+const { isEligibleToRegister } = require('./waitlistService');
 
 async function registerUser(email, password) {
   checkRequired('Email', email);
@@ -13,11 +14,13 @@ async function registerUser(email, password) {
   validatePassword(password);
   email = normalizeEmail(email);
 
-  const entry = await Waitlist.findOne({ email });
-  if (!entry || !entry.approved) throw httpError(403, 'Email is not approved');
-
-  const existing = await User.findOne({ email });
-  if (existing) throw httpError(409, 'An account with this email already exists');
+  // Collapse "not approved" vs "already has an account" into one generic
+  // response via the same isEligibleToRegister check joinWaitlist/checkWaitlist
+  // already share — distinct 403/409 messages here would turn registration
+  // into an account-existence oracle, the exact enumeration risk
+  // isEligibleToRegister exists to avoid elsewhere.
+  if (!(await isEligibleToRegister(email)))
+    throw httpError(403, 'This email is not eligible to register. Make sure it is an approved waitlist email without an existing account.');
 
   // Proof-of-inbox: the email must have completed code verification. This is the
   // non-bypassable enforcement point — skipping the verify UI still fails here.

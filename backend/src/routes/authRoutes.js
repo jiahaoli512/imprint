@@ -1,26 +1,31 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
-const { authLimiter, codeRequestLimiter } = require('../middleware/rateLimit');
+const { authLimiter, codeRequestLimiter, registerLimiter, signupVerifyLimiter } = require('../middleware/rateLimit');
 const { registerUser, loginUser } = require('../services/authService');
 const { requestCode, verifyCode } = require('../services/verificationService');
 
 // Registration + login. Mounted at /api/users by routes/users.js, so the
 // existing paths (/, /login, /request-code, /verify-code) are unchanged.
 
-router.post('/', authLimiter, handle(async (req, res) => {
+// registerLimiter — its own bucket, not authLimiter/login's, so failed
+// account-creation attempts from an IP can't eat into (or be eaten by) that
+// IP's login-attempt budget. See rateLimit.js's authLimiter comment.
+router.post('/', registerLimiter, handle(async (req, res) => {
   await registerUser(req.body.email, req.body.password);
   res.status(201).json({ ok: true });
 }));
 
 // Signup email verification (pre-auth). request-code emails a 6-char code to an
 // eligible address; verify-code checks it. Both are rate-limited: request-code by
-// codeRequestLimiter (counts successes — sends email), verify-code by authLimiter
-// (counts failures — brute-force guard), on top of per-email limits in the service.
+// codeRequestLimiter (counts successes — sends email), verify-code by its own
+// signupVerifyLimiter (counts failures — brute-force guard; a separate bucket
+// from login/register/reset-verify — see rateLimit.js's authLimiter comment),
+// on top of per-email limits in the service.
 router.post('/request-code', codeRequestLimiter, handle(async (req, res) => {
   res.json(await requestCode(req.body.email));
 }));
 
-router.post('/verify-code', authLimiter, handle(async (req, res) => {
+router.post('/verify-code', signupVerifyLimiter, handle(async (req, res) => {
   res.json(await verifyCode(req.body.email, req.body.code));
 }));
 

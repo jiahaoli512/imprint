@@ -1,12 +1,14 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAdminAuth = require('../middleware/adminAuth');
-const { authLimiter } = require('../middleware/rateLimit');
+const { waitlistJoinLimiter } = require('../middleware/rateLimit');
 const { joinWaitlist, listWaitlist, countWaitlist, checkWaitlist, reorderWaitlist, approveEntry, deleteEntry } = require('../services/waitlistService');
 
-// Public routes. Join is auth-limited (failed attempts only) to slow bulk email
-// probing of this unauthenticated endpoint.
-router.post('/',      authLimiter, handle(async (req, res) => {
+// Public routes. Join is rate-limited (failed attempts only) to slow bulk
+// email probing of this unauthenticated endpoint — its own bucket, not
+// shared with login/register/verify-code endpoints, per rateLimit.js's
+// authLimiter comment.
+router.post('/',      waitlistJoinLimiter, handle(async (req, res) => {
   const result = await joinWaitlist(req.body.email, req.body.name);
   res.status(201).json({ message: "You're on the list!", ...result });
 }));

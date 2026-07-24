@@ -23,11 +23,58 @@ const apiLimiter = createLimiter({
   message: 'Too many requests, please try again later.',
 });
 
-// Strict limiter for auth-sensitive endpoints (login, register, admin login)
+// Strict limiter for login specifically. Same shape (10/15min, failures-only)
+// is reused below for register, both verify-code endpoints, waitlist join,
+// and admin login — but each gets its OWN instance rather than sharing this
+// one. express-rate-limit keys by IP across every route mounted on one
+// instance, so sharing here would mean a few failed *login* attempts from an
+// IP eat into the budget for, say, a legitimate admin-login attempt from that
+// same office/NAT/VPN IP (or vice versa) — an unrelated-action coupling this
+// codebase already avoids for passwordChangeLimiter (see its own comment).
 const authLimiter = createLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10,
   skipSuccessfulRequests: true, // only failed attempts count toward the limit
+  message: 'Too many attempts, please try again later.',
+});
+
+// Same policy as authLimiter, separate bucket — see authLimiter's comment.
+const registerLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: 'Too many attempts, please try again later.',
+});
+
+// Same policy as authLimiter, separate bucket — see authLimiter's comment.
+const signupVerifyLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: 'Too many attempts, please try again later.',
+});
+
+// Same policy as authLimiter, separate bucket — see authLimiter's comment.
+const resetVerifyLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: 'Too many attempts, please try again later.',
+});
+
+// Same policy as authLimiter, separate bucket — see authLimiter's comment.
+const waitlistJoinLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: 'Too many attempts, please try again later.',
+});
+
+// Same policy as authLimiter, separate bucket — see authLimiter's comment.
+const adminLoginLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
   message: 'Too many attempts, please try again later.',
 });
 
@@ -93,4 +140,5 @@ const passwordChangeLimiter = createLimiter({
 module.exports = {
   apiLimiter, authLimiter, contactLimiter, codeRequestLimiter, friendRequestLimiter,
   exportLimiter, passwordChangeLimiter,
+  registerLimiter, signupVerifyLimiter, resetVerifyLimiter, waitlistJoinLimiter, adminLoginLimiter,
 };

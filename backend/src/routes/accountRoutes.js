@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
-const { authLimiter, codeRequestLimiter, exportLimiter, passwordChangeLimiter } = require('../middleware/rateLimit');
+const { codeRequestLimiter, exportLimiter, passwordChangeLimiter, resetVerifyLimiter } = require('../middleware/rateLimit');
 const {
   requestPasswordReset, verifyPasswordReset, resetPassword, finishReset, changePassword, assertCurrentPassword,
 } = require('../services/passwordResetService');
@@ -27,7 +27,9 @@ router.post('/reset/request-code', codeRequestLimiter, handle(async (req, res) =
   res.json(await requestPasswordReset(req.body.email));
 }));
 
-router.post('/reset/verify-code', authLimiter, handle(async (req, res) => {
+// resetVerifyLimiter — its own bucket, not shared with login/register/signup-
+// verify — see rateLimit.js's authLimiter comment on why.
+router.post('/reset/verify-code', resetVerifyLimiter, handle(async (req, res) => {
   res.json(await verifyPasswordReset(req.body.email, req.body.code));
 }));
 
