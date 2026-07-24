@@ -59,15 +59,31 @@ async function finishReset(email) {
   await consumeReset(email);
 }
 
+// Verifies `password` against the account's stored hash for an already-
+// authenticated user. Deliberately never throws 401: the route calling this
+// is requireAuth-gated, so the caller's Bearer token is already valid, and
+// the frontend's request() helper treats any 401 arriving alongside a token
+// as "session expired" — clearing the session and bouncing to /home. A wrong
+// password here is a 400 (a bad request body against a still-valid
+// session), not an auth failure. Shared by changePassword and the Export
+// Data password-confirmation gate.
+async function assertCurrentPassword(userId, password) {
+  const user = await User.findById(userId).select('+passwordHash');
+  // Defensive only, not the "wrong password" case above: requireAuth +
+  // userTokenFresh already guarantee the user exists for any request that
+  // reaches here, so this branch should be unreachable in practice (e.g.
+  // deleted between token-check and this read). Kept as a 400 for the same
+  // reason as above — still inside an authenticated request, not an auth
+  // failure the frontend should react to.
+  if (!user) throw httpError(400, 'Not authenticated.');
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) throw httpError(400, 'Current password is incorrect.');
+}
+
 // Changes the password for an already-authenticated user, gated by re-entering the
 // current password (unlike resetPassword, which is gated by a verified email-code
 // challenge). Bumps tokenVersion like resetPassword does, so the response's fresh
 // token must be stored client-side or the caller gets logged out on its next request.
-// Deliberately never throws 401 here: the route is requireAuth-gated, so the
-// caller's Bearer token is already valid, and the frontend's request() helper
-// treats any 401 received alongside a token as "session expired" — clearing
-// the session and bouncing to /home. A wrong current password is a 400 (a bad
-// request body against a still-valid session), not an auth failure.
 async function changePassword(userId, currentPassword, newPassword) {
   checkRequired('Current password', currentPassword);
   checkRequired('New password', newPassword);
@@ -76,19 +92,11 @@ async function changePassword(userId, currentPassword, newPassword) {
   // re-validates its own newPassword argument too (it's also called directly
   // by resetPassword), so this isn't relied on for correctness, only ordering.
   validatePassword(newPassword);
-  const user = await User.findById(userId).select('+passwordHash');
-  // Defensive only, not the "wrong password" case the comment above is about:
-  // requireAuth + userTokenFresh already guarantee the user exists for any
-  // request that reaches here, so this branch should be unreachable in
-  // practice (e.g. deleted between token-check and this read). Kept as a 400
-  // rather than a 401 for the same reason as below — it's still inside an
-  // authenticated request, not an auth failure the frontend should react to.
-  if (!user) throw httpError(400, 'Not authenticated.');
-  const ok = await bcrypt.compare(currentPassword, user.passwordHash);
-  if (!ok) throw httpError(400, 'Current password is incorrect.');
+  await assertCurrentPassword(userId, currentPassword);
   return setNewPassword({ _id: userId }, newPassword);
 }
 
 module.exports = {
   requestPasswordReset, verifyPasswordReset, resetPassword, finishReset, changePassword,
+  assertCurrentPassword,
 };

@@ -3,7 +3,7 @@ const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
 const { authLimiter, codeRequestLimiter, exportLimiter, passwordChangeLimiter } = require('../middleware/rateLimit');
 const {
-  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset, changePassword,
+  requestPasswordReset, verifyPasswordReset, resetPassword, finishReset, changePassword, assertCurrentPassword,
 } = require('../services/passwordResetService');
 const { logoutAllDevices } = require('../services/sessionService');
 const { emailAccountExport } = require('../services/exportService');
@@ -82,10 +82,15 @@ router.post('/logout-all', requireAuth, handle(async (req, res) => {
 
 // Self-export of raw location history + map markers (Settings > Account >
 // Export Data), delivered as CSV attachments to the account's own email
-// rather than returned in the response — see exportService for why.
-// exportLimiter guards the underlying query — see locationService.getUserLocations
-// for why it's still worth limiting even though it's capped.
+// rather than returned in the response — see exportService for why. Gated
+// by re-entering the current password (same check changePassword uses) —
+// a full GPS trail going out on a single click with no re-auth is too
+// costly a mistake (a shared/unattended device, a slipped click) to skip.
+// exportLimiter guards both this check and the underlying query — see
+// locationService.getUserLocations for why it's still worth limiting even
+// though the query itself is capped.
 router.post('/export', requireAuth, exportLimiter, handle(async (req, res) => {
+  await assertCurrentPassword(req.user.id, req.body.password);
   await emailAccountExport(req.user.id, req.user.email);
   res.json({ ok: true });
 }));

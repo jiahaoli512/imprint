@@ -215,6 +215,54 @@ function LogoutAllModal({ onCancel }) {
   );
 }
 
+// Two-step "Export your data" flow: a confirm step, then a password
+// re-entry gate (like ChangePasswordForm's re-auth) before the export
+// actually fires — a full GPS trail going out on one click with no
+// confirmation was too easy to trigger by accident (shared/unattended
+// device, a slipped click). Both steps share one Modal instance rather than
+// two separately-mounted modals, so there's no flicker/remount between them.
+function ExportDataModal({ step, exporting, exportError, onProceed, onCancel, onSubmitPassword }) {
+  const [password, setPassword] = useState('');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSubmitPassword(password);
+  }
+
+  if (step === 'confirm') {
+    return (
+      <Modal onClose={onCancel}>
+        <h2 className="modal-title">Export your data?</h2>
+        <p className="modal-sub" style={{ marginTop: '16px' }}>
+          We'll email a CSV of your location history and map markers to your account's email address.
+        </p>
+        <button type="button" className="btn btn-primary modal-submit" onClick={onProceed}>Continue</button>
+        <button type="button" className="modal-cancel" onClick={onCancel}>Cancel</button>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal onClose={onCancel}>
+      <h2 className="modal-title">Confirm your password</h2>
+      <p className="modal-sub" style={{ marginTop: '16px' }}>Enter your password to export your data.</p>
+      <form className="settings-inline-form auth-form" style={{ marginTop: '16px' }} onSubmit={handleSubmit}>
+        <PasswordInput
+          placeholder="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        {exportError && <p className="auth-error">{exportError}</p>}
+        <button type="submit" className="btn btn-primary modal-submit" disabled={exporting || !password}>
+          {exporting ? 'Exporting…' : 'Confirm'}
+        </button>
+        <button type="button" className="modal-cancel" onClick={onCancel} disabled={exporting}>Cancel</button>
+      </form>
+    </Modal>
+  );
+}
+
 // The Account Settings tab: profile shortcut, password change, data export,
 // and a full session sign-out. Receives `ctx` (not individual props) from
 // SettingsModal — see that file's comment on why.
@@ -223,7 +271,7 @@ export default function AccountSettings({ ctx }) {
   const navigate = useNavigate();
   const [changingPassword, setChangingPassword] = useState(false);
   const [confirmingLogoutAll, setConfirmingLogoutAll] = useState(false);
-  const { exporting, exportError, exportSent, handleExport } = useAccountExport();
+  const { step: exportStep, exporting, exportError, openConfirm: openExportConfirm, proceedToPassword, cancel: cancelExport, submitPassword } = useAccountExport();
   // Reconciled once per Settings open — see useUser.js's own comment on why
   // a rename made on another device/session can leave client.js's cached
   // username stale until something resyncs it. main.jsx already does this
@@ -268,14 +316,13 @@ export default function AccountSettings({ ctx }) {
         title="Export your data"
         description="Email a CSV of your location history and map markers to your account's email address. Location history is every raw GPS point your device has logged; map markers are the thinned-out points actually shown on your map (one per ~100m, so nearby points aren't duplicated)."
       >
-        {exportSent ? (
+        {exportStep === 'sent' ? (
           <p className="auth-sub">Check your inbox — your export is on its way.</p>
         ) : (
-          <button type="button" className="btn btn-ghost" onClick={handleExport} disabled={exporting}>
-            <Mail size={14} /> {exporting ? 'Sending…' : 'Email My Data'}
+          <button type="button" className="btn btn-ghost" onClick={openExportConfirm}>
+            <Mail size={14} /> Email My Data
           </button>
         )}
-        {exportError && <p className="auth-error">{exportError}</p>}
       </Setting>
 
       <Setting title="Log out of all devices" description="Sign out of every session and device on your account, including this one.">
@@ -285,6 +332,16 @@ export default function AccountSettings({ ctx }) {
       </Setting>
 
       {confirmingLogoutAll && <LogoutAllModal onCancel={() => setConfirmingLogoutAll(false)} />}
+      {(exportStep === 'confirm' || exportStep === 'password') && (
+        <ExportDataModal
+          step={exportStep}
+          exporting={exporting}
+          exportError={exportError}
+          onProceed={proceedToPassword}
+          onCancel={cancelExport}
+          onSubmitPassword={submitPassword}
+        />
+      )}
     </ScrollHint>
   );
 }

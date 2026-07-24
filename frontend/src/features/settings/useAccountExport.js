@@ -1,24 +1,37 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
 
-// Owns the "Export your data" action: trigger the backend to email both CSVs
-// (locations + markers) to the account's own address, and the
-// in-flight/sent/error state. `exportAccountData` is injected (default: the
-// real API call) — named after the api method it defaults to, matching
-// useLogoutAllDevices's `logoutAllDevices` and ChangePasswordForm's
+// Owns the "Export your data" flow: a confirm step, then a password
+// re-entry gate (like ChangePasswordForm's re-auth, not the forgot-password
+// email-code flow), before the backend actually emails both CSVs (locations
+// + markers) to the account's own address. `exportAccountData` is injected
+// (default: the real API call) — named after the api method it defaults to,
+// matching useLogoutAllDevices's `logoutAllDevices` and ChangePasswordForm's
 // `changePassword` params — so this is testable without mocking the whole
 // api/client module.
 export function useAccountExport({ exportAccountData = api.exportAccountData } = {}) {
+  const [step, setStep] = useState('idle'); // idle | confirm | password | sent
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
-  const [exportSent, setExportSent] = useState(false);
 
-  async function handleExport() {
+  function openConfirm() {
+    setExportError('');
+    setStep('confirm');
+  }
+  function proceedToPassword() {
+    setStep('password');
+  }
+  function cancel() {
+    setStep('idle');
+    setExportError('');
+  }
+
+  async function submitPassword(password) {
     setExporting(true);
     setExportError('');
     try {
-      await exportAccountData();
-      setExportSent(true);
+      await exportAccountData(password);
+      setStep('sent');
     } catch (err) {
       setExportError(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -26,5 +39,5 @@ export function useAccountExport({ exportAccountData = api.exportAccountData } =
     }
   }
 
-  return { exporting, exportError, exportSent, handleExport };
+  return { step, exporting, exportError, openConfirm, proceedToPassword, cancel, submitPassword };
 }
