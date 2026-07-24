@@ -2181,8 +2181,10 @@ footer {
 .settings-inline-form-actions { display: flex; gap: 10px; }
 .settings-inline-form-actions .btn { flex: 1; }
 
-/* Account tab: View Email row — censored value + eye toggle. */
-.view-email-row {
+/* Account tab: View Username / View Email rows — a read-only value pill,
+   optionally paired with an eye toggle (View Email only; View Username has
+   nothing to censor). */
+.settings-view-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2192,7 +2194,7 @@ footer {
   border-radius: 12px;
   padding: 10px 14px;
 }
-.view-email-value {
+.settings-view-value {
   font-size: 14px;
   color: var(--text);
   overflow: hidden;

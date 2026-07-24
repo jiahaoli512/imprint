@@ -49,8 +49,8 @@ function ViewEmailSetting({ getEmail = api.getEmail }) {
 
   return (
     <div className="settings-inline-form">
-      <div className="view-email-row">
-        <span className="view-email-value">
+      <div className="settings-view-row">
+        <span className="settings-view-value">
           {visible && email ? email : (email ? censorEmail(email) : '••••••••••••')}
         </span>
         <button
@@ -64,6 +64,20 @@ function ViewEmailSetting({ getEmail = api.getEmail }) {
         </button>
       </div>
       {error && <p className="auth-error">{error}</p>}
+    </div>
+  );
+}
+
+// Not censored — the username is already public (every profile URL/search
+// result shows it), so there's nothing to gate behind a reveal. Reads it
+// straight from client.js's cached copy rather than fetching, same as
+// handleEditProfile below.
+function ViewUsernameSetting() {
+  return (
+    <div className="settings-inline-form">
+      <div className="settings-view-row">
+        <span className="settings-view-value">@{getUsername()}</span>
+      </div>
     </div>
   );
 }
@@ -172,6 +186,10 @@ export default function AccountSettings({ ctx }) {
     <ScrollHint wrapClassName="settings-scroll" className="settings-panel">
       <Setting title="Edit profile" description="Edit your name and username.">
         <button type="button" className="btn btn-primary" onClick={handleEditProfile}>Edit Profile</button>
+      </Setting>
+
+      <Setting title="View username" description="Your account's username.">
+        <ViewUsernameSetting />
       </Setting>
 
       <Setting title="View email" description="Your account's email address is censored by default. Click the eye icon to reveal it.">
