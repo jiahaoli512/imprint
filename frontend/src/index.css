@@ -2183,7 +2183,7 @@ footer {
 
 /* Account tab: View Username / View Email rows — a read-only value pill,
    optionally paired with an eye toggle (View Email only; View Username has
-   nothing to censor). */
+   nothing to censor), plus a copy button both rows always get. */
 .settings-view-row {
   display: flex;
   align-items: center;
@@ -2201,6 +2201,32 @@ footer {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+.settings-view-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+/* Copy button's transient "Copied!" toast — positioned above the button so
+   it never shifts row layout; fades in via opacity/transform (zeroed for
+   Reduce Motion by the global [data-reduce-motion] rule). */
+.settings-copy-wrap { position: relative; }
+.settings-copy-toast {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  animation: settingsCopyToast 1.5s ease forwards;
+  pointer-events: none;
+}
+@keyframes settingsCopyToast {
+  0% { opacity: 0; transform: translateY(2px); }
+  10%, 80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(0); }
 }
 
 /* Range slider (point opacity). */

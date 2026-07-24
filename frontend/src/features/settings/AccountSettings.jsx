@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, LogOut, Eye, EyeOff } from 'lucide-react';
+import { Mail, LogOut, Eye, EyeOff, Copy, Check } from 'lucide-react';
 import Modal from '../../components/Modal';
 import PasswordInput from '../../components/PasswordInput';
 import PasswordAndConfirmFields from '../../components/PasswordAndConfirmFields';
@@ -22,29 +22,63 @@ function censorEmail(email) {
   return `${email[0]}${'*'.repeat(at - 1)}${email.slice(at)}`;
 }
 
-// Fetches the account email lazily — only on first reveal, not on mount —
-// so a user who never clicks the eye never puts their email in memory/DOM at
-// all beyond the censored form. Toggling back to hidden re-masks the already-
-// fetched value rather than re-fetching.
+// Copies a value to the clipboard and swaps to a checkmark + "Copied!" toast
+// for a beat, then reverts. `getValue` may be sync (the plain string) or
+// async (ViewEmailSetting passes its fetch-or-cache function, so copying
+// still works — and fetches once — even if the row is currently censored).
+function CopyButton({ getValue, label }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    const value = typeof getValue === 'function' ? await getValue() : getValue;
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* clipboard permission denied/unavailable — no-op */ }
+  }
+
+  return (
+    <div className="settings-copy-wrap">
+      <button type="button" className="icon-btn" aria-label={`Copy ${label}`} onClick={handleCopy}>
+        {copied ? <Check size={15} /> : <Copy size={15} />}
+      </button>
+      {copied && <span className="settings-copy-toast" role="status">Copied!</span>}
+    </div>
+  );
+}
+
+// Fetches the account email lazily — only on first reveal (or copy), not on
+// mount — so a user who never asks for it never puts their email in
+// memory/DOM at all beyond the censored form. Toggling back to hidden
+// re-masks the already-fetched value rather than re-fetching. `ensureEmail`
+// is shared by both the eye toggle and the copy button so there's one fetch
+// path, not two.
 function ViewEmailSetting({ getEmail = api.getEmail }) {
   const [email, setEmail] = useState(null);
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function reveal() {
-    if (email) { setVisible(true); return; }
+  async function ensureEmail() {
+    if (email) return email;
     setLoading(true);
     setError('');
     try {
       const data = await getEmail();
       setEmail(data.email);
-      setVisible(true);
+      return data.email;
     } catch {
       setError('Could not load your email.');
+      return null;
     } finally {
       setLoading(false);
     }
+  }
+
+  async function reveal() {
+    if (await ensureEmail()) setVisible(true);
   }
 
   return (
@@ -53,15 +87,18 @@ function ViewEmailSetting({ getEmail = api.getEmail }) {
         <span className="settings-view-value">
           {visible && email ? email : (email ? censorEmail(email) : '••••••••••••')}
         </span>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={visible ? 'Hide email' : 'Show email'}
-          onClick={() => (visible ? setVisible(false) : reveal())}
-          disabled={loading}
-        >
-          {visible ? <EyeOff size={15} /> : <Eye size={15} />}
-        </button>
+        <div className="settings-view-actions">
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label={visible ? 'Hide email' : 'Show email'}
+            onClick={() => (visible ? setVisible(false) : reveal())}
+            disabled={loading}
+          >
+            {visible ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+          <CopyButton getValue={ensureEmail} label="email" />
+        </div>
       </div>
       {error && <p className="auth-error">{error}</p>}
     </div>
@@ -73,10 +110,14 @@ function ViewEmailSetting({ getEmail = api.getEmail }) {
 // straight from client.js's cached copy rather than fetching, same as
 // handleEditProfile below.
 function ViewUsernameSetting() {
+  const username = getUsername();
   return (
     <div className="settings-inline-form">
       <div className="settings-view-row">
-        <span className="settings-view-value">@{getUsername()}</span>
+        <span className="settings-view-value">@{username}</span>
+        <div className="settings-view-actions">
+          <CopyButton getValue={username} label="username" />
+        </div>
       </div>
     </div>
   );
