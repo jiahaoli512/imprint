@@ -142,6 +142,17 @@ async function listUsers() {
   return User.find({}, ADMIN_LIST_FIELDS).sort({ createdAt: -1 });
 }
 
+// Resolves the caller's current username by id — used by GET /api/users/me
+// to let the frontend resync its cached username after a rename made on a
+// different device/session (the JWT itself isn't revoked by a rename, only
+// by a tokenVersion bump, so a stale client keeps a valid session with a
+// wrong cached username otherwise).
+async function getOwnUsername(userId) {
+  const user = await User.findById(userId, 'username');
+  if (!user) throw httpError(404, 'User not found.');
+  return user.username;
+}
+
 module.exports = {
-  checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers,
+  checkUsername, setupProfile, searchUsers, getProfileFor, updateUserByUsername, listUsers, getOwnUsername,
 };

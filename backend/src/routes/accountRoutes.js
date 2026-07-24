@@ -7,6 +7,7 @@ const {
 } = require('../services/passwordResetService');
 const { logoutAllDevices } = require('../services/sessionService');
 const { emailAccountExport } = require('../services/exportService');
+const { getOwnUsername } = require('../services/profileService');
 
 // Password + session management: forgot-password reset, change-password
 // while signed in, full sign-out, and self-service data export. Mounted at
@@ -38,6 +39,19 @@ router.post('/reset/password', requireAuth, handle(async (req, res) => {
 router.post('/reset/finish', requireAuth, handle(async (req, res) => {
   await finishReset(req.user.email);
   res.json({ ok: true });
+}));
+
+// Resolves the caller's *current* username by id, independent of whatever
+// username a client has cached. A user JWT never goes stale on a username
+// change (only tokenVersion bumps revoke it — see resetPassword/changePassword/
+// logoutAllDevices — and renames don't touch it), so a session left signed in
+// on another device keeps working but its cached username (client.js's
+// imprint_username) silently goes stale, breaking every by-username fetch
+// (dashboard, profile, markers) with 404s until a fresh login re-derives it.
+// The frontend calls this to resync that cache — see client.js's
+// refreshUsername.
+router.get('/me', requireAuth, handle(async (req, res) => {
+  res.json({ username: await getOwnUsername(req.user.id) });
 }));
 
 // Settings > Account > View Email. The email is already carried (and

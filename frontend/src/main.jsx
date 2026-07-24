@@ -5,7 +5,7 @@ import './index.css'
 import 'leaflet/dist/leaflet.css'
 import App from './App.jsx'
 import { applyReduceMotion } from './features/settings/reduceMotion'
-import { hydrateAuth } from './api/client'
+import { hydrateAuth, refreshUsername } from './api/client'
 
 // Reflect the stored reduce-motion preference onto <html> before first paint.
 applyReduceMotion();
@@ -42,4 +42,14 @@ hydrateAuth().then(() => {
       <App />
     </StrictMode>,
   )
+  // Fire-and-forget, deliberately not awaited before render: a username
+  // changed on another device/session leaves this one with a stale cached
+  // username (see refreshUsername's own comment) until something resyncs
+  // it. Doing that resync here, once per app launch, fixes it proactively
+  // most of the time without blocking first paint on a network round-trip
+  // (which could stall for tens of seconds against a cold Render backend —
+  // see CLAUDE.md's cold-start note). useUser.js still self-heals
+  // reactively if a stale-username 404 slips through anyway (e.g. this
+  // call hasn't resolved yet, or failed).
+  refreshUsername();
 })

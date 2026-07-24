@@ -216,6 +216,7 @@ export const api = {
   // token like resetPassword, since it also revokes existing sessions);
   // full sign-out of every session including this one; a self-export emailed
   // to the account's own address (POST — it triggers a send, not just a read).
+  getMe:                ()             => request('/api/users/me'),
   getEmail:             ()             => request('/api/users/email'),
   changePassword:       (currentPassword, newPassword) =>
     request.post('/api/users/password', { currentPassword, newPassword }),
@@ -266,6 +267,26 @@ export const api = {
   reorderWaitlist:      (ids)      => adminRequest.patch('/api/waitlist/reorder', { ids }),
   approveWaitlistEntry: (id)       => adminRequest.patch(`/api/waitlist/${id}/approve`),
 };
+
+// Resyncs the cached username (see getUsername/setUsername above) against
+// the account's actual current username. A username change made on another
+// device/session doesn't revoke this one's token (only tokenVersion bumps
+// do — password reset/change, logout-all — and renames don't touch it), so
+// a signed-in-elsewhere client can be left with a stale cached username that
+// 404s every by-username fetch (dashboard, profile, markers) indefinitely.
+// Best-effort: silently no-ops on failure (offline, cold backend, no user
+// session) rather than surfacing an error for what's just a background sync.
+// Returns the resolved (possibly unchanged) username, or null on failure.
+export async function refreshUsername() {
+  if (!getToken() || !getUsername()) return null;
+  try {
+    const { username } = await api.getMe();
+    if (username && username !== getUsername()) setUsername(username);
+    return username;
+  } catch {
+    return null;
+  }
+}
 
 // Resolve the right profile API calls for the current view (admin vs. self),
 // so pages don't repeat `isAdminView ? api.adminX : api.X` ternaries.
