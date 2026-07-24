@@ -155,9 +155,19 @@ async function listFriends(viewerId, ownerUsername, { isAdmin = false } = {}) {
     .sort((a, b) => a.username.localeCompare(b.username));
 }
 
-// Count of accepted friendships a user is part of (either side of the edge).
-function getFriendCount(userId) {
-  return FriendRequest.countDocuments(acceptedFriendshipsOf(userId));
+// Count of accepted friendships a user is part of (either side of the edge)
+// whose counterpart account still exists. A plain countDocuments would also
+// count an edge whose other side was deleted outside the app (e.g. directly
+// in the database, which doesn't cascade-delete FriendRequest docs) — every
+// other friend-facing query already guards against this (listIncomingRequests
+// filters on `.requester`, friendAcceptedActivity on `.recipient`, listFriends
+// with `.filter(Boolean)`); this was the one spot that didn't, so the count
+// and the list could disagree.
+async function getFriendCount(userId) {
+  const edges = await FriendRequest.find(acceptedFriendshipsOf(userId), 'requester recipient')
+    .populate('requester', '_id')
+    .populate('recipient', '_id');
+  return edges.filter((e) => e.requester && e.recipient).length;
 }
 
 // The viewer's relationship to a profile owner, for the profile's friend button:
