@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, LogOut, Eye, EyeOff, Copy, Check } from 'lucide-react';
 import Modal from '../../components/Modal';
 import PasswordInput from '../../components/PasswordInput';
 import PasswordAndConfirmFields from '../../components/PasswordAndConfirmFields';
 import ScrollHint from '../../components/ScrollHint';
-import { api, getUsername, setToken } from '../../api/client';
+import { api, getUsername, setToken, refreshUsername } from '../../api/client';
 import { passwordValid, passwordsMatch } from '../../utils/passwordRules';
 import { useForm } from '../../utils/useForm';
 import { useAccountExport } from './useAccountExport';
@@ -108,11 +108,13 @@ function ViewEmailSetting({ getEmail = api.getEmail }) {
 }
 
 // Not censored — the username is already public (every profile URL/search
-// result shows it), so there's nothing to gate behind a reveal. Reads it
-// straight from client.js's cached copy rather than fetching, same as
-// handleEditProfile below.
-function ViewUsernameSetting() {
-  const username = getUsername();
+// result shows it), so there's nothing to gate behind a reveal. Takes the
+// reconciled username from AccountSettings (see its own comment) rather
+// than reading client.js's cache directly, so a rename made on another
+// device/session can't sit here silently showing the stale value forever —
+// unlike a stale profile/dashboard fetch, a plain local read like this
+// never touches the network, so nothing would otherwise catch it.
+function ViewUsernameSetting({ username }) {
   return (
     <div className="settings-inline-form">
       <div className="settings-view-row">
@@ -222,10 +224,22 @@ export default function AccountSettings({ ctx }) {
   const [changingPassword, setChangingPassword] = useState(false);
   const [confirmingLogoutAll, setConfirmingLogoutAll] = useState(false);
   const { exporting, exportError, exportSent, handleExport } = useAccountExport();
+  // Reconciled once per Settings open — see useUser.js's own comment on why
+  // a rename made on another device/session can leave client.js's cached
+  // username stale until something resyncs it. main.jsx already does this
+  // once at app boot, but Settings can be opened well after that resolves
+  // (or before it does), so this reconciles again rather than trusting boot
+  // timing. Seeded from the cache so the row still renders instantly.
+  const [username, setUsernameState] = useState(getUsername());
+  useEffect(() => {
+    let active = true;
+    refreshUsername().then((fresh) => { if (active && fresh) setUsernameState(fresh); });
+    return () => { active = false; };
+  }, []);
 
   function handleEditProfile() {
     onClose();
-    navigate(`/${getUsername()}/profile`, { state: { autoEdit: true } });
+    navigate(`/${username}/profile`, { state: { autoEdit: true } });
   }
 
   return (
@@ -235,7 +249,7 @@ export default function AccountSettings({ ctx }) {
       </Setting>
 
       <Setting title="View username" description="Your account's username.">
-        <ViewUsernameSetting />
+        <ViewUsernameSetting username={username} />
       </Setting>
 
       <Setting title="View email" description="Your account's email address is censored by default. Click the eye icon to reveal it.">
