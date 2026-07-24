@@ -1,13 +1,14 @@
 const router = require('express').Router();
 const handle = require('../middleware/handle');
 const requireAuth = require('../middleware/auth');
-const { codeRequestLimiter, exportLimiter, passwordChangeLimiter, resetVerifyLimiter } = require('../middleware/rateLimit');
+const { codeRequestLimiter, exportLimiter, passwordChangeLimiter, resetVerifyLimiter, emailCheckLimiter } = require('../middleware/rateLimit');
 const {
   requestPasswordReset, verifyPasswordReset, resetPassword, finishReset, changePassword, assertCurrentPassword,
 } = require('../services/passwordResetService');
 const { logoutAllDevices } = require('../services/sessionService');
 const { emailAccountExport } = require('../services/exportService');
 const { getOwnUsername } = require('../services/profileService');
+const { assertDeliverable } = require('../services/emailCheckService');
 
 // Password + session management: forgot-password reset, change-password
 // while signed in, full sign-out, and self-service data export. Mounted at
@@ -17,6 +18,18 @@ const { getOwnUsername } = require('../services/profileService');
 // route file per CLAUDE.md's routes-are-thin convention at the file-cohesion
 // level, mirroring the authService/passwordResetService/profileService split
 // this file's imports already draw from).
+
+// Public, pre-auth deliverability pre-check for the forgot-password email
+// step (see ForgotPassword.jsx: it advances to the "enter code" screen only
+// after this succeeds, so a rejected email surfaces its error on the email
+// screen — where the user can actually fix it — rather than only being
+// caught later when reset/request-code's own email actually fails to send).
+// Shares assertDeliverable with joinWaitlist so the two entry points can't
+// drift. emailCheckLimiter guards it — see the limiter's own comment.
+router.get('/check-email', emailCheckLimiter, handle(async (req, res) => {
+  await assertDeliverable(req.query.email);
+  res.json({ ok: true });
+}));
 
 // Password reset (forgot-password flow). Same code challenge as signup:
 // request-code emails a 6-char code to an existing account; verify-code checks it

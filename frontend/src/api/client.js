@@ -223,6 +223,7 @@ export const api = {
   logoutAllDevices:     ()             => request.post('/api/users/logout-all', {}),
   exportAccountData:    (password)     => request.post('/api/users/export', { password }),
   checkWaitlist:  (email)              => request(`/api/waitlist/check?email=${encodeURIComponent(email)}`),
+  checkEmail:     (email)              => request(`/api/users/check-email?email=${encodeURIComponent(email)}`),
   checkUsername:  (username)           => request(`/api/users/check-username?username=${encodeURIComponent(username)}`),
   setupProfile:   (body)               => request.patch('/api/users/profile', body),
   getUser:        (username)           => request(`/api/users/by-username/${encodeURIComponent(username)}`),

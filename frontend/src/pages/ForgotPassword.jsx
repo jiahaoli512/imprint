@@ -36,14 +36,27 @@ export default function ForgotPassword() {
     else navigate('/login/profile', { state: { email } });
   }
 
-  function handleEmailSubmit(e) {
+  // Deliverability is checked here, before advancing to CodeVerifyStep, not
+  // left to surface only when reset/request-code's own send fails —
+  // CodeVerifyStep's screen has no email field to fix and AuthShell's onBack
+  // goes to /login, not back a step, so a rejection needs to land here where
+  // the user can actually correct it.
+  async function handleEmailSubmit(e) {
     e.preventDefault();
     const { trimmed, error } = validateEmailInput(email);
     if (error) { setEmailError(error); return; }
     setEmailError('');
-    setEmail(trimmed);
-    // CodeVerifyStep issues the reset code when it mounts (respecting the cooldown).
-    setStep('verify');
+    setLoading(true);
+    try {
+      await api.checkEmail(trimmed);
+      setEmail(trimmed);
+      // CodeVerifyStep issues the reset code when it mounts (respecting the cooldown).
+      setStep('verify');
+    } catch (err) {
+      setEmailError(err.message || 'Could not verify this email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   // A successful code verification logs the user in (the response carries a token).
@@ -97,7 +110,7 @@ export default function ForgotPassword() {
             />
             {emailError && <p className="auth-error">{emailError}</p>}
             <button type="submit" className="btn btn-primary auth-submit" disabled={loading || !email}>
-              Send Code
+              {loading ? 'Checking…' : 'Send Code'}
             </button>
           </form>
           <p className="auth-switch">

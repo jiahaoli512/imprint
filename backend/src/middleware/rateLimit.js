@@ -78,6 +78,21 @@ const adminLoginLimiter = createLimiter({
   message: 'Too many attempts, please try again later.',
 });
 
+// Guards the public, unauthenticated GET /api/users/check-email (forgot-
+// password's email-step pre-check). Counts *all* requests, not just
+// failures — even a "reachable" result still spends a Verifalia credit, and
+// Verifalia's free tier is a 25/day quota for the whole app, not per-IP, so
+// this is the first line of defense against one actor draining that shared
+// budget. Not a complete defense against distributed abuse, but
+// proportionate — any quota exhaustion fails open (see utils/verifalia.js),
+// so the worst case is the feature quietly adding no value for the rest of
+// the day, not a blocked user.
+const emailCheckLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many email checks, please try again later.',
+});
+
 // Limiter for the two signed-in username/name-lookup endpoints
 // (check-username, search). Both are auth-gated (not anonymous), but neither
 // had a dedicated limiter before — they only fell under the generous global
@@ -160,5 +175,5 @@ module.exports = {
   apiLimiter, authLimiter, contactLimiter, codeRequestLimiter, friendRequestLimiter,
   exportLimiter, passwordChangeLimiter,
   registerLimiter, signupVerifyLimiter, resetVerifyLimiter, waitlistJoinLimiter, adminLoginLimiter,
-  lookupLimiter,
+  lookupLimiter, emailCheckLimiter,
 };

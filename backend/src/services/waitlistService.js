@@ -1,7 +1,8 @@
 const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const { sendApprovalEmail } = require('../utils/email');
-const { checkLength, checkRequired, checkEmail, normalizeEmail } = require('../utils/validate');
+const { checkLength, checkRequired, normalizeEmail } = require('../utils/validate');
+const { assertDeliverable } = require('./emailCheckService');
 const httpError = require('../utils/httpError');
 
 // Reassign positions to a clean 0..n-1 sequence in their current sort order.
@@ -31,7 +32,10 @@ async function isEligibleToRegister(email) {
 async function joinWaitlist(email, name) {
   checkRequired('Email', email);
   checkLength('email', email);
-  checkEmail(email);
+  // assertDeliverable's own checkEmail (regex format check) runs first and is
+  // free, rejecting obviously-malformed input before ever spending a
+  // Verifalia credit on the mailbox-deliverability check.
+  await assertDeliverable(email);
   checkLength('name', name);
   email = normalizeEmail(email);
 
