@@ -248,11 +248,11 @@ export default function AccountSettings({ ctx }) {
         <button type="button" className="btn btn-primary" onClick={handleEditProfile}>Edit Profile</button>
       </Setting>
 
-      <Setting title="View username" description="Your account's username.">
+      <Setting title="View username" description="The username registered to your account.">
         <ViewUsernameSetting username={username} />
       </Setting>
 
-      <Setting title="View email" description="Your account's email address is censored by default. Click the eye icon to reveal it.">
+      <Setting title="View email" description="The email address registered to your account.">
         <ViewEmailSetting />
       </Setting>
 
