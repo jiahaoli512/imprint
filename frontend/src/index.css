@@ -2181,6 +2181,26 @@ footer {
 .settings-inline-form-actions { display: flex; gap: 10px; }
 .settings-inline-form-actions .btn { flex: 1; }
 
+/* Account tab: View Email row — censored value + eye toggle. */
+.view-email-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.view-email-value {
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Range slider (point opacity). */
 .settings-slider-row { display: flex; align-items: center; gap: 12px; }
 .settings-slider {
