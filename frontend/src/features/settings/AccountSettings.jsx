@@ -84,9 +84,11 @@ function ViewEmailSetting({ getEmail = api.getEmail }) {
   return (
     <div className="settings-inline-form">
       <div className="settings-view-row">
-        <span className="settings-view-value">
-          {visible && email ? email : (email ? censorEmail(email) : '••••••••••••')}
-        </span>
+        <div className="settings-view-field">
+          <span className="settings-view-value">
+            {visible && email ? email : (email ? censorEmail(email) : '••••••••••••')}
+          </span>
+        </div>
         <div className="settings-view-actions">
           <button
             type="button"
@@ -114,7 +116,10 @@ function ViewUsernameSetting() {
   return (
     <div className="settings-inline-form">
       <div className="settings-view-row">
-        <span className="settings-view-value">@{username}</span>
+        <div className="settings-view-field settings-view-field-split">
+          <span className="settings-username-at">@</span>
+          <span className="settings-view-value">{username}</span>
+        </div>
         <div className="settings-view-actions">
           <CopyButton getValue={username} label="username" />
         </div>
