@@ -1,12 +1,11 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const Waitlist = require('../models/Waitlist');
 const { checkLength, checkRequired, normalizeEmail, normalizeUsername } = require('../utils/validate');
 const { validatePassword } = require('../utils/validatePassword');
 const httpError = require('../utils/httpError');
 const { toAuthResult } = require('./userSerializers');
 const { assertEmailVerified, consumeVerification } = require('./verificationService');
-const { isEligibleToRegister } = require('./waitlistService');
+const { isEligibleToRegister, consumeOnRegister } = require('./waitlistService');
 
 async function registerUser(email, password) {
   checkRequired('Email', email);
@@ -28,8 +27,12 @@ async function registerUser(email, password) {
 
   const passwordHash = await bcrypt.hash(password, 12);
   await User.create({ email, passwordHash });
+  // Removing the waitlist entry is waitlistService's own lifecycle rule (see
+  // consumeOnRegister — it also keeps `position` a clean sequence, same as
+  // the admin deleteEntry path), so it's delegated there rather than this
+  // service reaching into the Waitlist model directly.
   await Promise.all([
-    Waitlist.deleteOne({ email }),
+    consumeOnRegister(email),
     consumeVerification(email),
   ]);
 }

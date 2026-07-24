@@ -78,6 +78,24 @@ const adminLoginLimiter = createLimiter({
   message: 'Too many attempts, please try again later.',
 });
 
+// Limiter for the two signed-in username/name-lookup endpoints
+// (check-username, search). Both are auth-gated (not anonymous), but neither
+// had a dedicated limiter before — they only fell under the generous global
+// apiLimiter (300/15min on all of /api), which is far looser than every other
+// guessing-shaped endpoint in this codebase (login, register, verify-code,
+// waitlist join all cap around 10/15min). check-username is an exact-match
+// boolean oracle and search a prefix-match one; a signed-in attacker could
+// otherwise enumerate at up to 300 req/15min/IP. Counts *all* requests
+// (not just failures) since a "not found"/no-match response is itself the
+// abusable signal here, not a failure to retry past. Generous enough for
+// real typing (a user checking several candidate usernames, or a few
+// searches) without matching the wide-open global default.
+const lookupLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  message: 'Too many lookups, please try again later.',
+});
+
 // Strict limiter for the public contact form. Unlike authLimiter, this counts
 // *successful* requests too — a successful submission is the abusable action
 // here (it sends an email / consumes Brevo quota), so it must be capped. A real
@@ -124,8 +142,9 @@ const exportLimiter = createLimiter({
 });
 
 // Same policy as authLimiter (failures-only, same window/cap), but a
-// separate instance/bucket: authLimiter is mounted on login and both
-// verify-code endpoints, and express-rate-limit keys by IP across every
+// separate instance/bucket: authLimiter is mounted on login only now (see
+// its own comment — register/verify-code/waitlist-join/admin-login each got
+// their own instance too), and express-rate-limit keys by IP across every
 // route sharing one instance — reusing authLimiter here would mean a few
 // failed *login* attempts eat into the budget for a legitimate
 // password-change attempt from the same IP, which is a confusing coupling
@@ -141,4 +160,5 @@ module.exports = {
   apiLimiter, authLimiter, contactLimiter, codeRequestLimiter, friendRequestLimiter,
   exportLimiter, passwordChangeLimiter,
   registerLimiter, signupVerifyLimiter, resetVerifyLimiter, waitlistJoinLimiter, adminLoginLimiter,
+  lookupLimiter,
 };

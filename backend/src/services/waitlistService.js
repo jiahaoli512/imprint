@@ -102,7 +102,17 @@ async function deleteEntry(id) {
   await normalizePositions();
 }
 
+// Removes an email's waitlist entry once it's completed registration —
+// authService.registerUser calls this instead of touching the Waitlist
+// model directly, so this collection's lifecycle rules (including keeping
+// `position` a clean 0..n-1 sequence, same as deleteEntry) stay owned by
+// this service rather than drifting across two independent write paths.
+async function consumeOnRegister(email) {
+  await Waitlist.deleteOne({ email });
+  await normalizePositions();
+}
+
 module.exports = {
   joinWaitlist, listWaitlist, countWaitlist, checkWaitlist, reorderWaitlist, approveEntry, deleteEntry,
-  isEligibleToRegister,
+  isEligibleToRegister, consumeOnRegister,
 };
