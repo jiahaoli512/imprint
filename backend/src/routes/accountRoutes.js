@@ -40,6 +40,14 @@ router.post('/reset/finish', requireAuth, handle(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// Settings > Account > View Email. The email is already carried (and
+// signature-verified) in req.user's JWT payload — see token.js's signToken —
+// and the app has no email-change feature, so it can't go stale; no DB hit
+// needed, same trust reset/password and export already place in req.user.email.
+router.get('/email', requireAuth, handle(async (req, res) => {
+  res.json({ email: req.user.email });
+}));
+
 // Change password while already signed in, gated by re-entering the current
 // password (as opposed to reset/password's email-code-verified challenge).
 // Also bumps tokenVersion, so a fresh token is returned to keep this client

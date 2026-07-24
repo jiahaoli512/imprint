@@ -216,6 +216,7 @@ export const api = {
   // token like resetPassword, since it also revokes existing sessions);
   // full sign-out of every session including this one; a self-export emailed
   // to the account's own address (POST — it triggers a send, not just a read).
+  getEmail:             ()             => request('/api/users/email'),
   changePassword:       (currentPassword, newPassword) =>
     request.post('/api/users/password', { currentPassword, newPassword }),
   logoutAllDevices:     ()             => request.post('/api/users/logout-all', {}),

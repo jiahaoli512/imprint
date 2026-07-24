@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, LogOut } from 'lucide-react';
+import { Mail, LogOut, Eye, EyeOff } from 'lucide-react';
 import Modal from '../../components/Modal';
 import PasswordInput from '../../components/PasswordInput';
 import PasswordAndConfirmFields from '../../components/PasswordAndConfirmFields';
@@ -11,6 +11,62 @@ import { useForm } from '../../utils/useForm';
 import { useAccountExport } from './useAccountExport';
 import { useLogoutAllDevices } from './useLogoutAllDevices';
 import Setting from './Setting';
+
+// Masks a local part down to its first character (`jiahaoli@g.ucla.edu` ->
+// `j*******@g.ucla.edu`) — the domain stays visible since it's rarely
+// sensitive on its own and helps the user recognize the right account at a
+// glance while still censored by default.
+function censorEmail(email) {
+  const at = email.indexOf('@');
+  if (at <= 0) return email;
+  return `${email[0]}${'*'.repeat(at - 1)}${email.slice(at)}`;
+}
+
+// Fetches the account email lazily — only on first reveal, not on mount —
+// so a user who never clicks the eye never puts their email in memory/DOM at
+// all beyond the censored form. Toggling back to hidden re-masks the already-
+// fetched value rather than re-fetching.
+function ViewEmailSetting({ getEmail = api.getEmail }) {
+  const [email, setEmail] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function reveal() {
+    if (email) { setVisible(true); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getEmail();
+      setEmail(data.email);
+      setVisible(true);
+    } catch {
+      setError('Could not load your email.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="settings-inline-form">
+      <div className="view-email-row">
+        <span className="view-email-value">
+          {visible && email ? email : (email ? censorEmail(email) : '••••••••••••')}
+        </span>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={visible ? 'Hide email' : 'Show email'}
+          onClick={() => (visible ? setVisible(false) : reveal())}
+          disabled={loading}
+        >
+          {visible ? <EyeOff size={15} /> : <Eye size={15} />}
+        </button>
+      </div>
+      {error && <p className="auth-error">{error}</p>}
+    </div>
+  );
+}
 
 // Inline "change password while signed in" form, gated by re-entering the
 // current password (as opposed to the forgot-password flow's email-code
@@ -116,6 +172,10 @@ export default function AccountSettings({ ctx }) {
     <ScrollHint wrapClassName="settings-scroll" className="settings-panel">
       <Setting title="Edit profile" description="Edit your name and username.">
         <button type="button" className="btn btn-primary" onClick={handleEditProfile}>Edit Profile</button>
+      </Setting>
+
+      <Setting title="View email" description="Your account's email address is censored by default. Click the eye icon to reveal it.">
+        <ViewEmailSetting />
       </Setting>
 
       <Setting title="Change password" description="Update your password using your current one.">
