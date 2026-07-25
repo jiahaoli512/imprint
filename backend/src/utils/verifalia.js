@@ -6,12 +6,12 @@ const BASE_URL = 'https://api.verifalia.com/v2.7';
 const POLL_INTERVAL_MS = 1000;
 const POLL_TIMEOUT_MS = 8000;
 
-if (!process.env.VERIFALIA_ACCOUNT_SID || !process.env.VERIFALIA_API_KEY) {
-  console.warn('[verifalia] WARNING: VERIFALIA_ACCOUNT_SID/VERIFALIA_API_KEY not set — deliverability checks will be skipped (fail open)');
+if (!process.env.VERIFALIA_USERNAME || !process.env.VERIFALIA_PASSWORD) {
+  console.warn('[verifalia] WARNING: VERIFALIA_USERNAME/VERIFALIA_PASSWORD not set — deliverability checks will be skipped (fail open)');
 }
 
 function authHeader() {
-  const raw = `${process.env.VERIFALIA_ACCOUNT_SID}:${process.env.VERIFALIA_API_KEY}`;
+  const raw = `${process.env.VERIFALIA_USERNAME}:${process.env.VERIFALIA_PASSWORD}`;
   return `Basic ${Buffer.from(raw).toString('base64')}`;
 }
 
@@ -55,7 +55,7 @@ async function classify(email) {
 // signup or password reset. The outcome is always logged, even when
 // inconclusive, so bounce-rate impact can be assessed later.
 async function isDeliverable(email) {
-  if (!process.env.VERIFALIA_ACCOUNT_SID || !process.env.VERIFALIA_API_KEY) return true;
+  if (!process.env.VERIFALIA_USERNAME || !process.env.VERIFALIA_PASSWORD) return true;
   try {
     const classification = await classify(email);
     if (classification !== 'Deliverable' && classification !== 'Undeliverable') {
